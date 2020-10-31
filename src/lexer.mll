@@ -68,7 +68,10 @@ rule token = parse
   | eof {EOF}
 
 and comment = parse
-  | "\n" {token lexbuf}
+  | "\n" {
+      if !(Hyper.canEnd) then SEMICOLON
+      else token lexbuf
+    }
   | _ {comment lexbuf}
 
 {
