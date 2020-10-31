@@ -15,7 +15,7 @@ let nombre = chiffre+
 let car = [' '-'~'] | '\\' | '\"' | '\n' | '\t'
 let chaine = "\""(car+)"\""
 
-let space = ' ' | '\t'
+let space = ' ' | '\t'
 
 rule token = parse
   | nombre as i { Hyper.enableEnd (); INT (int_of_string i) }
@@ -60,7 +60,7 @@ rule token = parse
   | ";" {Hyper.disableEnd (); SEMICOLON}
   | "::" {Hyper.disableEnd ();TYPE}
   | "\n" {
-      let b = !Hyper.canEnd in 
+      let b = !Hyper.canEnd in
       !Hyper.canEnd := false;
       if b then SEMICOLON
       else token lexbuf
@@ -71,7 +71,7 @@ rule token = parse
 
 and comment = parse
   | "\n" {
-      let b = !Hyper.canEnd in 
+      let b = !Hyper.canEnd in
       !Hyper.canEnd := false;
       if b then SEMICOLON
       else token lexbuf
