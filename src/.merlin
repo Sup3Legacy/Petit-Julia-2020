@@ -1,0 +1,8 @@
+EXCLUDE_QUERY_DIR
+B /home/const/.opam/default/lib/ppx_deriving/runtime
+B /home/const/.opam/default/lib/result
+B _build/default/.minijulia.eobjs/byte
+S /home/const/.opam/default/lib/ppx_deriving/runtime
+S /home/const/.opam/default/lib/result
+S .
+FLG -ppx '/media/sf_L3/Compil/Petit-Julia-2020/src/_build/default/.ppx/52c49c7c6bc3dda051f54733e606b527/ppx.exe --as-ppx'

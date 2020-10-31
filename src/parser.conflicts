@@ -1,0 +1,833 @@
+
+** Conflict (shift/reduce) in state 127.
+** Token involved: MINUS
+** This state is reached from fichier after reading:
+
+expr 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+fichier 
+list(decl) EOF 
+(?)
+
+** In state 127, looking ahead at MINUS, reducing production
+** decl -> expr 
+** is permitted because of the following sub-derivation:
+
+decl list(decl) // lookahead token appears because list(decl) can begin with MINUS
+expr . 
+
+** In state 127, looking ahead at MINUS, shifting is permitted
+** because of the following sub-derivation:
+
+decl list(decl) 
+expr SEMICOLON 
+expr . MINUS expr 
+
+** Conflict (reduce/reduce) in state 114.
+** Token involved: END
+** This state is reached from fichier after reading:
+
+option(MUTABLE) STRUCT IDENT 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+fichier 
+list(decl) EOF 
+decl list(decl) 
+structure 
+option(MUTABLE) STRUCT IDENT loption(separated_nonempty_list(SEMICOLON,option(param))) END SEMICOLON // lookahead token appears
+                             (?)
+
+** In state 114, looking ahead at END, reducing production
+** loption(separated_nonempty_list(SEMICOLON,option(param))) -> 
+** is permitted because of the following sub-derivation:
+
+. 
+
+** In state 114, looking ahead at END, reducing production
+** option(param) -> 
+** is permitted because of the following sub-derivation:
+
+separated_nonempty_list(SEMICOLON,option(param)) // lookahead token is inherited
+option(param) // lookahead token is inherited
+. 
+
+** Conflict (reduce/reduce) in state 107.
+** Token involved: END
+** This state is reached from fichier after reading:
+
+FUNCTION IDENT_PARG loption(separated_nonempty_list(COMMA,param)) PARD option(typage) 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+fichier 
+list(decl) EOF 
+decl list(decl) 
+fonction 
+FUNCTION IDENT_PARG loption(separated_nonempty_list(COMMA,param)) PARD option(typage) bloc END SEMICOLON // lookahead token appears
+                                                                                      loption(separated_nonempty_list(SEMICOLON,option(expr))) // lookahead token is inherited
+                                                                                      (?)
+
+** In state 107, looking ahead at END, reducing production
+** loption(separated_nonempty_list(SEMICOLON,option(expr))) -> 
+** is permitted because of the following sub-derivation:
+
+. 
+
+** In state 107, looking ahead at END, reducing production
+** option(expr) -> 
+** is permitted because of the following sub-derivation:
+
+separated_nonempty_list(SEMICOLON,option(expr)) // lookahead token is inherited
+option(expr) // lookahead token is inherited
+. 
+
+** Conflict (reduce/reduce) in state 90.
+** Token involved: END
+** This state is reached from fichier after reading:
+
+WHILE expr 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+fichier 
+list(decl) EOF 
+decl list(decl) 
+expr SEMICOLON 
+WHILE expr bloc END // lookahead token appears
+           loption(separated_nonempty_list(SEMICOLON,option(expr))) // lookahead token is inherited
+           (?)
+
+** In state 90, looking ahead at END, reducing production
+** loption(separated_nonempty_list(SEMICOLON,option(expr))) -> 
+** is permitted because of the following sub-derivation:
+
+. 
+
+** In state 90, looking ahead at END, reducing production
+** option(expr) -> 
+** is permitted because of the following sub-derivation:
+
+separated_nonempty_list(SEMICOLON,option(expr)) // lookahead token is inherited
+option(expr) // lookahead token is inherited
+. 
+
+** Conflict (shift/reduce) in state 86.
+** Token involved: PARD_IDENT
+** This state is reached from fichier after reading:
+
+NOT expr 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+fichier 
+list(decl) EOF 
+decl list(decl) 
+expr SEMICOLON 
+(?)
+
+** In state 86, looking ahead at PARD_IDENT, shifting is permitted
+** because of the following sub-derivation:
+
+NOT expr 
+    expr . PARD_IDENT 
+
+** In state 86, looking ahead at PARD_IDENT, reducing production
+** expr -> NOT expr 
+** is permitted because of the following sub-derivation:
+
+expr PARD_IDENT // lookahead token appears
+NOT expr . 
+
+** Conflict (shift/reduce) in state 85.
+** Token involved: PARD_IDENT
+** This state is reached from fichier after reading:
+
+MINUS expr 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+fichier 
+list(decl) EOF 
+decl list(decl) 
+expr SEMICOLON 
+(?)
+
+** In state 85, looking ahead at PARD_IDENT, shifting is permitted
+** because of the following sub-derivation:
+
+MINUS expr 
+      expr . PARD_IDENT 
+
+** In state 85, looking ahead at PARD_IDENT, reducing production
+** expr -> MINUS expr 
+** is permitted because of the following sub-derivation:
+
+expr PARD_IDENT // lookahead token appears
+MINUS expr . 
+
+** Conflict (reduce/reduce) in state 80.
+** Token involved: END
+** This state is reached from fichier after reading:
+
+IF expr bloc ELSE 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+fichier 
+list(decl) EOF 
+decl list(decl) 
+expr SEMICOLON 
+IF expr bloc else_exp 
+             ELSE bloc END // lookahead token appears
+                  loption(separated_nonempty_list(SEMICOLON,option(expr))) // lookahead token is inherited
+                  (?)
+
+** In state 80, looking ahead at END, reducing production
+** loption(separated_nonempty_list(SEMICOLON,option(expr))) -> 
+** is permitted because of the following sub-derivation:
+
+. 
+
+** In state 80, looking ahead at END, reducing production
+** option(expr) -> 
+** is permitted because of the following sub-derivation:
+
+separated_nonempty_list(SEMICOLON,option(expr)) // lookahead token is inherited
+option(expr) // lookahead token is inherited
+. 
+
+** Conflict (reduce/reduce) in state 78.
+** Tokens involved: END ELSEIF ELSE
+** The following explanations concentrate on token END.
+** This state is reached from fichier after reading:
+
+IF expr bloc ELSEIF expr 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+fichier 
+list(decl) EOF 
+decl list(decl) 
+expr SEMICOLON 
+IF expr bloc else_exp 
+             ELSEIF expr bloc else_exp // lookahead token appears because else_exp can begin with END
+                         loption(separated_nonempty_list(SEMICOLON,option(expr))) // lookahead token is inherited
+                         (?)
+
+** In state 78, looking ahead at END, reducing production
+** loption(separated_nonempty_list(SEMICOLON,option(expr))) -> 
+** is permitted because of the following sub-derivation:
+
+. 
+
+** In state 78, looking ahead at END, reducing production
+** option(expr) -> 
+** is permitted because of the following sub-derivation:
+
+separated_nonempty_list(SEMICOLON,option(expr)) // lookahead token is inherited
+option(expr) // lookahead token is inherited
+. 
+
+** Conflict (reduce/reduce) in state 74.
+** Tokens involved: END ELSEIF ELSE
+** The following explanations concentrate on token END.
+** This state is reached from fichier after reading:
+
+IF expr 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+fichier 
+list(decl) EOF 
+decl list(decl) 
+expr SEMICOLON 
+IF expr bloc else_exp // lookahead token appears because else_exp can begin with END
+        loption(separated_nonempty_list(SEMICOLON,option(expr))) // lookahead token is inherited
+        (?)
+
+** In state 74, looking ahead at END, reducing production
+** loption(separated_nonempty_list(SEMICOLON,option(expr))) -> 
+** is permitted because of the following sub-derivation:
+
+. 
+
+** In state 74, looking ahead at END, reducing production
+** option(expr) -> 
+** is permitted because of the following sub-derivation:
+
+separated_nonempty_list(SEMICOLON,option(expr)) // lookahead token is inherited
+option(expr) // lookahead token is inherited
+. 
+
+** Conflict (shift/reduce/reduce) in state 65.
+** Tokens involved: TIMES SEMICOLON PLUS PARD_IDENT OR NEQ MODULO MINUS LEQ L GEQ G EQ END ELSEIF ELSE AND
+** The following explanations concentrate on token TIMES.
+** This state is reached from fichier after reading:
+
+WHILE expr MINUS expr 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+fichier 
+list(decl) EOF 
+decl list(decl) 
+expr SEMICOLON 
+(?)
+
+** In state 65, looking ahead at TIMES, reducing production
+** expr -> MINUS expr 
+** is permitted because of the following sub-derivation:
+
+WHILE expr bloc END 
+           loption(separated_nonempty_list(SEMICOLON,option(expr))) 
+           separated_nonempty_list(SEMICOLON,option(expr)) 
+           option(expr) 
+           expr 
+           expr TIMES expr // lookahead token appears
+           MINUS expr . 
+
+** In state 65, looking ahead at TIMES, reducing production
+** expr -> expr MINUS expr 
+** is permitted because of the following sub-derivation:
+
+WHILE expr bloc END 
+      expr TIMES expr // lookahead token appears
+      expr MINUS expr . 
+
+** In state 65, looking ahead at TIMES, shifting is permitted
+** because of the following sub-derivation:
+
+WHILE expr bloc END 
+      expr MINUS expr 
+                 expr . TIMES expr 
+
+** Conflict (reduce/reduce) in state 63.
+** Token involved: END
+** This state is reached from fichier after reading:
+
+FOR IDENT AFFECT expr COLON expr 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+fichier 
+list(decl) EOF 
+decl list(decl) 
+expr SEMICOLON 
+FOR IDENT AFFECT expr COLON expr bloc END // lookahead token appears
+                                 loption(separated_nonempty_list(SEMICOLON,option(expr))) // lookahead token is inherited
+                                 (?)
+
+** In state 63, looking ahead at END, reducing production
+** loption(separated_nonempty_list(SEMICOLON,option(expr))) -> 
+** is permitted because of the following sub-derivation:
+
+. 
+
+** In state 63, looking ahead at END, reducing production
+** option(expr) -> 
+** is permitted because of the following sub-derivation:
+
+separated_nonempty_list(SEMICOLON,option(expr)) // lookahead token is inherited
+option(expr) // lookahead token is inherited
+. 
+
+** Conflict (shift/reduce) in state 56.
+** Tokens involved: TIMES PLUS PARD_IDENT OR NEQ MODULO MINUS LEQ L GEQ G EXP EQ DOT AND
+** The following explanations concentrate on token TIMES.
+** This state is reached from fichier after reading:
+
+RETURN expr 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+fichier 
+list(decl) EOF 
+decl list(decl) 
+expr SEMICOLON 
+(?)
+
+** In state 56, looking ahead at TIMES, shifting is permitted
+** because of the following sub-derivation:
+
+RETURN option(expr) 
+       expr 
+       expr . TIMES expr 
+
+** In state 56, looking ahead at TIMES, reducing production
+** option(expr) -> expr 
+** is permitted because of the following sub-derivation:
+
+expr TIMES expr // lookahead token appears
+RETURN option(expr) // lookahead token is inherited
+       expr . 
+
+** Conflict (reduce/reduce) in state 51.
+** Token involved: PARD
+** This state is reached from fichier after reading:
+
+PARG expr SEMICOLON 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+fichier 
+list(decl) EOF 
+decl list(decl) 
+expr SEMICOLON 
+PARG bloc1 PARD // lookahead token appears
+     expr SEMICOLON bloc // lookahead token is inherited
+                    loption(separated_nonempty_list(SEMICOLON,option(expr))) // lookahead token is inherited
+                    (?)
+
+** In state 51, looking ahead at PARD, reducing production
+** loption(separated_nonempty_list(SEMICOLON,option(expr))) -> 
+** is permitted because of the following sub-derivation:
+
+. 
+
+** In state 51, looking ahead at PARD, reducing production
+** option(expr) -> 
+** is permitted because of the following sub-derivation:
+
+separated_nonempty_list(SEMICOLON,option(expr)) // lookahead token is inherited
+option(expr) // lookahead token is inherited
+. 
+
+** Conflict (shift/reduce) in state 49.
+** Token involved: PARD_IDENT
+** This state is reached from fichier after reading:
+
+expr AND expr 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+fichier 
+list(decl) EOF 
+decl list(decl) 
+expr SEMICOLON 
+(?)
+
+** In state 49, looking ahead at PARD_IDENT, shifting is permitted
+** because of the following sub-derivation:
+
+expr AND expr 
+         expr . PARD_IDENT 
+
+** In state 49, looking ahead at PARD_IDENT, reducing production
+** expr -> expr AND expr 
+** is permitted because of the following sub-derivation:
+
+expr PARD_IDENT // lookahead token appears
+expr AND expr . 
+
+** Conflict (shift/reduce) in state 47.
+** Token involved: PARD_IDENT
+** This state is reached from fichier after reading:
+
+expr EQ expr 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+fichier 
+list(decl) EOF 
+decl list(decl) 
+expr SEMICOLON 
+(?)
+
+** In state 47, looking ahead at PARD_IDENT, shifting is permitted
+** because of the following sub-derivation:
+
+expr EQ expr 
+        expr . PARD_IDENT 
+
+** In state 47, looking ahead at PARD_IDENT, reducing production
+** expr -> expr EQ expr 
+** is permitted because of the following sub-derivation:
+
+expr PARD_IDENT // lookahead token appears
+expr EQ expr . 
+
+** Conflict (shift/reduce) in state 45.
+** Token involved: PARD_IDENT
+** This state is reached from fichier after reading:
+
+expr G expr 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+fichier 
+list(decl) EOF 
+decl list(decl) 
+expr SEMICOLON 
+(?)
+
+** In state 45, looking ahead at PARD_IDENT, shifting is permitted
+** because of the following sub-derivation:
+
+expr G expr 
+       expr . PARD_IDENT 
+
+** In state 45, looking ahead at PARD_IDENT, reducing production
+** expr -> expr G expr 
+** is permitted because of the following sub-derivation:
+
+expr PARD_IDENT // lookahead token appears
+expr G expr . 
+
+** Conflict (shift/reduce) in state 43.
+** Token involved: PARD_IDENT
+** This state is reached from fichier after reading:
+
+expr GEQ expr 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+fichier 
+list(decl) EOF 
+decl list(decl) 
+expr SEMICOLON 
+(?)
+
+** In state 43, looking ahead at PARD_IDENT, shifting is permitted
+** because of the following sub-derivation:
+
+expr GEQ expr 
+         expr . PARD_IDENT 
+
+** In state 43, looking ahead at PARD_IDENT, reducing production
+** expr -> expr GEQ expr 
+** is permitted because of the following sub-derivation:
+
+expr PARD_IDENT // lookahead token appears
+expr GEQ expr . 
+
+** Conflict (shift/reduce) in state 41.
+** Token involved: PARD_IDENT
+** This state is reached from fichier after reading:
+
+expr L expr 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+fichier 
+list(decl) EOF 
+decl list(decl) 
+expr SEMICOLON 
+(?)
+
+** In state 41, looking ahead at PARD_IDENT, shifting is permitted
+** because of the following sub-derivation:
+
+expr L expr 
+       expr . PARD_IDENT 
+
+** In state 41, looking ahead at PARD_IDENT, reducing production
+** expr -> expr L expr 
+** is permitted because of the following sub-derivation:
+
+expr PARD_IDENT // lookahead token appears
+expr L expr . 
+
+** Conflict (shift/reduce) in state 39.
+** Token involved: PARD_IDENT
+** This state is reached from fichier after reading:
+
+expr LEQ expr 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+fichier 
+list(decl) EOF 
+decl list(decl) 
+expr SEMICOLON 
+(?)
+
+** In state 39, looking ahead at PARD_IDENT, shifting is permitted
+** because of the following sub-derivation:
+
+expr LEQ expr 
+         expr . PARD_IDENT 
+
+** In state 39, looking ahead at PARD_IDENT, reducing production
+** expr -> expr LEQ expr 
+** is permitted because of the following sub-derivation:
+
+expr PARD_IDENT // lookahead token appears
+expr LEQ expr . 
+
+** Conflict (shift/reduce) in state 37.
+** Token involved: PARD_IDENT
+** This state is reached from fichier after reading:
+
+expr MINUS expr 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+fichier 
+list(decl) EOF 
+decl list(decl) 
+expr SEMICOLON 
+(?)
+
+** In state 37, looking ahead at PARD_IDENT, shifting is permitted
+** because of the following sub-derivation:
+
+expr MINUS expr 
+           expr . PARD_IDENT 
+
+** In state 37, looking ahead at PARD_IDENT, reducing production
+** expr -> expr MINUS expr 
+** is permitted because of the following sub-derivation:
+
+expr PARD_IDENT // lookahead token appears
+expr MINUS expr . 
+
+** Conflict (shift/reduce) in state 35.
+** Token involved: PARD_IDENT
+** This state is reached from fichier after reading:
+
+expr NEQ expr 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+fichier 
+list(decl) EOF 
+decl list(decl) 
+expr SEMICOLON 
+(?)
+
+** In state 35, looking ahead at PARD_IDENT, shifting is permitted
+** because of the following sub-derivation:
+
+expr NEQ expr 
+         expr . PARD_IDENT 
+
+** In state 35, looking ahead at PARD_IDENT, reducing production
+** expr -> expr NEQ expr 
+** is permitted because of the following sub-derivation:
+
+expr PARD_IDENT // lookahead token appears
+expr NEQ expr . 
+
+** Conflict (shift/reduce) in state 33.
+** Token involved: PARD_IDENT
+** This state is reached from fichier after reading:
+
+expr OR expr 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+fichier 
+list(decl) EOF 
+decl list(decl) 
+expr SEMICOLON 
+(?)
+
+** In state 33, looking ahead at PARD_IDENT, shifting is permitted
+** because of the following sub-derivation:
+
+expr OR expr 
+        expr . PARD_IDENT 
+
+** In state 33, looking ahead at PARD_IDENT, reducing production
+** expr -> expr OR expr 
+** is permitted because of the following sub-derivation:
+
+expr PARD_IDENT // lookahead token appears
+expr OR expr . 
+
+** Conflict (shift/reduce) in state 31.
+** Token involved: PARD_IDENT
+** This state is reached from fichier after reading:
+
+expr MODULO expr 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+fichier 
+list(decl) EOF 
+decl list(decl) 
+expr SEMICOLON 
+(?)
+
+** In state 31, looking ahead at PARD_IDENT, shifting is permitted
+** because of the following sub-derivation:
+
+expr MODULO expr 
+            expr . PARD_IDENT 
+
+** In state 31, looking ahead at PARD_IDENT, reducing production
+** expr -> expr MODULO expr 
+** is permitted because of the following sub-derivation:
+
+expr PARD_IDENT // lookahead token appears
+expr MODULO expr . 
+
+** Conflict (shift/reduce) in state 29.
+** Token involved: PARD_IDENT
+** This state is reached from fichier after reading:
+
+expr PLUS expr 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+fichier 
+list(decl) EOF 
+decl list(decl) 
+expr SEMICOLON 
+(?)
+
+** In state 29, looking ahead at PARD_IDENT, shifting is permitted
+** because of the following sub-derivation:
+
+expr PLUS expr 
+          expr . PARD_IDENT 
+
+** In state 29, looking ahead at PARD_IDENT, reducing production
+** expr -> expr PLUS expr 
+** is permitted because of the following sub-derivation:
+
+expr PARD_IDENT // lookahead token appears
+expr PLUS expr . 
+
+** Conflict (shift/reduce) in state 25.
+** Token involved: PARD_IDENT
+** This state is reached from fichier after reading:
+
+expr EXP expr 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+fichier 
+list(decl) EOF 
+decl list(decl) 
+expr SEMICOLON 
+(?)
+
+** In state 25, looking ahead at PARD_IDENT, shifting is permitted
+** because of the following sub-derivation:
+
+expr EXP expr 
+         expr . PARD_IDENT 
+
+** In state 25, looking ahead at PARD_IDENT, reducing production
+** expr -> expr EXP expr 
+** is permitted because of the following sub-derivation:
+
+expr PARD_IDENT // lookahead token appears
+expr EXP expr . 
+
+** Conflict (shift/reduce) in state 22.
+** Token involved: PARD_IDENT
+** This state is reached from fichier after reading:
+
+expr TIMES expr 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+fichier 
+list(decl) EOF 
+decl list(decl) 
+expr SEMICOLON 
+(?)
+
+** In state 22, looking ahead at PARD_IDENT, shifting is permitted
+** because of the following sub-derivation:
+
+expr TIMES expr 
+           expr . PARD_IDENT 
+
+** In state 22, looking ahead at PARD_IDENT, reducing production
+** expr -> expr TIMES expr 
+** is permitted because of the following sub-derivation:
+
+expr PARD_IDENT // lookahead token appears
+expr TIMES expr . 
+
+** Conflict (shift/reduce) in state 20.
+** Token involved: PARD_IDENT
+** This state is reached from fichier after reading:
+
+lvalue AFFECT expr 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+fichier 
+list(decl) EOF 
+decl list(decl) 
+expr SEMICOLON 
+(?)
+
+** In state 20, looking ahead at PARD_IDENT, shifting is permitted
+** because of the following sub-derivation:
+
+lvalue AFFECT expr 
+              expr . PARD_IDENT 
+
+** In state 20, looking ahead at PARD_IDENT, reducing production
+** expr -> lvalue AFFECT expr 
+** is permitted because of the following sub-derivation:
+
+expr PARD_IDENT // lookahead token appears
+lvalue AFFECT expr . 
+
+** Conflict (shift/reduce) in state 3.
+** Tokens involved: WHILE TRUE RETURN PARG NOT MINUS INT IF IDENT_PARG IDENT FOR FALSE ENTIER_PARG ENTIER_IDENT CHAINE
+** The following explanations concentrate on token WHILE.
+** This state is reached from fichier after reading:
+
+RETURN 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+fichier 
+list(decl) EOF 
+(?)
+
+** In state 3, looking ahead at WHILE, shifting is permitted
+** because of the following sub-derivation:
+
+decl list(decl) 
+expr SEMICOLON 
+RETURN option(expr) 
+       expr 
+       . WHILE expr bloc END 
+
+** In state 3, looking ahead at WHILE, reducing production
+** option(expr) -> 
+** is permitted because of the following sub-derivation:
+
+decl list(decl) // lookahead token appears because list(decl) can begin with WHILE
+expr // lookahead token is inherited
+RETURN option(expr) // lookahead token is inherited
+       . 

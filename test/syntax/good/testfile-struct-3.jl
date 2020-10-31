@@ -1,0 +1,2 @@
+
+struct S; a end

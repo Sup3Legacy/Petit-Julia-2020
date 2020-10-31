@@ -1,0 +1,9 @@
+(ocamllex
+  (modules lexer))
+(menhir
+  (modules parser)
+  (flags (-v)))
+(executable
+  (name minijulia)
+  (preprocess (pps ppx_deriving.show ppx_deriving.ord))
+  (flags ()))
