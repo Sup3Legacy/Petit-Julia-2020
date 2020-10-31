@@ -60,7 +60,9 @@ rule token = parse
   | ";" {Hyper.disableEnd (); SEMICOLON}
   | "::" {Hyper.disableEnd ();TYPE}
   | "\n" {
-      if !(Hyper.canEnd) then SEMICOLON
+      let b = !Hyper.canEnd in 
+      !Hyper.canEnd := false;
+      if b then SEMICOLON
       else token lexbuf
     }
   | space {token lexbuf}
@@ -69,7 +71,9 @@ rule token = parse
 
 and comment = parse
   | "\n" {
-      if !(Hyper.canEnd) then SEMICOLON
+      let b = !Hyper.canEnd in 
+      !Hyper.canEnd := false;
+      if b then SEMICOLON
       else token lexbuf
     }
   | _ {comment lexbuf}
