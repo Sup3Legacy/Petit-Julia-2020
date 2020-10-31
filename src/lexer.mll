@@ -61,7 +61,7 @@ rule token = parse
   | "::" {Hyper.disableEnd ();TYPE}
   | "\n" {
       let b = !Hyper.canEnd in
-      !Hyper.canEnd := false;
+      Hyper.canEnd := false;
       if b then SEMICOLON
       else token lexbuf
     }
@@ -72,7 +72,7 @@ rule token = parse
 and comment = parse
   | "\n" {
       let b = !Hyper.canEnd in
-      !Hyper.canEnd := false;
+      Hyper.canEnd := false;
       if b then SEMICOLON
       else token lexbuf
     }
