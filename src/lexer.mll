@@ -2,6 +2,8 @@
   open Parser
   open Hyper
   open Ast
+
+  exception Lexing_error of string
 }
 
 let chiffre = ['0'-'9']
@@ -12,6 +14,8 @@ let nombre = chiffre+
 
 let car = [' '-'~'] | '\\' | '\"' | '\n' | '\t'
 let chaine = "\""(car+)"\""
+
+let space = ' ' | '\t'
 
 rule token = parse
   | nombre as i { Hyper.enableEnd (); INT (int_of_string i) }
@@ -59,7 +63,8 @@ rule token = parse
       if !(Hyper.canEnd) then SEMICOLON
       else token lexbuf
     }
-  | _ {Hyper.enableEnd (); token lexbuf}
+  | space {token lexbuf}
+  | _ as c {raise (Lexing_error ("Invalid character : '"^(String.make 1 c)^"'"))}
   | eof {EOF}
 
 and comment = parse
