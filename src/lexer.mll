@@ -14,9 +14,9 @@ let ident = (alpha)(alpha | chiffre)*
 let nombre = chiffre+
 
 let car = [' '-'~'] | '\\' | '\"' | '\n' | '\t'
-let chaine = "\""(car+)"\""
+let chaine = '\"'(car*)'\"'
 
-let space = ' ' | '\t'
+let space = (' ' | '\t')*
 
 rule token = parse
   | nombre as i { Hyper.enableEnd (); INT (int_of_string i) }
@@ -32,10 +32,6 @@ rule token = parse
         match word with
         | Some token -> token
         | None -> IDENT s
-    }
-  | chaine as s { Hyper.enableEnd ();
-      let n = String.length s in
-      CHAINE (String.sub s 1 (n - 2))
     }
   | "," {Hyper.disableEnd (); COMMA}
   | "+" {Hyper.disableEnd (); PLUS}
@@ -63,23 +59,29 @@ rule token = parse
   | "\n" {
       new_line lexbuf;
       let b = !Hyper.canEnd in
-      Hyper.disableEnd ();
+      (* Hyper.disableEnd (); ATTENTION cela ferait planter si on a plusieurs sauts consécitufs de ligne, je pense *)
       if b then SEMICOLON
       else token lexbuf
     }
   | space {token lexbuf}
+  | '"' {string_handle lexbuf}
   | _ as c {raise (Lexing_error ("Invalid character : '"^(String.make 1 c)^"'"))}
   | eof {EOF}
 
 and comment = parse
+  | chaine as s {comment lexbuf}
+  | "\\n" {comment lexbuf}
   | "\n" {
       new_line lexbuf;
-      let b = !Hyper.canEnd in
-      Hyper.canEnd := false;
-      if b then SEMICOLON
-      else token lexbuf
+      (* Hyper.disableEnd (); ATTENTION cela ferait planter si on a plusieurs sauts consécitufs de ligne, je pense *)
+      token lexbuf
     }
   | _ {comment lexbuf}
+
+and string_handle = parse
+  | '"' {CHAINE (empty_stack ())}
+  | _ as c {push_to_string_stack c; string_handle lexbuf}
+  | eof {raise (Lexing_error "Unfinished string")}
 
 {
   (*let () = token (Lexing.from_channel stdin) in*)

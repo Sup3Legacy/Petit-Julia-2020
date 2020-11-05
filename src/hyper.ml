@@ -28,3 +28,18 @@ let enableEnd () =
 let disableEnd () =
   canEnd := false
 ;;
+
+let string_stack = ref []
+
+let push_to_string_stack a =
+  string_stack := a :: !string_stack
+;;
+
+let empty_stack () =
+  let b = !string_stack in
+  string_stack := [];
+  let n = List.length b in
+  let buf = Buffer.create n in
+  List.iter (Buffer.add_char buf) b;
+  Buffer.contents buf
+;;

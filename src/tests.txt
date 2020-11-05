@@ -1,0 +1,2 @@
+Failed tests :
+- /exec/mandelbrot.jl

@@ -6,3 +6,7 @@ minijulia.exe:
 
 clean:
 	dune clean
+
+explain:
+	menhir --base /tmp/parser --dump --explain parser.mly
+	cat /tmp/parser.conflicts

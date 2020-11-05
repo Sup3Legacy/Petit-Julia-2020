@@ -70,7 +70,7 @@ typage:
 
 fonction:
   | FUNCTION ig = IDENT_PARG parameters = separated_list(COMMA, param)
-    PARD t = typage? SEMICOLON? b = bloc END
+    PARD t = typage? b = bloc END
     {
       Function (ig, parameters, t, b)
     }
@@ -99,7 +99,7 @@ expr:
 
   | l = lvalue AFFECT e = expr {ElvalueAffect (l, e)}
   | l = lvalue {Elvalue l}
-  | RETURN e = expr? {Ereturn e} 
+  | RETURN e = expr? {Ereturn e}
   | FOR i = IDENT AFFECT e1 = expr COLON e2 = expr b = bloc END {
       Efor ((i : ident), e1, e2, b)
     }
