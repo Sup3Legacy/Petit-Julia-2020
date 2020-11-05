@@ -1,4 +1,5 @@
 {
+  open Lexing
   open Parser
   open Hyper
   open Ast
@@ -60,8 +61,9 @@ rule token = parse
   | ";" {Hyper.disableEnd (); SEMICOLON}
   | "::" {Hyper.disableEnd ();TYPE}
   | "\n" {
+      new_line lexbuf;
       let b = !Hyper.canEnd in
-      Hyper.canEnd := false;
+      Hyper.disableEnd ();
       if b then SEMICOLON
       else token lexbuf
     }
@@ -71,6 +73,7 @@ rule token = parse
 
 and comment = parse
   | "\n" {
+      new_line lexbuf;
       let b = !Hyper.canEnd in
       Hyper.canEnd := false;
       if b then SEMICOLON

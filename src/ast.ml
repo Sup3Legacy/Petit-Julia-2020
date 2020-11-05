@@ -58,7 +58,7 @@ and operateur =
   | Eq
   | Neq
   | Lo
-  | Go
+  | Gr
   | Leq
   | Geq
   | Plus

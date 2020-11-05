@@ -233,7 +233,7 @@ let dump_tree ?show_lazy ?lim x =
 	Opaque "lazy"
     else if t = Obj.forward_tag then (
       if show_lazy then (
-	assert (Lazy.lazy_is_val (Obj.obj r));
+	assert (Lazy.is_val (Obj.obj r));
 	Forward (dump (Obj.repr (Lazy.force_val (Obj.obj r))))
       )
       else
@@ -276,7 +276,7 @@ let dump_tree ?show_lazy ?lim x =
       Opaque "abstract"
     else if t = Obj.custom_tag then
       Opaque "custom"
-    else if t = Obj.final_tag then
+    else if t = Obj.custom_tag then
       Opaque "final"
     else if t = Obj.out_of_heap_tag then
       Opaque "out of heap"
