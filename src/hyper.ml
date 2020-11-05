@@ -15,7 +15,7 @@ let separate_int_ident s =
   while !i < n && not !found do
     i := !i + 1;
     match s.[!i] with
-      | '0'..'9' -> ()
+      | '0'..'9' | '-' -> ()
       | _ -> found := true;
   done;
   let res1 =

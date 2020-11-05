@@ -12,6 +12,7 @@ let alpha = ['a'-'z']|['A'-'Z']|'_'
 
 let ident = (alpha)(alpha | chiffre)*
 let nombre = chiffre+
+let neg = '-'nombre
 
 let car = [' '-'~'] | '\\' | '\"' | '\n' | '\t' | '"'
 let chaine = '\"'(car*)'\"'
@@ -19,8 +20,15 @@ let chaine = '\"'(car*)'\"'
 let space = (' ' | '\t')*
 
 rule token = parse
-  | nombre as i { Hyper.enableEnd (); INT (int_of_string i) }
-  | nombre"(" as i {Hyper.disableEnd ();ENTIER_PARG (int_of_string (String.sub i 0 ((String.length i) - 1)))}
+  | nombre as i { Hyper.enableEnd (); INT (
+      try int_of_string i
+      with _ -> raise (Lexing_error "Overflowing integer")) }
+  | nombre"(" as i {Hyper.disableEnd ();
+      let b =
+      try int_of_string (String.sub i 0 ((String.length i) - 1))
+      with _ -> raise (Lexing_error "Overflowing integer")
+      in
+      ENTIER_PARG b}
   | nombre ident as b {Hyper.disableEnd ();
       let (i, s) =
       try (Hyper.separate_int_ident b)
