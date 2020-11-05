@@ -1,5 +1,7 @@
 open Parser
 
+exception Overflowing_integer
+
 let keywords = Hashtbl.create 12
 let words = [("else", ELSE); ("elseif", ELSEIF); ("end", END); ("false", FALSE); ("for", FOR);
   ("function", FUNCTION); ("if", IF); ("mutable", MUTABLE); ("return", RETURN); ("struct", STRUCT);
@@ -16,7 +18,11 @@ let separate_int_ident s =
       | '0'..'9' -> ()
       | _ -> found := true;
   done;
-  (int_of_string (String.sub s 0 (!i)), String.sub s (!i) (n - !i))
+  let res1 =
+  try int_of_string (String.sub s 0 (!i))
+  with _ -> raise Overflowing_integer
+  in
+  (res1, String.sub s (!i) (n - !i))
 
 
 let canEnd = ref false;;
@@ -40,6 +46,8 @@ let empty_stack () =
   string_stack := [];
   let n = List.length b in
   let buf = Buffer.create n in
-  List.iter (Buffer.add_char buf) b;
+  List.iter (Buffer.add_char buf) (List.rev b);
   Buffer.contents buf
 ;;
+
+let escaped = ref false;;

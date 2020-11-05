@@ -1,7 +1,7 @@
 %{
   open Ast
-
 %}
+
 %token <int> INT
 %token <string> CHAINE
 %token <string> IDENT

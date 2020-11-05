@@ -9,8 +9,9 @@ let file = ref "test.jl";;
 let handle () =
   let c = open_in !file in
   let lb = Lexing.from_channel c in
-  let e = Parser.fichier Lexer.token lb in
-  print_endline (show_fichier e)
+  let e = Parser.fichier Lexer.token lb  in
+  (* print_endline (show_fichier e) *)
+  print_endline !file (* On peut switch entre afficher le nom (ie. compil réussie) et afficher l'arbre généré *)
 ;;
 
 
