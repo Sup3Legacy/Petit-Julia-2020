@@ -14,7 +14,7 @@ let ident = (alpha)(alpha | chiffre)*
 let nombre = chiffre+
 let neg = '-'nombre
 
-let car = [' '-'!''#'-'['']'-'~'] | '\n' | '\t' | "\\\"" | "\\\\"
+let car = [' '-'!''#'-'['']'-'~'] | "\\n" | "\\t" | "\\\"" | "\\\\"
 let chaine = '\"'(car*)'\"'
 
 let space = (' ' | '\t')*

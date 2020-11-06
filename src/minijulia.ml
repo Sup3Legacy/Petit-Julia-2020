@@ -5,7 +5,7 @@ open Ast
 (* open Ast *)
 
 let file = ref "test.jl";;
-let affiche = true;;
+let affiche = false;;
 
 let handle () =
   let c = open_in !file in
