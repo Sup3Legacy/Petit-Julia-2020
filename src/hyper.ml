@@ -11,12 +11,12 @@ let () = List.iter (fun (s, t) -> Hashtbl.add keywords s t) words
 exception Not_an_int
 
 
-let int_from_string s = 
-  let val0 = int_of_char '0' in 
-  let length = String.length s in 
+let int_from_string s =
+  let val0 = int_of_char '0' in
+  let length = String.length s in
   if length = 0 then raise Not_an_int;
-  let n = ref (if s.[0] = '-' then 0 else int_of_char s.[0] - val0) in 
-  for i = 1 to length-1 do 
+  let n = ref (if s.[0] = '-' then 0 else int_of_char s.[0] - val0) in
+  for i = 1 to length-1 do
     n := 10 * !n + int_of_char s.[i] - val0;
   done;
   if s.[0] = '-' then - !n else !n;;

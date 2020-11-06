@@ -37,6 +37,10 @@
 %left DOT
 
 
+%nonassoc ELSE
+%nonassoc ELSEIF
+
+%nonassoc WHILE
 
 
 %start <Ast.fichier> fichier
@@ -53,8 +57,7 @@ decl:
 ;
 
 structure:
-  | b = MUTABLE? STRUCT i = IDENT parameters = separated_list(SEMICOLON, option(param))
-    END
+  | b = MUTABLE? STRUCT i = IDENT parameters = separated_list(SEMICOLON, option(param)) END
     {
       let res = match b with
         | Some () -> true
@@ -95,7 +98,7 @@ expr:
   | PARG e = expr i = PARD_IDENT {EparDIdent (e, i)}
   | i = IDENT_PARG l = separated_list(COMMA, expr) PARD {Eapplication (i, l)}
   | NOT e = expr {Enot e}
-  | MINUS e = expr %prec UMINUS {Eminus e}
+  | MINUS e = expr %prec MINUS {Eminus e}
 
   | l = lvalue AFFECT e = expr {ElvalueAffect (l, e)}
   | l = lvalue {Elvalue l}

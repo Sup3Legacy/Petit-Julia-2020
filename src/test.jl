@@ -1,9 +1,1 @@
-
-println(9223372036854775807)
-println(-9223372036854775808)
-println(9223372036854775807 + 1)
-println(-9223372036854775808 - 1)
-println(2 ^ 63)
-println(2 ^ 63 - 1)
-println(- 2 ^ 63)
-println(1729 ^ 42)
+if a == 0 print(b) elseif c == 12 print(d) else print(e) end 
