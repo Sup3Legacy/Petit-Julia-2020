@@ -5,13 +5,14 @@ open Ast
 (* open Ast *)
 
 let file = ref "test.jl";;
+let affiche = true;;
 
 let handle () =
   let c = open_in !file in
   let lb = Lexing.from_channel c in
   let e = Parser.fichier Lexer.token lb  in
-  (* print_endline (show_fichier e) *)
-  print_endline !file (* On peut switch entre afficher le nom (ie. compil réussie) et afficher l'arbre généré *)
+  if affiche then print_endline (show_fichier e)
+  else print_endline !file (* On peut switch entre afficher le nom (ie. compil réussie) et afficher l'arbre généré *)
 ;;
 
 
@@ -19,6 +20,7 @@ let handle () =
 let set_filename n =
   file := n
 ;;
+
 
 let main () =
   begin
