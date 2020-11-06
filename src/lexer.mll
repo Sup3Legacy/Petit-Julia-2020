@@ -21,18 +21,18 @@ let space = (' ' | '\t')*
 
 rule token = parse
   | nombre as i { Hyper.enableEnd (); INT (
-      try int_of_string i
-      with _ -> raise (Lexing_error "Overflowing integer")) }
+      try Hyper.int_from_string i
+      with _ -> raise (Lexing_error ("Overflowing integer : "^i))) }
   | nombre"(" as i {Hyper.disableEnd ();
       let b =
-      try int_of_string (String.sub i 0 ((String.length i) - 1))
-      with _ -> raise (Lexing_error "Overflowing integer")
+      try Hyper.int_from_string (String.sub i 0 ((String.length i) - 1))
+      with _ -> raise (Lexing_error ("Overflowing integer : "^i))
       in
       ENTIER_PARG b}
   | nombre ident as b {Hyper.disableEnd ();
       let (i, s) =
       try (Hyper.separate_int_ident b)
-      with _ -> raise (Lexing_error "Overflowing integer")
+      with _ -> raise (Lexing_error ("Overflowing integer : "^b))
       in
       ENTIER_IDENT (i, s)
     }
