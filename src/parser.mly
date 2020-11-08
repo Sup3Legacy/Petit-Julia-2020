@@ -80,7 +80,7 @@ typage:
 
 fonction:
   | FUNCTION ig = IDENT_PARG parameters = separated_list(COMMA, param)
-    PARD t = typage? b = bloc END
+    PARD t = typage? b = bloc_END
     {
       Function (ig, parameters, t, b)
     }
@@ -110,10 +110,10 @@ expr:
   | l = lvalue AFFECT e = expr {ElvalueAffect (l, e)}
   | l = lvalue {Elvalue l}
   | RETURN e = expr? {Ereturn e}
-  | FOR i = IDENT AFFECT e1 = expr COLON e2 = expr b = bloc END {
+  | FOR i = IDENT AFFECT e1 = expr COLON e2 = expr b = bloc_END {
       Efor ((i : ident), e1, e2, b)
     }
-  | WHILE e = expr b = bloc END {
+  | WHILE e = expr b = bloc_END {
       Ewhile (e, b)
     }
   | IF e = expr b = bloc el = else_exp {
@@ -128,7 +128,7 @@ lvalue:
 
 else_exp:
   | END {Iend}
-  | ELSE b = bloc END {Ielse b}
+  | ELSE b = bloc_END {Ielse b}
   | ELSEIF e = expr b = bloc el = else_exp {Ielseif (e, b, el)}
 ;
 
@@ -150,6 +150,17 @@ else_exp:
 
 bloc:
   | e = separated_list(SEMICOLON, expr?) {Bloc e}
+;
+
+bloc_END:
+  |b = bloc_END2 {Bloc b}
+;
+
+bloc_END2:
+  |e = expr END {[Some e]}
+  | END {[]}
+  | SEMICOLON bl = bloc_END2 {None::bl}
+  | e = expr SEMICOLON bl = bloc_END2 {(Some e)::bl}
 ;
 
 bloc1:
