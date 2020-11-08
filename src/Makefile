@@ -1,5 +1,5 @@
 all: minijulia.exe
-	dune exec ./minijulia.exe -f test.jl
+	dune exec ./minijulia.exe
 
 minijulia.exe:
 	dune build minijulia.exe
@@ -12,4 +12,4 @@ explain:
 	cat /tmp/parser.conflicts
 
 tests:
-	for g in ../test/exec/*.jl; do ./_build/default/minijulia.exe -f $$g; done
+	for g in ../test/exec/*.jl; do ./_build/default/minijulia.exe -disable_print -f $$g; done
