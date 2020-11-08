@@ -65,7 +65,7 @@ rule token = parse
   | ")" {Hyper.enableEnd ();PARD}
   | "#" {comment lexbuf}
   | ":" {Hyper.disableEnd ();COLON}
-  | ";" {Hyper.disableEnd (); SEMICOLON}
+  | ";" {Hyper.disableEnd ();SEMICOLON}
   | "::" {Hyper.disableEnd ();TYPE}
   | "\n" {
       new_line lexbuf;
