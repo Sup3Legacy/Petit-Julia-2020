@@ -57,7 +57,7 @@ decl:
 ;
 
 structure:
-  | b = MUTABLE? STRUCT i = IDENT parameters = separated_list(SEMICOLON, option(param)) END
+  | b = MUTABLE? STRUCT i = IDENT parameters = param_list
     {
       let res = match b with
         | Some () -> true
@@ -65,6 +65,13 @@ structure:
       in
       Struct (res, i, parameters)
     }
+;
+
+param_list :
+  | END {[]}
+  | SEMICOLON pl = param_list {None::pl}
+  | p = param SEMICOLON pl = param_list {(Some p)::pl}
+  | p = param END {[Some p]}
 ;
 
 typage:
