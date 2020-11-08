@@ -6,3 +6,5 @@ src/dum-master/
 src/easy-format-master/
 
 src/.merlin
+
+src/test.jl
