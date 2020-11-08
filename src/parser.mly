@@ -31,8 +31,7 @@
 %left EQ NEQ L G LEQ GEQ
 %left PLUS MINUS
 %left TIMES MODULO
-%nonassoc NOT
-%nonassoc UMINUS
+%nonassoc NOT, unary_minus
 %right EXP
 %left DOT
 
@@ -90,6 +89,7 @@ param:
   | i = IDENT b = typage? {Param (i, b)}
 ;
 
+
 expr:
   | e1 = expr o = operateur e2 = expr {Ebinop (o, e1, e2)}
   | i = INT {Eentier i}
@@ -105,11 +105,12 @@ expr:
   | PARG e = expr i = PARD_IDENT {EparDIdent (e, i)}
   | i = IDENT_PARG l = separated_list(COMMA, expr) PARD {Eapplication (i, l)}
   | NOT e = expr {Enot e}
-  | MINUS e = expr %prec MINUS {Eminus e}
+  | MINUS e = expr %prec unary_minus {Eminus e}
 
   | l = lvalue AFFECT e = expr {ElvalueAffect (l, e)}
   | l = lvalue {Elvalue l}
-  | RETURN e = expr? {Ereturn e}
+  | RETURN e = expr {Ereturn (Some e)}
+  | RETURN {Ereturn None}
   | FOR i = IDENT AFFECT e1 = expr COLON e2 = expr b = bloc_END {
       Efor ((i : ident), e1, e2, b)
     }
@@ -176,7 +177,4 @@ bloc1_PARD:
   | e = expr PARD {Bloc1 (e, None)}
 ;
 
-bloc1:
-  | e = expr SEMICOLON b = bloc {Bloc1 (e, Some b)}
-  | e = expr {Bloc1 (e, None)}
-;
+
