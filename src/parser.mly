@@ -100,8 +100,8 @@ expr:
       match b with
       | i, s -> EentierIdent (i, s)
     }
-  | i = ENTIER_PARG b = bloc1 PARD {EentierParG (i, b)}
-  | PARG b = bloc1 PARD {Ebloc1 b}
+  | i = ENTIER_PARG b = bloc1_PARD {EentierParG (i, b)}
+  | PARG b = bloc1_PARD {Ebloc1 b}
   | PARG e = expr i = PARD_IDENT {EparDIdent (e, i)}
   | i = IDENT_PARG l = separated_list(COMMA, expr) PARD {Eapplication (i, l)}
   | NOT e = expr {Enot e}
@@ -161,6 +161,18 @@ bloc_END2:
   | END {[]}
   | SEMICOLON bl = bloc_END2 {None::bl}
   | e = expr SEMICOLON bl = bloc_END2 {(Some e)::bl}
+;
+
+bloc_PARD:
+  |e = expr PARD {[Some e]}
+  | PARD {[]}
+  | SEMICOLON bl = bloc_PARD {None::bl}
+  | e = expr SEMICOLON bl = bloc_PARD {(Some e)::bl}
+;
+
+bloc1_PARD:
+  | e = expr SEMICOLON b = bloc_PARD {Bloc1 (e, Some (Bloc b))}
+  | e = expr PARD {Bloc1 (e, None)}
 ;
 
 bloc1:
