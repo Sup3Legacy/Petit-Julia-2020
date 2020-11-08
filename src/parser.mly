@@ -129,7 +129,7 @@ lvalue:
 else_exp:
   | END {Iend}
   | ELSE b = bloc_END {Ielse b}
-  | ELSEIF e = expr b = bloc el = else_exp {Ielseif (e, b, el)}
+  | ELSEIF e = expr b = bloc el = else_exp {Ielseif (e,b, el)}
 ;
 
 %inline operateur:
@@ -149,8 +149,9 @@ else_exp:
 ;
 
 bloc:
-  | e = separated_list(SEMICOLON, expr?) {Bloc e}
+  | e = separated_nonempty_list(SEMICOLON, expr?) {Bloc e}
 ;
+
 
 bloc_END:
   |b = bloc_END2 {Bloc b}

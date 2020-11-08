@@ -1,157 +1,5 @@
 
-** Conflict (reduce/reduce) in state 117.
-** Token involved: END
-** This state is reached from fichier after reading:
-
-option(MUTABLE) STRUCT IDENT 
-
-** The derivations that appear below have the following common factor:
-** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
-
-fichier 
-list(decl) EOF 
-decl list(decl) 
-structure SEMICOLON 
-option(MUTABLE) STRUCT IDENT loption(separated_nonempty_list(SEMICOLON,option(param))) END // lookahead token appears
-                             (?)
-
-** In state 117, looking ahead at END, reducing production
-** loption(separated_nonempty_list(SEMICOLON,option(param))) -> 
-** is permitted because of the following sub-derivation:
-
-. 
-
-** In state 117, looking ahead at END, reducing production
-** option(param) -> 
-** is permitted because of the following sub-derivation:
-
-separated_nonempty_list(SEMICOLON,option(param)) // lookahead token is inherited
-option(param) // lookahead token is inherited
-. 
-
-** Conflict (reduce/reduce) in state 110.
-** Token involved: END
-** This state is reached from fichier after reading:
-
-FUNCTION IDENT_PARG loption(separated_nonempty_list(COMMA,param)) PARD option(typage) option(SEMICOLON) 
-
-** The derivations that appear below have the following common factor:
-** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
-
-fichier 
-list(decl) EOF 
-decl list(decl) 
-fonction SEMICOLON 
-FUNCTION IDENT_PARG loption(separated_nonempty_list(COMMA,param)) PARD option(typage) option(SEMICOLON) bloc END // lookahead token appears
-                                                                                                        loption(separated_nonempty_list(SEMICOLON,option(expr))) // lookahead token is inherited
-                                                                                                        (?)
-
-** In state 110, looking ahead at END, reducing production
-** loption(separated_nonempty_list(SEMICOLON,option(expr))) -> 
-** is permitted because of the following sub-derivation:
-
-. 
-
-** In state 110, looking ahead at END, reducing production
-** option(expr) -> 
-** is permitted because of the following sub-derivation:
-
-separated_nonempty_list(SEMICOLON,option(expr)) // lookahead token is inherited
-option(expr) // lookahead token is inherited
-. 
-
-** Conflict (shift/reduce) in state 108.
-** Token involved: SEMICOLON
-** This state is reached from fichier after reading:
-
-FUNCTION IDENT_PARG loption(separated_nonempty_list(COMMA,param)) PARD option(typage) 
-
-** The derivations that appear below have the following common factor:
-** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
-
-fichier 
-list(decl) EOF 
-decl list(decl) 
-fonction SEMICOLON 
-(?)
-
-** In state 108, looking ahead at SEMICOLON, reducing production
-** option(SEMICOLON) -> 
-** is permitted because of the following sub-derivation:
-
-FUNCTION IDENT_PARG loption(separated_nonempty_list(COMMA,param)) PARD option(typage) option(SEMICOLON) bloc END // lookahead token appears because bloc can begin with SEMICOLON
-                                                                                      . 
-
-** In state 108, looking ahead at SEMICOLON, shifting is permitted
-** because of the following sub-derivation:
-
-FUNCTION IDENT_PARG loption(separated_nonempty_list(COMMA,param)) PARD option(typage) option(SEMICOLON) bloc END 
-                                                                                      . SEMICOLON 
-
 ** Conflict (reduce/reduce) in state 91.
-** Token involved: END
-** This state is reached from fichier after reading:
-
-WHILE expr 
-
-** The derivations that appear below have the following common factor:
-** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
-
-fichier 
-list(decl) EOF 
-decl list(decl) 
-expr SEMICOLON 
-WHILE expr bloc END // lookahead token appears
-           loption(separated_nonempty_list(SEMICOLON,option(expr))) // lookahead token is inherited
-           (?)
-
-** In state 91, looking ahead at END, reducing production
-** loption(separated_nonempty_list(SEMICOLON,option(expr))) -> 
-** is permitted because of the following sub-derivation:
-
-. 
-
-** In state 91, looking ahead at END, reducing production
-** option(expr) -> 
-** is permitted because of the following sub-derivation:
-
-separated_nonempty_list(SEMICOLON,option(expr)) // lookahead token is inherited
-option(expr) // lookahead token is inherited
-. 
-
-** Conflict (reduce/reduce) in state 79.
-** Token involved: END
-** This state is reached from fichier after reading:
-
-IF expr bloc ELSE 
-
-** The derivations that appear below have the following common factor:
-** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
-
-fichier 
-list(decl) EOF 
-decl list(decl) 
-expr SEMICOLON 
-IF expr bloc else_exp 
-             ELSE bloc END // lookahead token appears
-                  loption(separated_nonempty_list(SEMICOLON,option(expr))) // lookahead token is inherited
-                  (?)
-
-** In state 79, looking ahead at END, reducing production
-** loption(separated_nonempty_list(SEMICOLON,option(expr))) -> 
-** is permitted because of the following sub-derivation:
-
-. 
-
-** In state 79, looking ahead at END, reducing production
-** option(expr) -> 
-** is permitted because of the following sub-derivation:
-
-separated_nonempty_list(SEMICOLON,option(expr)) // lookahead token is inherited
-option(expr) // lookahead token is inherited
-. 
-
-** Conflict (reduce/reduce) in state 77.
 ** Tokens involved: END ELSEIF ELSE
 ** The following explanations concentrate on token END.
 ** This state is reached from fichier after reading:
@@ -170,13 +18,13 @@ IF expr bloc else_exp
                          loption(separated_nonempty_list(SEMICOLON,option(expr))) // lookahead token is inherited
                          (?)
 
-** In state 77, looking ahead at END, reducing production
+** In state 91, looking ahead at END, reducing production
 ** loption(separated_nonempty_list(SEMICOLON,option(expr))) -> 
 ** is permitted because of the following sub-derivation:
 
 . 
 
-** In state 77, looking ahead at END, reducing production
+** In state 91, looking ahead at END, reducing production
 ** option(expr) -> 
 ** is permitted because of the following sub-derivation:
 
@@ -184,7 +32,38 @@ separated_nonempty_list(SEMICOLON,option(expr)) // lookahead token is inherited
 option(expr) // lookahead token is inherited
 . 
 
-** Conflict (reduce/reduce) in state 73.
+** Conflict (shift/reduce) in state 86.
+** Tokens involved: TIMES PLUS OR NEQ MODULO MINUS LEQ L GEQ G EXP EQ DOT AND
+** The following explanations concentrate on token TIMES.
+** This state is reached from fichier after reading:
+
+RETURN expr 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+fichier 
+list(decl) EOF 
+decl list(decl) 
+expr SEMICOLON 
+(?)
+
+** In state 86, looking ahead at TIMES, shifting is permitted
+** because of the following sub-derivation:
+
+RETURN option(expr) 
+       expr 
+       expr . TIMES expr 
+
+** In state 86, looking ahead at TIMES, reducing production
+** option(expr) -> expr 
+** is permitted because of the following sub-derivation:
+
+expr TIMES expr // lookahead token appears
+RETURN option(expr) // lookahead token is inherited
+       expr . 
+
+** Conflict (reduce/reduce) in state 81.
 ** Tokens involved: END ELSEIF ELSE
 ** The following explanations concentrate on token END.
 ** This state is reached from fichier after reading:
@@ -202,13 +81,13 @@ IF expr bloc else_exp // lookahead token appears because else_exp can begin with
         loption(separated_nonempty_list(SEMICOLON,option(expr))) // lookahead token is inherited
         (?)
 
-** In state 73, looking ahead at END, reducing production
+** In state 81, looking ahead at END, reducing production
 ** loption(separated_nonempty_list(SEMICOLON,option(expr))) -> 
 ** is permitted because of the following sub-derivation:
 
 . 
 
-** In state 73, looking ahead at END, reducing production
+** In state 81, looking ahead at END, reducing production
 ** option(expr) -> 
 ** is permitted because of the following sub-derivation:
 
@@ -216,9 +95,9 @@ separated_nonempty_list(SEMICOLON,option(expr)) // lookahead token is inherited
 option(expr) // lookahead token is inherited
 . 
 
-** Conflict (shift/reduce/reduce) in state 64.
-** Tokens involved: TIMES SEMICOLON PLUS MODULO MINUS EXP END ELSEIF ELSE DOT
-** The following explanations concentrate on token TIMES.
+** Conflict (shift/reduce/reduce) in state 72.
+** Tokens involved: SEMICOLON PLUS OR NEQ MINUS LEQ L GEQ G EQ END ELSEIF ELSE AND
+** The following explanations concentrate on token PLUS.
 ** This state is reached from fichier after reading:
 
 WHILE expr MINUS expr 
@@ -232,126 +111,30 @@ decl list(decl)
 expr SEMICOLON 
 (?)
 
-** In state 64, looking ahead at TIMES, reducing production
+** In state 72, looking ahead at PLUS, shifting is permitted
+** because of the following sub-derivation:
+
+WHILE expr bloc_END 
+      expr MINUS expr 
+                 expr . PLUS expr 
+
+** In state 72, looking ahead at PLUS, reducing production
 ** expr -> expr MINUS expr 
 ** is permitted because of the following sub-derivation:
 
-WHILE expr bloc END 
-      expr TIMES expr // lookahead token appears
+WHILE expr bloc_END 
+      expr PLUS expr // lookahead token appears
       expr MINUS expr . 
 
-** In state 64, looking ahead at TIMES, shifting is permitted
-** because of the following sub-derivation:
-
-WHILE expr bloc END 
-      expr MINUS expr 
-                 expr . TIMES expr 
-
-** In state 64, looking ahead at TIMES, reducing production
+** In state 72, looking ahead at PLUS, reducing production
 ** expr -> MINUS expr 
 ** is permitted because of the following sub-derivation:
 
-WHILE expr bloc END 
-           loption(separated_nonempty_list(SEMICOLON,option(expr))) 
-           separated_nonempty_list(SEMICOLON,option(expr)) 
-           option(expr) 
-           expr 
-           expr TIMES expr // lookahead token appears
+WHILE expr bloc_END 
+           bloc_END2 
+           expr END 
+           expr PLUS expr // lookahead token appears
            MINUS expr . 
-
-** Conflict (reduce/reduce) in state 62.
-** Token involved: END
-** This state is reached from fichier after reading:
-
-FOR IDENT AFFECT expr COLON expr 
-
-** The derivations that appear below have the following common factor:
-** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
-
-fichier 
-list(decl) EOF 
-decl list(decl) 
-expr SEMICOLON 
-FOR IDENT AFFECT expr COLON expr bloc END // lookahead token appears
-                                 loption(separated_nonempty_list(SEMICOLON,option(expr))) // lookahead token is inherited
-                                 (?)
-
-** In state 62, looking ahead at END, reducing production
-** loption(separated_nonempty_list(SEMICOLON,option(expr))) -> 
-** is permitted because of the following sub-derivation:
-
-. 
-
-** In state 62, looking ahead at END, reducing production
-** option(expr) -> 
-** is permitted because of the following sub-derivation:
-
-separated_nonempty_list(SEMICOLON,option(expr)) // lookahead token is inherited
-option(expr) // lookahead token is inherited
-. 
-
-** Conflict (shift/reduce) in state 49.
-** Tokens involved: TIMES PLUS OR NEQ MODULO MINUS LEQ L GEQ G EXP EQ DOT AND
-** The following explanations concentrate on token TIMES.
-** This state is reached from fichier after reading:
-
-RETURN expr 
-
-** The derivations that appear below have the following common factor:
-** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
-
-fichier 
-list(decl) EOF 
-decl list(decl) 
-expr SEMICOLON 
-(?)
-
-** In state 49, looking ahead at TIMES, shifting is permitted
-** because of the following sub-derivation:
-
-RETURN option(expr) 
-       expr 
-       expr . TIMES expr 
-
-** In state 49, looking ahead at TIMES, reducing production
-** option(expr) -> expr 
-** is permitted because of the following sub-derivation:
-
-expr TIMES expr // lookahead token appears
-RETURN option(expr) // lookahead token is inherited
-       expr . 
-
-** Conflict (reduce/reduce) in state 44.
-** Token involved: PARD
-** This state is reached from fichier after reading:
-
-PARG expr SEMICOLON 
-
-** The derivations that appear below have the following common factor:
-** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
-
-fichier 
-list(decl) EOF 
-decl list(decl) 
-expr SEMICOLON 
-PARG bloc1 PARD // lookahead token appears
-     expr SEMICOLON bloc // lookahead token is inherited
-                    loption(separated_nonempty_list(SEMICOLON,option(expr))) // lookahead token is inherited
-                    (?)
-
-** In state 44, looking ahead at PARD, reducing production
-** loption(separated_nonempty_list(SEMICOLON,option(expr))) -> 
-** is permitted because of the following sub-derivation:
-
-. 
-
-** In state 44, looking ahead at PARD, reducing production
-** option(expr) -> 
-** is permitted because of the following sub-derivation:
-
-separated_nonempty_list(SEMICOLON,option(expr)) // lookahead token is inherited
-option(expr) // lookahead token is inherited
-. 
 
 ** Conflict (shift/reduce) in state 3.
 ** Tokens involved: WHILE TRUE RETURN PARG NOT MINUS INT IF IDENT_PARG IDENT FOR FALSE ENTIER_PARG ENTIER_IDENT CHAINE
