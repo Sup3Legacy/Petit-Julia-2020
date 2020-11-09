@@ -38,11 +38,19 @@ rule token = parse
     }
   | ident"(" as s {Hyper.disableEnd (); IDENT_PARG (String.sub s 0 ((String.length s) - 1))}
   | ")"ident as s {Hyper.enableEnd (); PARD_IDENT (String.sub s 1 ((String.length s) - 1))}
-  | ident as s { Hyper.enableEnd ();
-      let word = Hashtbl.find_opt Hyper.keywords s in
+  | ident as s {
+        let word = Hashtbl.find_opt Hyper.keywords s in
         match word with
-        | Some token -> token
-        | None -> IDENT s
+        | Some token -> begin
+          let _ = match token with 
+            |TRUE | FALSE | RETURN | END -> Hyper.enableEnd ()
+            | _ -> Hyper.disableEnd ()
+          in token
+          end
+        | None -> begin 
+          Hyper.enableEnd ();
+          IDENT s
+          end
     }
   | "," {Hyper.disableEnd (); COMMA}
   | "+" {Hyper.disableEnd (); PLUS}

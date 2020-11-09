@@ -13,3 +13,8 @@ explain:
 
 tests:
 	for g in ../test/exec/*.jl; do ./_build/default/minijulia.exe -disable_print -f $$g; done
+	for g in ../test/syntax/good/*.jl; do ./_build/default/minijulia.exe -disable_print -f $$g; done
+
+fails:
+	for g in ../test/syntax/bad/*.jl; do ./_build/default/minijulia.exe -disable_print -f $$g; done
+	
