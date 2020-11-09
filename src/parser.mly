@@ -114,10 +114,18 @@ expr:
   | FOR i = IDENT AFFECT e1 = expr COLON e2 = expr b = bloc END {
       Efor ((i : ident), e1, e2, b)
     }
-  | WHILE e = expr b = bloc END {Ewhile (e, b)}
+  | w = whileExp {
+      let (e, b) = w in
+      Ewhile (e, b)
+    }
   | IF e = expr b = bloc el = else_exp {
       Eif (e, b, el)
     }
+;
+
+whileExp:
+  | WHILE e = expr END {(e, (Bloc []))}
+  | WHILE e = expr SEMICOLON b = bloc END {(e, b)}
 ;
 
 lvalue:
