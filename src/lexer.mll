@@ -29,7 +29,7 @@ rule token = parse
       with _ -> raise (Lexing_error ("Overflowing integer : "^i))
       in
       ENTIER_PARG b}
-  | nombre ident as b {Hyper.disableEnd ();
+  | nombre ident as b {Hyper.enableEnd ();
       let (i, s) =
       try (Hyper.separate_int_ident b)
       with _ -> raise (Lexing_error ("Overflowing integer : "^b))
