@@ -105,7 +105,7 @@ expr:
   | PARG e = expr i = PARD_IDENT {EparDIdent (e, i)}
   | i = IDENT_PARG l = separated_list(COMMA, expr) PARD {Eapplication (i, l)}
   | NOT e = expr {Enot e}
-  | MINUS e = expr %prec unary_minus {Eminus e}
+  | MINUS e = expr %prec unary_minus{Eminus e}
 
   | l = lvalue AFFECT e = expr {ElvalueAffect (l, e)}
   | l = lvalue {Elvalue l}
@@ -114,9 +114,7 @@ expr:
   | FOR i = IDENT AFFECT e1 = expr COLON e2 = expr b = bloc END {
       Efor ((i : ident), e1, e2, b)
     }
-  | WHILE e = expr b = bloc END {
-      Ewhile (e, b)
-    }
+  | WHILE e = expr b = bloc END {Ewhile (e, b)}
   | IF e = expr b = bloc el = else_exp {
       Eif (e, b, el)
     }
@@ -158,4 +156,3 @@ bloc1:
   | e = expr SEMICOLON b = bloc {Bloc1 (e,Some b)}
   | e = expr {Bloc1 (e,None)}
 ;
-
