@@ -79,7 +79,7 @@ typage:
 
 fonction:
   | FUNCTION ig = IDENT_PARG parameters = separated_list(COMMA, param)
-    PARD t = typage? b = bloc_END
+    PARD t = typage? b = bloc END
     {
       Function (ig, parameters, t, b)
     }
@@ -100,8 +100,8 @@ expr:
       match b with
       | i, s -> EentierIdent (i, s)
     }
-  | i = ENTIER_PARG b = bloc1_PARD {EentierParG (i, b)}
-  | PARG b = bloc1_PARD {Ebloc1 b}
+  | i = ENTIER_PARG b = bloc1 PARD {EentierParG (i, b)}
+  | PARG b = bloc1 PARD {Ebloc1 b}
   | PARG e = expr i = PARD_IDENT {EparDIdent (e, i)}
   | i = IDENT_PARG l = separated_list(COMMA, expr) PARD {Eapplication (i, l)}
   | NOT e = expr {Enot e}
@@ -111,10 +111,10 @@ expr:
   | l = lvalue {Elvalue l}
   | RETURN e = expr {Ereturn (Some e)}
   | RETURN {Ereturn None}
-  | FOR i = IDENT AFFECT e1 = expr COLON e2 = expr b = bloc_END {
+  | FOR i = IDENT AFFECT e1 = expr COLON e2 = expr b = bloc END {
       Efor ((i : ident), e1, e2, b)
     }
-  | WHILE e = expr b = bloc_END {
+  | WHILE e = expr b = bloc END {
       Ewhile (e, b)
     }
   | IF e = expr b = bloc el = else_exp {
@@ -129,7 +129,7 @@ lvalue:
 
 else_exp:
   | END {Iend}
-  | ELSE b = bloc_END {Ielse b}
+  | ELSE b = bloc END {Ielse b}
   | ELSEIF e = expr b = bloc el = else_exp {Ielseif (e,b, el)}
 ;
 
@@ -154,27 +154,8 @@ bloc:
 ;
 
 
-bloc_END:
-  |b = bloc_END2 {Bloc b}
+bloc1:
+  | e = expr SEMICOLON b = bloc {Bloc1 (e,Some b)}
+  | e = expr {Bloc1 (e,None)}
 ;
-
-bloc_END2:
-  |e = expr END {[Some e]}
-  | END {[]}
-  | SEMICOLON bl = bloc_END2 {None::bl}
-  | e = expr SEMICOLON bl = bloc_END2 {(Some e)::bl}
-;
-
-bloc_PARD:
-  |e = expr PARD {[Some e]}
-  | PARD {[]}
-  | SEMICOLON bl = bloc_PARD {None::bl}
-  | e = expr SEMICOLON bl = bloc_PARD {(Some e)::bl}
-;
-
-bloc1_PARD:
-  | e = expr SEMICOLON b = bloc_PARD {Bloc1 (e, Some (Bloc b))}
-  | e = expr PARD {Bloc1 (e, None)}
-;
-
 
