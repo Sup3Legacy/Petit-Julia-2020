@@ -1,5 +1,6 @@
 %{
   open Ast
+
 %}
 
 %token <int> INT
@@ -52,7 +53,6 @@ declarations_list:
   | s = structure EOF {[Dstruct s]}
   | f = fonction EOF {[Dfonction f]}
   | e = expr EOF {[Dexpr e]}
-  | SEMICOLON {print_string "semicolon\n";exit 1}
 ;
 
 
