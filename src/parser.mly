@@ -84,14 +84,9 @@ param:
   | i = IDENT b = typage? {Param (i, b)}
 ;
 
-expr:
-	| e = expr2 {e}
-	| RETURN {Ereturn None}
-  	| MINUS e = expr %prec unary_minus{Eminus e}
-;
 
-expr2R:
-  | e1 = expr2R o = operateur e2 = expr {Ebinop (o, e1, e2)}
+expr_wMin_:
+  | e1 = expr_wMin_ o = operateur e2 = expr {Ebinop (o, e1, e2)}
   | i = INT {Eentier i}
   | s = CHAINE {Echaine s}
   | TRUE {Etrue}
@@ -105,8 +100,8 @@ expr2R:
   | PARG e = expr i = PARD_IDENT {EparDIdent (e, i)}
   | i = IDENT_PARG l = separated_list(COMMA, expr) PARD {Eapplication (i, l)}
   | NOT e = expr {Enot e}
-  | l = lvalue2R AFFECT e = expr {ElvalueAffect (l, e)}
-  | l = lvalue2R {Elvalue l}
+  | l = lvalue_wMin_ AFFECT e = expr {ElvalueAffect (l, e)}
+  | l = lvalue_wMin_ {Elvalue l}
   | RETURN e = expr {Ereturn (Some e)}
   | RETURN {Ereturn None}
   | FOR i = IDENT AFFECT e1 = expr COLON e2b = expr_bloc END {
@@ -123,8 +118,8 @@ expr2R:
     }
 ;
 
-expr2M:
-  | e1 = expr o = operateur e2 = expr2M {Ebinop (o, e1, e2)}
+expr_w_Ret:
+  | e1 = expr o = operateur e2 = expr_w_Ret {Ebinop (o, e1, e2)}
   | i = INT {Eentier i}
   | s = CHAINE {Echaine s}
   | TRUE {Etrue}
@@ -137,11 +132,11 @@ expr2M:
   | PARG b = bloc1 PARD {Ebloc1 b}
   | PARG e = expr i = PARD_IDENT {EparDIdent (e, i)}
   | i = IDENT_PARG l = separated_list(COMMA, expr) PARD {Eapplication (i, l)}
-  | NOT e = expr2M {Enot e}
-  | l = lvalue AFFECT e = expr2M {ElvalueAffect (l, e)}
+  | NOT e = expr_w_Ret {Enot e}
+  | l = lvalue AFFECT e = expr_w_Ret {ElvalueAffect (l, e)}
   | l = lvalue {Elvalue l}
-  | MINUS e = expr2M %prec unary_minus{Eminus e}
-  | RETURN e = expr2M {Ereturn (Some e)}
+  | MINUS e = expr_w_Ret %prec unary_minus{Eminus e}
+  | RETURN e = expr_w_Ret {Ereturn (Some e)}
   | FOR i = IDENT AFFECT e1 = expr COLON e2b = expr_bloc END {
   		let (e2, b) = e2b in 
       	Efor ((i : ident), e1, e2,Bloc b)
@@ -156,7 +151,7 @@ expr2M:
     }
 ;
 
-expr2:
+expr:
   | e1 = expr o = operateur e2 = expr {Ebinop (o, e1, e2)}
   | i = INT {Eentier i}
   | s = CHAINE {Echaine s}
@@ -173,7 +168,9 @@ expr2:
   | NOT e = expr {Enot e}
   | l = lvalue AFFECT e = expr {ElvalueAffect (l, e)}
   | l = lvalue {Elvalue l}
+  | MINUS e = expr %prec unary_minus{Eminus e}
   | RETURN e = expr {Ereturn (Some e)}
+  | RETURN {Ereturn None}
   | FOR i = IDENT AFFECT e1 = expr COLON e2b = expr_bloc END {
   		let (e2, b) = e2b in 
       	Efor ((i : ident), e1, e2,Bloc b)
@@ -190,7 +187,7 @@ expr2:
 
 whileExp:
   | WHILE e = expr b = bloc_END {(e,Bloc b)}
-  | WHILE e1 = expr2M e2 = expr2R b = bloc_END {(e1,Bloc ((Some e2)::b))}
+  | WHILE e1 = expr_w_Ret e2 = expr_wMin_ b = bloc_END {(e1,Bloc ((Some e2)::b))}
 ;
 
 lvalue:
@@ -198,9 +195,9 @@ lvalue:
   | e = expr DOT i = IDENT {Lindex (e, (i : ident))}
 ;
 
-lvalue2R:
+lvalue_wMin_:
   | i = IDENT {Lident (i : ident)}
-  | e = expr2R DOT i = IDENT {Lindex (e, (i : ident))}
+  | e = expr_wMin_ DOT i = IDENT {Lindex (e, (i : ident))}
 ;
 
 else_exp:
@@ -236,14 +233,15 @@ bloc:
 expr_bloc:
 	| e = expr {(e, [])}
 	| e = expr b = expr_bloc2 {(e, b)}
-	| e1 = expr2M e2 = expr2R b = expr_bloc2 {(e1, (Some e2)::b)}
-	| e1 = expr2M e2 = expr2R {(e1, [Some e2])}
+	| e1 = expr_w_Ret e2 = expr_wMin_ b = expr_bloc2 {(e1, (Some e2)::b)}
+	| e1 = expr_w_Ret e2 = expr_wMin_ {(e1, [Some e2])}
 ;
 
 expr_bloc2:
 	| SEMICOLON {[]}
 	| SEMICOLON e = expr b = expr_bloc2 {(Some e)::b}
 	| SEMICOLON b = expr_bloc2 {b}
+	| SEMICOLON e = expr {[Some e]}
 ;
 
 bloc_END:
