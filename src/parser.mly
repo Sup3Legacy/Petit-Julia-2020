@@ -41,14 +41,19 @@
 %%
 
 fichier:
-  | declarations = list(decl) EOF {DeclarationList declarations}
+  | declarations = declarations_list {DeclarationList declarations}
 ;
 
-decl:
-  | s = structure SEMICOLON {Dstruct s}
-  | f = fonction SEMICOLON {Dfonction f}
-  | e = expr SEMICOLON {Dexpr e}
+declarations_list:
+  | EOF {[]}
+  | s = structure SEMICOLON d = declarations_list {(Dstruct s)::d}
+  | f = fonction SEMICOLON d = declarations_list {(Dfonction f)::d}
+  | e = expr SEMICOLON d = declarations_list {(Dexpr e)::d}
+  | s = structure EOF {[Dstruct s]}
+  | f = fonction EOF {[Dfonction f]}
+  | e = expr EOF {[Dexpr e]}
 ;
+
 
 structure:
   | b = MUTABLE? STRUCT i = IDENT parameters = param_list
