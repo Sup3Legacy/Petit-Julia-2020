@@ -79,9 +79,9 @@ typage:
 
 fonction:
   | FUNCTION ig = IDENT_PARG parameters = separated_list(COMMA, param)
-    PARD t = typage? b = bloc END
+    PARD t = typage? e = expr? b = bloc_END
     {
-      Function (ig, parameters, t, b)
+      Function (ig, parameters, t, Bloc  (e::b))
     }
 ;
 
@@ -207,7 +207,8 @@ lvalue_wMin_:
 
 else_exp:
   | END {Iend}
-  | ELSE b = bloc END {Ielse b}
+  | ELSE b = bloc_END {Ielse (Bloc b)}
+  | ELSE e = expr b = bloc_END {Ielse (Bloc ((Some e)::b))}
   | ELSEIF eb = expr_bloc el = else_exp {
   	let (e,b) = eb in 
   	Ielseif (e,Bloc b, el)

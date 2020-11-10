@@ -5,6 +5,9 @@
   open Ast
 
   exception Lexing_error of string
+
+  let file = ref "test.jl";;
+  
 }
 
 let chiffre = ['0'-'9']
@@ -84,7 +87,13 @@ rule token = parse
     }
   | space {token lexbuf}
   | chaine as s {Hyper.enableEnd (); CHAINE (String.sub s 1 (String.length s - 2))}
-  | _ as c {raise (Lexing_error ("Invalid character : '"^(String.make 1 c)^"'"))}
+  | _ {
+    let p = Lexing.lexeme_start_p lexbuf in
+    Printf.printf "File \"%s\", line %d, character %d-%d :\n" !file p.pos_lnum p.pos_bol (p.pos_bol+p.pos_cnum);
+    print_string "syntax error\n";
+    ;
+    exit 1
+  }
   | eof {EOF}
 
 and comment = parse
