@@ -207,7 +207,7 @@ lvalue_wMin_:
 
 else_exp:
   | END {Iend}
-  | ELSE b = bloc_END {Ielse (Bloc b)}
+  | ELSE b = bloc_END {Ielse (Bloc (None::b))}
   | ELSE e = expr b = bloc_END {Ielse (Bloc ((Some e)::b))}
   | ELSEIF eb = expr_bloc el = else_exp {
   	let (e,b) = eb in 
@@ -246,12 +246,12 @@ expr_bloc:
 expr_bloc2:
 	| SEMICOLON {[]}
 	| SEMICOLON e = expr b = expr_bloc2 {(Some e)::b}
-	| SEMICOLON b = expr_bloc2 {b}
+	| SEMICOLON b = expr_bloc2 {None::b}
 	| SEMICOLON e = expr {[Some e]}
 ;
 
 bloc_END:
-	| END {[]}
+	| END {[None]}
 	| SEMICOLON e = expr b = bloc_END {(Some e)::b}
 	| SEMICOLON b = bloc_END {None::b}
 ;

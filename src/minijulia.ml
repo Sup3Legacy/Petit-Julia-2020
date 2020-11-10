@@ -18,6 +18,7 @@ let handle () =
     exit 0;
     end
   else begin
+    print_endline (show_fichier e);
     print_endline !file;
     exit 0;
   end

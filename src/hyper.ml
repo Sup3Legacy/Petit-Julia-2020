@@ -39,12 +39,15 @@ let separate_int_ident s =
 
 
 let canEnd = ref false;;
+let dernierEstElse = ref false;;
 
 let enableEnd () =
+  dernierEstElse := false;
   canEnd := true
 ;;
 
 let disableEnd () =
+  dernierEstElse := false;
   canEnd := false
 ;;
 
@@ -64,3 +67,15 @@ let empty_stack () =
 ;;
 
 let escaped = ref false;;
+
+
+let parDepth = ref 0;;
+
+let enterPar () = 
+  parDepth := !parDepth + 1
+;;
+
+let leavePar () = 
+  parDepth := !parDepth - 1;
+  !parDepth < 0
+;;
