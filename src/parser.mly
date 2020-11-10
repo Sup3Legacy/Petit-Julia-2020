@@ -36,11 +36,6 @@
 %left DOT
 
 
-%nonassoc ELSE
-%nonassoc ELSEIF
-
-%nonassoc WHILE
-
 
 %start <Ast.fichier> fichier
 %%
@@ -89,8 +84,79 @@ param:
   | i = IDENT b = typage? {Param (i, b)}
 ;
 
-
 expr:
+	| e = expr2 {e}
+	| RETURN {Ereturn None}
+  	| MINUS e = expr %prec unary_minus{Eminus e}
+;
+
+expr2R:
+  | e1 = expr2R o = operateur e2 = expr {Ebinop (o, e1, e2)}
+  | i = INT {Eentier i}
+  | s = CHAINE {Echaine s}
+  | TRUE {Etrue}
+  | FALSE {Efalse}
+  | b = ENTIER_IDENT {
+      match b with
+      | i, s -> EentierIdent (i, s)
+    }
+  | i = ENTIER_PARG b = bloc1 PARD {EentierParG (i, b)}
+  | PARG b = bloc1 PARD {Ebloc1 b}
+  | PARG e = expr i = PARD_IDENT {EparDIdent (e, i)}
+  | i = IDENT_PARG l = separated_list(COMMA, expr) PARD {Eapplication (i, l)}
+  | NOT e = expr {Enot e}
+  | l = lvalue2R AFFECT e = expr {ElvalueAffect (l, e)}
+  | l = lvalue2R {Elvalue l}
+  | RETURN e = expr {Ereturn (Some e)}
+  | RETURN {Ereturn None}
+  | FOR i = IDENT AFFECT e1 = expr COLON e2b = expr_bloc END {
+  		let (e2, b) = e2b in
+      Efor ((i : ident), e1, e2,Bloc b)
+    }
+  | w = whileExp {
+      let (e, b) = w in
+      Ewhile (e, b)
+    }
+  | IF eb = expr_bloc el = else_exp {
+  		let (e,b) = eb in 
+	    Eif (e,Bloc b, el)
+    }
+;
+
+expr2M:
+  | e1 = expr o = operateur e2 = expr2M {Ebinop (o, e1, e2)}
+  | i = INT {Eentier i}
+  | s = CHAINE {Echaine s}
+  | TRUE {Etrue}
+  | FALSE {Efalse}
+  | b = ENTIER_IDENT {
+      match b with
+      | i, s -> EentierIdent (i, s)
+    }
+  | i = ENTIER_PARG b = bloc1 PARD {EentierParG (i, b)}
+  | PARG b = bloc1 PARD {Ebloc1 b}
+  | PARG e = expr i = PARD_IDENT {EparDIdent (e, i)}
+  | i = IDENT_PARG l = separated_list(COMMA, expr) PARD {Eapplication (i, l)}
+  | NOT e = expr2M {Enot e}
+  | l = lvalue AFFECT e = expr2M {ElvalueAffect (l, e)}
+  | l = lvalue {Elvalue l}
+  | MINUS e = expr2M %prec unary_minus{Eminus e}
+  | RETURN e = expr2M {Ereturn (Some e)}
+  | FOR i = IDENT AFFECT e1 = expr COLON e2b = expr_bloc END {
+  		let (e2, b) = e2b in 
+      	Efor ((i : ident), e1, e2,Bloc b)
+    }
+  | w = whileExp {
+      let (e, b) = w in
+      Ewhile (e, b)
+    }
+  | IF eb = expr_bloc el = else_exp {
+  		let (e,b) = eb in
+      Eif (e,Bloc b, el)
+    }
+;
+
+expr2:
   | e1 = expr o = operateur e2 = expr {Ebinop (o, e1, e2)}
   | i = INT {Eentier i}
   | s = CHAINE {Echaine s}
@@ -105,27 +171,26 @@ expr:
   | PARG e = expr i = PARD_IDENT {EparDIdent (e, i)}
   | i = IDENT_PARG l = separated_list(COMMA, expr) PARD {Eapplication (i, l)}
   | NOT e = expr {Enot e}
-  | MINUS e = expr %prec unary_minus{Eminus e}
-
   | l = lvalue AFFECT e = expr {ElvalueAffect (l, e)}
   | l = lvalue {Elvalue l}
   | RETURN e = expr {Ereturn (Some e)}
-  | RETURN {Ereturn None}
-  | FOR i = IDENT AFFECT e1 = expr COLON e2 = expr b = bloc END {
-      Efor ((i : ident), e1, e2, b)
+  | FOR i = IDENT AFFECT e1 = expr COLON e2b = expr_bloc END {
+  		let (e2, b) = e2b in 
+      	Efor ((i : ident), e1, e2,Bloc b)
     }
   | w = whileExp {
       let (e, b) = w in
       Ewhile (e, b)
     }
-  | IF e = expr b = bloc el = else_exp {
-      Eif (e, b, el)
+  | IF eb = expr_bloc el = else_exp {
+  		let (e,b) = eb in
+      Eif (e,Bloc b, el)
     }
 ;
 
 whileExp:
-  | WHILE e = expr END {(e, (Bloc []))}
-  | WHILE e = expr SEMICOLON b = bloc END {(e, b)}
+  | WHILE e = expr b = bloc_END {(e,Bloc b)}
+  | WHILE e1 = expr2M e2 = expr2R b = bloc_END {(e1,Bloc ((Some e2)::b))}
 ;
 
 lvalue:
@@ -133,10 +198,18 @@ lvalue:
   | e = expr DOT i = IDENT {Lindex (e, (i : ident))}
 ;
 
+lvalue2R:
+  | i = IDENT {Lident (i : ident)}
+  | e = expr2R DOT i = IDENT {Lindex (e, (i : ident))}
+;
+
 else_exp:
   | END {Iend}
   | ELSE b = bloc END {Ielse b}
-  | ELSEIF e = expr b = bloc el = else_exp {Ielseif (e,b, el)}
+  | ELSEIF eb = expr_bloc el = else_exp {
+  	let (e,b) = eb in 
+  	Ielseif (e,Bloc b, el)
+  	}
 ;
 
 %inline operateur:
@@ -159,6 +232,25 @@ bloc:
   | e = separated_nonempty_list(SEMICOLON, expr?) {Bloc e}
 ;
 
+
+expr_bloc:
+	| e = expr {(e, [])}
+	| e = expr b = expr_bloc2 {(e, b)}
+	| e1 = expr2M e2 = expr2R b = expr_bloc2 {(e1, (Some e2)::b)}
+	| e1 = expr2M e2 = expr2R {(e1, [Some e2])}
+;
+
+expr_bloc2:
+	| SEMICOLON {[]}
+	| SEMICOLON e = expr b = expr_bloc2 {(Some e)::b}
+	| SEMICOLON b = expr_bloc2 {b}
+;
+
+bloc_END:
+	| END {[]}
+	| SEMICOLON e = expr b = bloc_END {(Some e)::b}
+	| SEMICOLON b = bloc_END {None::b}
+;
 
 bloc1:
   | e = expr SEMICOLON b = bloc {Bloc1 (e,Some b)}
