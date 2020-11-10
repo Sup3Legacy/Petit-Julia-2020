@@ -1,4 +1,3 @@
-while a - b - c end
-a - b - c
-while a<3 a = a+1 end;
--a-b;
+a = 3;
+if true 1 else 3 end;
+print(1);

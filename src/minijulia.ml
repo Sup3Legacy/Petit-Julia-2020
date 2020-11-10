@@ -11,17 +11,24 @@ let type_only = ref false;;
 let handle () =
   let c = open_in !file in
   let lb = Lexing.from_channel c in
-  let e = Parser.fichier Lexer.token lb in
+  let e = (try 
+    Parser.fichier Lexer.token lb
+    with _ -> begin
+      let Some position = !Hyper.position in 
+      let p = Lexing.lexeme_start_p position in 
+      let s = Lexing.lexeme position in
+      Printf.printf "File \"%s\", line %d, character %d-%d :\n" !file p.pos_lnum (p.pos_cnum - p.pos_bol) (p.pos_cnum - p.pos_bol + String.length s);
+      Printf.printf "Syntax error at lexeme : \"%s\"\n" s;
+      exit 1
+      end)
+    in
   if !parse_only then begin
     if !notAffiche then print_endline !file
     else print_endline (show_fichier e); (* On peut switch entre afficher le nom (ie. compil réussie) et afficher l'arbre généré *)
     exit 0;
-    end
-  else begin
-    print_endline (show_fichier e);
-    print_endline !file;
-    exit 0;
-  end
+    end;
+  print_endline !file;
+  exit 0;
 ;;
 
 

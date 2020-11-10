@@ -52,6 +52,7 @@ declarations_list:
   | s = structure EOF {[Dstruct s]}
   | f = fonction EOF {[Dfonction f]}
   | e = expr EOF {[Dexpr e]}
+  | SEMICOLON {print_string "semicolon\n";exit 1}
 ;
 
 
@@ -154,6 +155,7 @@ expr_w_Ret:
   		let (e,b) = eb in
       Eif (e,Bloc b, el)
     }
+
 ;
 
 expr:
@@ -188,6 +190,7 @@ expr:
   		let (e,b) = eb in
       Eif (e,Bloc b, el)
     }
+
 ;
 
 whileExp:
