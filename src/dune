@@ -4,6 +4,6 @@
   (modules parser)
   (flags (-v)))
 (executable
-  (name minijulia)
+  (name pjuliac)
   (preprocess (pps ppx_deriving.show ppx_deriving.ord))
   (flags ()))
