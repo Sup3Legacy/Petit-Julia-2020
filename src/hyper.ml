@@ -40,16 +40,13 @@ let separate_int_ident s =
 
 let canEnd = ref false;;
 let dernierEstElse = ref false;;
-let position = ref None;;
 
-let enableEnd (lb:Lexing.lexbuf) =
-  position := Some lb;
+let enableEnd () =
   dernierEstElse := false;
   canEnd := true
 ;;
 
-let disableEnd lb =
-  position := Some lb;
+let disableEnd () =
   dernierEstElse := false;
   canEnd := false
 ;;

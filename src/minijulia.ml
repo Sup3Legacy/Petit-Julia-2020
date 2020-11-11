@@ -14,19 +14,12 @@ let handle () =
   let e = (try 
     Parser.fichier Lexer.token lb
     with  _ -> begin
-        match !Hyper.position with 
-          | Some position -> begin 
-            let p = Lexing.lexeme_start_p position in 
-            let s = Lexing.lexeme position in
-            Printf.printf "File \"%s\", line %d, character %d-%d :\n" !file p.pos_lnum (p.pos_cnum - p.pos_bol) (p.pos_cnum - p.pos_bol + String.length s);
-            Printf.printf "Syntax error at lexeme : \"%s\"\n" s;
-            exit 1
-            end 
-          | None -> begin
-            Printf.printf "File \"%s\", line %d, character %d-%d :\n" !file 0 0 1;
-            Printf.printf "Syntax error at beginning of file\n";
-            exit 1            
-            end
+          let b = Lexing.lexeme_start_p lb in 
+          let e = Lexing.lexeme_end_p lb in 
+          let s = Lexing.lexeme lb in
+          Printf.printf "File \"%s\", line %d, character %d-%d :\n" !file b.pos_lnum (b.pos_cnum - b.pos_bol) (e.pos_cnum - e.pos_bol);
+          Printf.printf "Syntax error at lexeme : \"%s\"\n" s;
+          exit 1       
         end)
     in
   if !parse_only then begin
