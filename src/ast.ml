@@ -2,6 +2,10 @@ type ident = string
 [@@deriving show]
 ;;
 
+type position = {ldeb : int; cdeb : int; lfin : int; cfin : int}
+[@@deriving show]
+;;
+
 type fichier =
   | DeclarationList of declaration list
 [@@deriving show]
@@ -20,19 +24,19 @@ and param =
   | Param of ident * (ident option)
 [@@deriving show]
 and expression =
-  | Eentier of int
-  | Echaine of ident
-  | Etrue
-  | Efalse
-  | EentierIdent of int * ident
-  | EentierParG of int * bloc1
+  | Eentier of position * int
+  | Echaine of position * ident
+  | Etrue of position
+  | Efalse of position
+  | EentierIdent of position * int * ident
+  | EentierParG of position * int * bloc1
   | Ebloc1 of bloc1
-  | EparDIdent of expression * ident
-  | Eapplication of ident * (expression list)
+  | EparDIdent of position * expression * ident
+  | Eapplication of position * ident * (expression list)
   | Enot of expression
   | Eminus of expression
   | Ebinop of operateur * expression * expression
-  | Elvalue of lvalue
+  | Elvalue of position * lvalue
   | ElvalueAffect of lvalue * expression
   | Ereturn of (expression option)
   | Efor of ident * expression * expression * bloc

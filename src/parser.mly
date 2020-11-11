@@ -3,23 +3,36 @@
 
 %}
 
-%token <int> INT
-%token <string> CHAINE
-%token <string> IDENT
-%token EOF PARG PARD
+%token <Ast.position*int> INT
+%token <Ast.position*string> CHAINE
+%token <Ast.position*string> IDENT
+%token EOF
+%token <Ast.position> PARG
+%token <Ast.position> PARD
 %token AFFECT
 %token OR AND
 %token EQ NEQ L G LEQ GEQ
 %token PLUS MINUS TIMES MODULO EXP
-%token NOT
+%token <Ast.position> NOT
 %token DOT
 
-%token ELSE ELSEIF END FALSE FOR FUNCTION IF MUTABLE RETURN STRUCT TRUE WHILE
+%token <Ast.position> ELSE
+%token <Ast.position> ELSEIF
+%token <Ast.position> END
+%token <Ast.position> FALSE
+%token <Ast.position> FOR
+%token <Ast.position> FUNCTION
+%token <Ast.position> IF
+%token MUTABLE
+%token <Ast.position> RETURN
+%token <Ast.position> STRUCT
+%token <Ast.position> TRUE
+%token <Ast.position> WHILE
 
-%token <int * string> ENTIER_IDENT
-%token <string> IDENT_PARG
-%token <int> ENTIER_PARG
-%token <string> PARD_IDENT
+%token <Ast.position*int * string> ENTIER_IDENT
+%token <Ast.position*string> IDENT_PARG
+%token <Ast.position*int> ENTIER_PARG
+%token <Ast.position*string> PARD_IDENT
 
 %token TYPE
 
@@ -57,8 +70,9 @@ declarations_list:
 
 
 structure:
-  | b = MUTABLE? STRUCT i = IDENT parameters = param_list
+  | b = MUTABLE? STRUCT pi = IDENT parameters = param_list
     {
+      let (p,i) = pi in 
       let res = match b with
         | Some () -> true
         | None -> false
@@ -75,42 +89,43 @@ param_list :
 ;
 
 typage:
-  | TYPE i = IDENT {i}
+  | TYPE pi = IDENT {snd pi}
 ;
 
 fonction:
-  | FUNCTION ig = IDENT_PARG parameters = separated_list(COMMA, param)
+  | FUNCTION pig = IDENT_PARG parameters = separated_list(COMMA, param)
     PARD t = typage? e = expr? b = bloc_END
     {
+    	let (p,ig) = pig in 
       Function (ig, parameters, t, Bloc  (e::b))
     }
 ;
 
 param:
-  | i = IDENT b = typage? {Param (i, b)}
+  | pi = IDENT b = typage? {let (p,i) = pi in Param (i, b)}
 ;
 
 
 expr_wMin_:
   | e1 = expr_wMin_ o = operateur e2 = expr {Ebinop (o, e1, e2)}
-  | i = INT {Eentier i}
-  | s = CHAINE {Echaine s}
-  | TRUE {Etrue}
-  | FALSE {Efalse}
-  | b = ENTIER_IDENT {
-      match b with
-      | i, s -> EentierIdent (i, s)
+  | pi = INT {let (p,i) = pi in Eentier (p,i)}
+  | ps = CHAINE {let (p,s) = ps in Echaine (p,s)}
+  | p = TRUE {Etrue p}
+  | p = FALSE {Efalse p}
+  | pb = ENTIER_IDENT {
+  	  let (p,i,s) = pb in EentierIdent (p, i, s)
     }
-  | i = ENTIER_PARG b = bloc1 PARD {EentierParG (i, b)}
+  | pi = ENTIER_PARG b = bloc1 PARD {let (p,i) = pi in EentierParG (p, i, b)}
   | PARG b = bloc1 PARD {Ebloc1 b}
-  | PARG e = expr i = PARD_IDENT {EparDIdent (e, i)}
-  | i = IDENT_PARG l = separated_list(COMMA, expr) PARD {Eapplication (i, l)}
+  | PARG e = expr pi = PARD_IDENT {let (p,i) = pi in EparDIdent (p, e, i)}
+  | pi = IDENT_PARG l = separated_list(COMMA, expr) PARD {let (p,i) = pi in Eapplication (p, i, l)}
   | NOT e = expr {Enot e}
-  | l = lvalue_wMin_ AFFECT e = expr {ElvalueAffect (l, e)}
-  | l = lvalue_wMin_ {Elvalue l}
+  | pl = lvalue_wMin_ AFFECT e = expr {let (p,l) = pl in ElvalueAffect (l, e)}
+  | pl = lvalue_wMin_ {let (p,l) = pl in Elvalue (p,l)}
   | RETURN e = expr {Ereturn (Some e)}
   | RETURN {Ereturn None}
-  | FOR i = IDENT AFFECT e1 = expr COLON e2b = expr_bloc END {
+  | FOR pi = IDENT AFFECT e1 = expr COLON e2b = expr_bloc END {
+  		let (p,i) = pi in 
   		let (e2, b) = e2b in
       Efor ((i : ident), e1, e2,Bloc b)
     }
@@ -126,24 +141,24 @@ expr_wMin_:
 
 expr_w_Ret:
   | e1 = expr o = operateur e2 = expr_w_Ret {Ebinop (o, e1, e2)}
-  | i = INT {Eentier i}
-  | s = CHAINE {Echaine s}
-  | TRUE {Etrue}
-  | FALSE {Efalse}
-  | b = ENTIER_IDENT {
-      match b with
-      | i, s -> EentierIdent (i, s)
+  | pi = INT {let (p,i) = pi in Eentier (p,i)}
+  | ps = CHAINE {let (p,s) = ps in Echaine (p,s)}
+  | p = TRUE {Etrue p}
+  | p = FALSE {Efalse p}
+  | pb = ENTIER_IDENT {
+  	  let (p,i,s) = pb in EentierIdent (p, i, s)
     }
-  | i = ENTIER_PARG b = bloc1 PARD {EentierParG (i, b)}
+  | pi = ENTIER_PARG b = bloc1 PARD {let (p,i) = pi in EentierParG (p, i, b)}
   | PARG b = bloc1 PARD {Ebloc1 b}
-  | PARG e = expr i = PARD_IDENT {EparDIdent (e, i)}
-  | i = IDENT_PARG l = separated_list(COMMA, expr) PARD {Eapplication (i, l)}
+  | PARG e = expr pi = PARD_IDENT {let (p,i) = pi in EparDIdent (p, e, i)}
+  | pi = IDENT_PARG l = separated_list(COMMA, expr) PARD {let (p,i) = pi in Eapplication (p, i, l)}
   | NOT e = expr_w_Ret {Enot e}
-  | l = lvalue AFFECT e = expr_w_Ret {ElvalueAffect (l, e)}
-  | l = lvalue {Elvalue l}
+  | pl = lvalue AFFECT e = expr_w_Ret {let (p,l) = pl in ElvalueAffect (l, e)}
+  | pl = lvalue {let (p,l) = pl in Elvalue (p,l)}
   | MINUS e = expr_w_Ret %prec unary_minus{Eminus e}
   | RETURN e = expr_w_Ret {Ereturn (Some e)}
-  | FOR i = IDENT AFFECT e1 = expr COLON e2b = expr_bloc END {
+  | FOR pi = IDENT AFFECT e1 = expr COLON e2b = expr_bloc END {
+  		let (p,i) = pi in 
   		let (e2, b) = e2b in 
       	Efor ((i : ident), e1, e2,Bloc b)
     }
@@ -160,25 +175,25 @@ expr_w_Ret:
 
 expr:
   | e1 = expr o = operateur e2 = expr {Ebinop (o, e1, e2)}
-  | i = INT {Eentier i}
-  | s = CHAINE {Echaine s}
-  | TRUE {Etrue}
-  | FALSE {Efalse}
-  | b = ENTIER_IDENT {
-      match b with
-      | i, s -> EentierIdent (i, s)
+  | pi = INT {let (p,i) = pi in Eentier (p,i)}
+  | ps = CHAINE {let (p,s) = ps in Echaine (p,s)}
+  | p = TRUE {Etrue p}
+  | p = FALSE {Efalse p}
+  | pb = ENTIER_IDENT {
+  	  let (p,i,s) = pb in EentierIdent (p, i, s)
     }
-  | i = ENTIER_PARG b = bloc1 PARD {EentierParG (i, b)}
+  | pi = ENTIER_PARG b = bloc1 PARD {let (p,i) = pi in EentierParG (p, i, b)}
   | PARG b = bloc1 PARD {Ebloc1 b}
-  | PARG e = expr i = PARD_IDENT {EparDIdent (e, i)}
-  | i = IDENT_PARG l = separated_list(COMMA, expr) PARD {Eapplication (i, l)}
+  | PARG e = expr pi = PARD_IDENT {let (p,i) = pi in EparDIdent (p, e, i)}
+  | pi = IDENT_PARG l = separated_list(COMMA, expr) PARD {let (p,i) = pi in Eapplication (p, i, l)}
   | NOT e = expr {Enot e}
-  | l = lvalue AFFECT e = expr {ElvalueAffect (l, e)}
-  | l = lvalue {Elvalue l}
+  | pl = lvalue AFFECT e = expr {let (p,l) = pl in ElvalueAffect (l, e)}
+  | pl = lvalue {let (p,l) = pl in Elvalue (p,l)}
   | MINUS e = expr %prec unary_minus{Eminus e}
   | RETURN e = expr {Ereturn (Some e)}
   | RETURN {Ereturn None}
-  | FOR i = IDENT AFFECT e1 = expr COLON e2b = expr_bloc END {
+  | FOR pi = IDENT AFFECT e1 = expr COLON e2b = expr_bloc END {
+  		let (p,i) = pi in 
   		let (e2, b) = e2b in 
       	Efor ((i : ident), e1, e2,Bloc b)
     }
@@ -199,13 +214,13 @@ whileExp:
 ;
 
 lvalue:
-  | i = IDENT {Lident (i : ident)}
-  | e = expr DOT i = IDENT {Lindex (e, (i : ident))}
+  | pi = IDENT {let (p,i) = pi in p,Lident (i : ident)}
+  | e = expr DOT pi = IDENT {let (p,i) = pi in p,Lindex (e, (i : ident))}
 ;
 
 lvalue_wMin_:
-  | i = IDENT {Lident (i : ident)}
-  | e = expr_wMin_ DOT i = IDENT {Lindex (e, (i : ident))}
+  | pi = IDENT {let (p,i) = pi in p,Lident (i : ident)}
+  | e = expr_wMin_ DOT pi = IDENT {let (p,i) = pi in p,Lindex (e, (i : ident))}
 ;
 
 else_exp:

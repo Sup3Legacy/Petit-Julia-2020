@@ -1,11 +1,14 @@
 open Parser
+open Ast
 
 exception Overflowing_integer
 
+let posVide:Ast.position = {ldeb = -1; cdeb = -1; lfin = -1; cfin = -1}
+
 let keywords = Hashtbl.create 12
-let words = [("else", ELSE); ("elseif", ELSEIF); ("end", END); ("false", FALSE); ("for", FOR);
-  ("function", FUNCTION); ("if", IF); ("mutable", MUTABLE); ("return", RETURN); ("struct", STRUCT);
-  ("true", TRUE); ("while", WHILE)]
+let words = [("else", ELSE posVide); ("elseif", ELSEIF posVide); ("end", END posVide); ("false", FALSE posVide); ("for", FOR posVide);
+  ("function", FUNCTION posVide); ("if", IF posVide); ("mutable", MUTABLE); ("return", RETURN posVide); ("struct", STRUCT posVide);
+  ("true", TRUE posVide); ("while", WHILE posVide)]
 let () = List.iter (fun (s, t) -> Hashtbl.add keywords s t) words
 
 exception Not_an_int
@@ -79,3 +82,30 @@ let leavePar () =
   parDepth := !parDepth - 1;
   !parDepth < 0
 ;;
+
+let position lb = 
+  let deb = Lexing.lexeme_start_p lb in 
+  let fin = Lexing.lexeme_end_p lb in 
+  {ldeb = deb.pos_lnum; cdeb = deb.pos_cnum - deb.pos_bol; lfin = fin.pos_lnum; cfin = fin.pos_cnum - fin.pos_bol;}
+
+let fusionnePosition p1 p2 = 
+  {ldeb = p1.ldeb; cdeb = p1.cdeb; lfin = p2.lfin; cfin = p2.cfin}
+
+
+let rajoutePosition tk lb = 
+  let p = position lb in 
+  match tk with
+    | ELSE _ -> ELSE p
+    | ELSEIF _ -> ELSEIF p
+    | END _ -> END p
+    | FALSE _ -> FALSE p
+    | FOR _ -> FOR p
+    | FUNCTION _ -> FUNCTION p
+    | IF _ -> IF p
+    | MUTABLE -> MUTABLE
+    | RETURN _ -> RETURN p
+    | STRUCT _ -> STRUCT p
+    | TRUE _ -> TRUE p
+    | WHILE _ -> WHILE p 
+    | _ -> failwith "Unknown keyword"
+

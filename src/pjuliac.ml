@@ -26,11 +26,11 @@ let handle () =
       let e = Lexing.lexeme_end_p lb in 
       Printf.printf "File \"%s\", line %d, character %d-%d :\n" !file b.pos_lnum (b.pos_cnum - b.pos_bol) (e.pos_cnum - e.pos_bol);
       match a with 
-        |Lexing.Lexing_error s -> Printf.printf "Lexical error at lexeme : \"%s\"\n" s
+        |Lexer.Lexing_error s -> Printf.printf "Lexical error at lexeme : \"%s\"\n" s
         |Parser.Error -> Printf.printf "Syntax error\n"
         |_ -> Printf.printf "Unkown error\n";
       exit 1       
-    end)
+    end
 ;;
 
 
