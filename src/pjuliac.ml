@@ -11,24 +11,26 @@ let type_only = ref false;;
 let handle () =
   let c = open_in !file in
   let lb = Lexing.from_channel c in
-  let e = (try 
-    Parser.fichier Lexer.token lb
-    with  _ -> begin
-          let b = Lexing.lexeme_start_p lb in 
-          let e = Lexing.lexeme_end_p lb in 
-          let s = Lexing.lexeme lb in
-          Printf.printf "File \"%s\", line %d, character %d-%d :\n" !file b.pos_lnum (b.pos_cnum - b.pos_bol) (e.pos_cnum - e.pos_bol);
-          Printf.printf "Syntax error at lexeme : \"%s\"\n" s;
-          exit 1       
-        end)
+  try 
+    let e = Parser.fichier Lexer.token lb
     in
-  if !parse_only then begin
-    if !notAffiche then print_endline !file
-    else print_endline (show_fichier e); (* On peut switch entre afficher le nom (ie. compil réussie) et afficher l'arbre généré *)
+    if !parse_only then begin
+      if !notAffiche then print_endline !file
+      else print_endline (show_fichier e); (* On peut switch entre afficher le nom (ie. compil réussie) et afficher l'arbre généré *)
+      exit 0;
+      end;
+    print_endline !file;
     exit 0;
-    end;
-  print_endline !file;
-  exit 0;
+  with a -> begin
+      let b = Lexing.lexeme_start_p lb in 
+      let e = Lexing.lexeme_end_p lb in 
+      Printf.printf "File \"%s\", line %d, character %d-%d :\n" !file b.pos_lnum (b.pos_cnum - b.pos_bol) (e.pos_cnum - e.pos_bol);
+      match a with 
+        |Lexing.Lexing_error s -> Printf.printf "Lexical error at lexeme : \"%s\"\n" s
+        |Parser.Error -> Printf.printf "Syntax error\n"
+        |_ -> Printf.printf "Unkown error\n";
+      exit 1       
+    end)
 ;;
 
 

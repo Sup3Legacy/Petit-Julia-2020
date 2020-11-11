@@ -124,7 +124,8 @@ rule token = parse
   | _ as c{
     let p = Lexing.lexeme_start_p lexbuf in
     Printf.printf "File \"%s\", line %d, character %d-%d :\n" !file p.pos_lnum (p.pos_cnum - p.pos_bol) (p.pos_cnum - p.pos_bol+1);
-    Printf.printf "Syntax error : unkown char : \'%c\'\n" c;
+    if c = '"' then Printf.printf "Unclosed string\n"
+    else Printf.printf "Syntax error : unkown char : \'%c\'\n" c;
     exit 1
   }
   | eof {EOF}
