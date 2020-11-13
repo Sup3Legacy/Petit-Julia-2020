@@ -1,3 +1,4 @@
-a = 3;
+a = 3.a '';
 if true 1 else 3 end;
-print(1);
+
+function issou(abaa)

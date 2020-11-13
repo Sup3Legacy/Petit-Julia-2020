@@ -1,7 +1,7 @@
 open Lexer
 open Parser
-open Dum
 open Ast
+open Hyper
 (* open Ast *)
 
 let notAffiche = ref false;;
@@ -9,34 +9,34 @@ let parse_only = ref false;;
 let type_only = ref false;;
 
 let handle () =
-  let c = open_in !file in
+  let c = open_in !(Hyper.file) in
   let lb = Lexing.from_channel c in
-  try 
+  try
     let e = Parser.fichier Lexer.token lb
     in
     if !parse_only then begin
-      if !notAffiche then print_endline !file
+      if !notAffiche then print_endline !(Hyper.file)
       else print_endline (show_fichier e); (* On peut switch entre afficher le nom (ie. compil réussie) et afficher l'arbre généré *)
       exit 0;
       end;
-    print_endline !file;
+    print_endline !(Hyper.file);
     exit 0;
   with a -> begin
-      let b = Lexing.lexeme_start_p lb in 
-      let e = Lexing.lexeme_end_p lb in 
-      Printf.printf "File \"%s\", line %d, character %d-%d :\n" !file b.pos_lnum (b.pos_cnum - b.pos_bol) (e.pos_cnum - e.pos_bol);
-      match a with 
+      let b = Lexing.lexeme_start_p lb in
+      let e = Lexing.lexeme_end_p lb in
+      Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(Hyper.file) b.pos_lnum (b.pos_cnum - b.pos_bol) (e.pos_cnum - e.pos_bol);
+      match a with
         |Lexer.Lexing_error s -> Printf.printf "Lexical error at lexeme : \"%s\"\n" s
         |Parser.Error -> Printf.printf "Syntax error\n"
         |_ -> Printf.printf "Unkown error\n";
-      exit 1       
+      exit 1
     end
 ;;
 
 
 
 let set_filename n =
-  file := n
+  Hyper.file := n
 ;;
 
 

@@ -74,26 +74,26 @@ let escaped = ref false;;
 
 let parDepth = ref 0;;
 
-let enterPar () = 
+let enterPar () =
   parDepth := !parDepth + 1
 ;;
 
-let leavePar () = 
+let leavePar () =
   parDepth := !parDepth - 1;
   !parDepth < 0
 ;;
 
-let position lb = 
-  let deb = Lexing.lexeme_start_p lb in 
-  let fin = Lexing.lexeme_end_p lb in 
+let position lb =
+  let deb = Lexing.lexeme_start_p lb in
+  let fin = Lexing.lexeme_end_p lb in
   {ldeb = deb.pos_lnum; cdeb = deb.pos_cnum - deb.pos_bol; lfin = fin.pos_lnum; cfin = fin.pos_cnum - fin.pos_bol;}
 
-let fusionnePosition p1 p2 = 
+let fusionnePosition p1 p2 =
   {ldeb = p1.ldeb; cdeb = p1.cdeb; lfin = p2.lfin; cfin = p2.cfin}
 
 
-let rajoutePosition tk lb = 
-  let p = position lb in 
+let rajoutePosition tk lb =
+  let p = position lb in
   match tk with
     | ELSE _ -> ELSE p
     | ELSEIF _ -> ELSEIF p
@@ -106,6 +106,7 @@ let rajoutePosition tk lb =
     | RETURN _ -> RETURN p
     | STRUCT _ -> STRUCT p
     | TRUE _ -> TRUE p
-    | WHILE _ -> WHILE p 
+    | WHILE _ -> WHILE p
     | _ -> failwith "Unknown keyword"
 
+let file = ref "test.jl"

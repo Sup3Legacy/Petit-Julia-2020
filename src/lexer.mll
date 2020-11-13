@@ -6,7 +6,7 @@
 
   exception Lexing_error of string
 
-  let file = ref "test.jl";;
+
 
 }
 
@@ -44,7 +44,7 @@ rule token = parse
   | ")"ident as s {
     if Hyper.leavePar () then begin
       let p = Lexing.lexeme_start_p lexbuf in
-      Printf.printf "File \"%s\", line %d, character %d :\n" !file p.pos_lnum p.pos_bol;
+      Printf.printf "File \"%s\", line %d, character %d :\n" !(Hyper.file) p.pos_lnum p.pos_bol;
       Printf.printf "Syntax error : unoppened parenthesis\n";
     end;
     Hyper.enableEnd ();
@@ -54,7 +54,7 @@ rule token = parse
         let word = Hashtbl.find_opt Hyper.keywords s in
         match word with
         | Some token -> begin
-          let _ = match token with 
+          let _ = match token with
             |TRUE _ | FALSE _| RETURN _| END _-> Hyper.enableEnd ()
             | ELSE _-> begin
               Hyper.disableEnd ();
@@ -62,7 +62,7 @@ rule token = parse
               end
             | IF _ -> if !Hyper.dernierEstElse then begin
               let p = Lexing.lexeme_start_p lexbuf in
-              Printf.printf "File \"%s\", line %d, character %d-%d :\n" !file p.pos_lnum (p.pos_cnum - p.pos_bol) (p.pos_cnum - p.pos_bol+1);
+              Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(Hyper.file) p.pos_lnum (p.pos_cnum - p.pos_bol) (p.pos_cnum - p.pos_bol+1);
               Printf.printf "Syntax error : else followed by if\n";
               exit 1
               end;
@@ -70,7 +70,7 @@ rule token = parse
             | _ -> Hyper.disableEnd ()
           in Hyper.rajoutePosition token lexbuf
           end
-        | None -> begin 
+        | None -> begin
           Hyper.enableEnd ();
           IDENT (Hyper.position lexbuf,s)
           end
@@ -95,14 +95,14 @@ rule token = parse
   | "(" {Hyper.enterPar (); Hyper.disableEnd (); PARG (Hyper.position lexbuf)}
   | unclosedPar {
     let p = Lexing.lexeme_start_p lexbuf in
-    Printf.printf "File \"%s\", line %d, character %d-%d :\n" !file p.pos_lnum (p.pos_cnum - p.pos_bol) (p.pos_cnum - p.pos_bol+1);
+    Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(Hyper.file) p.pos_lnum (p.pos_cnum - p.pos_bol) (p.pos_cnum - p.pos_bol+1);
     Printf.printf "Syntax error : unclosed parenthesis\n";
     exit 1
   }
   | ")" {
     if Hyper.leavePar () then begin
     let p = Lexing.lexeme_start_p lexbuf in
-    Printf.printf "File \"%s\", line %d, character %d-%d :\n" !file p.pos_lnum (p.pos_cnum - p.pos_bol) (p.pos_cnum - p.pos_bol+1);
+    Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(Hyper.file) p.pos_lnum (p.pos_cnum - p.pos_bol) (p.pos_cnum - p.pos_bol+1);
     Printf.printf "Syntax error : unoppened parenthesis\n";
     end;
     Hyper.enableEnd ();
@@ -123,7 +123,7 @@ rule token = parse
   | chaine as s {Hyper.enableEnd (); CHAINE  (Hyper.position lexbuf,(String.sub s 1 (String.length s - 2)))}
   | _ as c{
     let p = Lexing.lexeme_start_p lexbuf in
-    Printf.printf "File \"%s\", line %d, character %d-%d :\n" !file p.pos_lnum (p.pos_cnum - p.pos_bol) (p.pos_cnum - p.pos_bol+1);
+    Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(Hyper.file) p.pos_lnum (p.pos_cnum - p.pos_bol) (p.pos_cnum - p.pos_bol+1);
     if c = '"' then Printf.printf "Unclosed string\n"
     else Printf.printf "Syntax error : unkown char : \'%c\'\n" c;
     exit 1

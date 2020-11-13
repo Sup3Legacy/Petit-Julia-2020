@@ -72,7 +72,7 @@ declarations_list:
 structure:
   | b = MUTABLE? STRUCT pi = IDENT parameters = param_list
     {
-      let (p,i) = pi in 
+      let (p,i) = pi in
       let res = match b with
         | Some () -> true
         | None -> false
@@ -96,7 +96,7 @@ fonction:
   | FUNCTION pig = IDENT_PARG parameters = separated_list(COMMA, param)
     PARD t = typage? e = expr? b = bloc_END
     {
-    	let (p,ig) = pig in 
+    	let (p,ig) = pig in
       Function (ig, parameters, t, Bloc  (e::b))
     }
 ;
@@ -125,7 +125,7 @@ expr_wMin_:
   | RETURN e = expr {Ereturn (Some e)}
   | RETURN {Ereturn None}
   | FOR pi = IDENT AFFECT e1 = expr COLON e2b = expr_bloc END {
-  		let (p,i) = pi in 
+  		let (p,i) = pi in
   		let (e2, b) = e2b in
       Efor ((i : ident), e1, e2,Bloc b)
     }
@@ -134,7 +134,7 @@ expr_wMin_:
       Ewhile (e, b)
     }
   | IF eb = expr_bloc el = else_exp {
-  		let (e,b) = eb in 
+  		let (e,b) = eb in
 	    Eif (e,Bloc b, el)
     }
 ;
@@ -158,8 +158,8 @@ expr_w_Ret:
   | MINUS e = expr_w_Ret %prec unary_minus{Eminus e}
   | RETURN e = expr_w_Ret {Ereturn (Some e)}
   | FOR pi = IDENT AFFECT e1 = expr COLON e2b = expr_bloc END {
-  		let (p,i) = pi in 
-  		let (e2, b) = e2b in 
+  		let (p,i) = pi in
+  		let (e2, b) = e2b in
       	Efor ((i : ident), e1, e2,Bloc b)
     }
   | w = whileExp {
@@ -193,8 +193,8 @@ expr:
   | RETURN e = expr {Ereturn (Some e)}
   | RETURN {Ereturn None}
   | FOR pi = IDENT AFFECT e1 = expr COLON e2b = expr_bloc END {
-  		let (p,i) = pi in 
-  		let (e2, b) = e2b in 
+  		let (p,i) = pi in
+  		let (e2, b) = e2b in
       	Efor ((i : ident), e1, e2,Bloc b)
     }
   | w = whileExp {
@@ -228,7 +228,7 @@ else_exp:
   | ELSE b = bloc_END {Ielse (Bloc (None::b))}
   | ELSE e = expr b = bloc_END {Ielse (Bloc ((Some e)::b))}
   | ELSEIF eb = expr_bloc el = else_exp {
-  	let (e,b) = eb in 
+  	let (e,b) = eb in
   	Ielseif (e,Bloc b, el)
   	}
 ;
