@@ -2,6 +2,7 @@ open Lexer
 open Parser
 open Ast
 open Hyper
+open Utilities
 (* open Ast *)
 
 let notAffiche = ref false;;
@@ -12,7 +13,7 @@ let handle () =
   let c = open_in !(Hyper.file) in
   let lb = Lexing.from_channel c in
   try
-    let e = Parser.fichier Lexer.token lb
+    let e = clean_file (Parser.fichier Lexer.token lb)
     in
     if !parse_only then begin
       if !notAffiche then print_endline !(Hyper.file)
