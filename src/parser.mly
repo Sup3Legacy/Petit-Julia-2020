@@ -97,12 +97,32 @@ fonction:
     PARD t = typage? e = expr? b = bloc_END
     {
     	let (p,ig) = pig in
-      Function (ig, parameters, t, Bloc  (e::b))
+      let typ =
+      match t with
+      | Some "Int64" -> Int64
+      | Some "Bool" -> Bool
+      | Some "String" -> String
+      | Some s -> S s
+      | None -> Any
+      in
+      Function (ig, parameters, typ, Bloc  (e::b))
     }
 ;
 
 param:
-  | pi = IDENT b = typage? {let (p,i) = pi in Param (i, b)}
+  | pi = IDENT b = typage?
+    {
+      let (p,i) = pi in
+      let typ =
+      match b with
+      | Some "Int64" -> Int64
+      | Some "Bool" -> Bool
+      | Some "String" -> String
+      | Some s -> S s
+      | None -> Any
+      in
+      Param (i, typ)
+    }
 ;
 
 

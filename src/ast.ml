@@ -1,3 +1,5 @@
+open Astype
+
 type ident = string
 [@@deriving show]
 ;;
@@ -6,7 +8,19 @@ type position = {ldeb : int; cdeb : int; lfin : int; cfin : int}
 [@@deriving show]
 ;;
 
+type pjtype =
+  | Any
+  | Nothing
+  | Int64
+  | Bool
+  | String
+  | S of string
+[@@deriving show]
+;;
 
+type funct = (pjtype list) * pjtype
+[@@deriving show]
+;;
 
 type fichier =
   | DeclarationList of declaration list
@@ -20,10 +34,10 @@ and structure =
   | Struct of bool * ident * (param option list)
 [@@deriving show]
 and fonction =
-  | Function of ident * (param list) * (ident option) * bloc
+  | Function of ident * (param list) * pjtype * bloc
 [@@deriving show]
 and param =
-  | Param of ident * (ident option)
+  | Param of ident * pjtype
 [@@deriving show]
 and expression =
   | Eentier of position * int

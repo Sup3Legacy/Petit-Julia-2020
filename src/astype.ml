@@ -1,12 +1,10 @@
-open Ast
-
-type pjtype =
+(* type pjtype =
   | Any
   | Nothing
   | Int64
   | Bool
   | String
-  | Struct of string
+  | S of string
 ;;
 
-type function =
+type funct = (pjtype list) * pjtype;; *)

@@ -5,7 +5,7 @@ open Hyper
 (* open Ast *)
 
 let notAffiche = ref false;;
-let parse_only = ref false;;
+let parse_only = ref true;;
 let type_only = ref false;;
 
 let handle () =
