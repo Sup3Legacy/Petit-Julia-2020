@@ -4,100 +4,100 @@
 ** The following explanations concentrate on token TIMES.
 ** This state is reached from fichier after reading:
 
-RETURN expr 
+RETURN expr
 
 ** The derivations that appear below have the following common factor:
 ** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
 
-fichier 
-list(decl) EOF 
-decl list(decl) 
-expr SEMICOLON 
+fichier
+list(decl) EOF
+decl list(decl)
+expr SEMICOLON
 (?)
 
 ** In state 86, looking ahead at TIMES, shifting is permitted
 ** because of the following sub-derivation:
 
-RETURN option(expr) 
-       expr 
-       expr . TIMES expr 
+RETURN option(expr)
+       expr
+       expr . TIMES expr
 
 ** In state 86, looking ahead at TIMES, reducing production
-** option(expr) -> expr 
+** option(expr) -> expr
 ** is permitted because of the following sub-derivation:
 
 expr TIMES expr // lookahead token appears
 RETURN option(expr) // lookahead token is inherited
-       expr . 
+       expr .
 
 ** Conflict (shift/reduce/reduce) in state 72.
 ** Tokens involved: SEMICOLON PLUS OR NEQ MINUS LEQ L GEQ G EQ END ELSEIF ELSE AND
 ** The following explanations concentrate on token PLUS.
 ** This state is reached from fichier after reading:
 
-WHILE expr MINUS expr 
+WHILE expr MINUS expr
 
 ** The derivations that appear below have the following common factor:
 ** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
 
-fichier 
-list(decl) EOF 
-decl list(decl) 
-expr SEMICOLON 
+fichier
+list(decl) EOF
+decl list(decl)
+expr SEMICOLON
 (?)
 
 ** In state 72, looking ahead at PLUS, shifting is permitted
 ** because of the following sub-derivation:
 
-WHILE expr bloc_END 
-      expr MINUS expr 
-                 expr . PLUS expr 
+WHILE expr bloc_END
+      expr MINUS expr
+                 expr . PLUS expr
 
 ** In state 72, looking ahead at PLUS, reducing production
-** expr -> expr MINUS expr 
+** expr -> expr MINUS expr
 ** is permitted because of the following sub-derivation:
 
-WHILE expr bloc_END 
+WHILE expr bloc_END
       expr PLUS expr // lookahead token appears
-      expr MINUS expr . 
+      expr MINUS expr .
 
 ** In state 72, looking ahead at PLUS, reducing production
-** expr -> MINUS expr 
+** expr -> MINUS expr
 ** is permitted because of the following sub-derivation:
 
-WHILE expr bloc_END 
-           bloc_END2 
-           expr END 
+WHILE expr bloc_END
+           bloc_END2
+           expr END
            expr PLUS expr // lookahead token appears
-           MINUS expr . 
+           MINUS expr .
 
 ** Conflict (shift/reduce) in state 3.
 ** Tokens involved: WHILE TRUE RETURN PARG NOT MINUS INT IF IDENT_PARG IDENT FOR FALSE ENTIER_PARG ENTIER_IDENT CHAINE
 ** The following explanations concentrate on token MINUS.
 ** This state is reached from fichier after reading:
 
-RETURN 
+RETURN
 
 ** The derivations that appear below have the following common factor:
 ** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
 
-fichier 
-list(decl) EOF 
-decl list(decl) 
-expr SEMICOLON 
+fichier
+list(decl) EOF
+decl list(decl)
+expr SEMICOLON
 (?)
 
 ** In state 3, looking ahead at MINUS, shifting is permitted
 ** because of the following sub-derivation:
 
-RETURN option(expr) 
-       expr 
-       . MINUS expr 
+RETURN option(expr)
+       expr
+       . MINUS expr
 
 ** In state 3, looking ahead at MINUS, reducing production
-** option(expr) -> 
+** option(expr) ->
 ** is permitted because of the following sub-derivation:
 
 expr MINUS expr // lookahead token appears
 RETURN option(expr) // lookahead token is inherited
-       . 
+       .

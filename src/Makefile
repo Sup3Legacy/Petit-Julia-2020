@@ -1,8 +1,17 @@
-all:pjuliac.exe
+all:pjuliac.exe pjuliainterp.exe
+
+
+compil: pjuliac.exe
 	dune exec ./pjuliac.exe
+
+interp: pjuliainterp.exe
+	dune exec ./pjuliainterp.exe
 
 pjuliac.exe:
 	dune build pjuliac.exe
+
+pjuliainterp.exe :
+	dune build pjuliainterp.exe
 
 clean:
 	dune clean
