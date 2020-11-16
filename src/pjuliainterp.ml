@@ -25,9 +25,21 @@ let startswith str motif =
 
 while !continue do
   (* boucle principale *)
+  print_newline();
+  print_string "λ>";
   instr := read_line();
-  if startswith
-  let lb = Lexing.from_string !instr in
+  let lb =
+    if startswith !instr "#run"
+      then
+        begin
+          let n = String.length !instr in
+          print_int n;
+          let file = open_in (String.sub !instr 5 (n - 5)) in
+          Lexing.from_channel file
+        end
+      else
+        Lexing.from_string !instr
+  in
   let e = clean_file (Parser.fichier Lexer.token lb) in
   print_endline (show_fichier e);
 done;
