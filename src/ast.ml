@@ -5,6 +5,8 @@
 *)
 open Astype
 
+exception Parsing_Error
+
 type ident = string
 [@@deriving show]
 ;;

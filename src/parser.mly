@@ -141,7 +141,11 @@ expr_wMin_:
   | PARG e = expr pi = PARD_IDENT {let (p,i) = pi in EparDIdent (p, e, i)}
   | pi = IDENT_PARG l = separated_list(COMMA, expr) PARD {let (p,i) = pi in Eapplication (p, i, l)}
   | NOT e = expr {Enot e}
-  | pl = lvalue_wMin_ AFFECT e = expr {let (p,l) = pl in ElvalueAffect (l, e)}
+  | l = expr_wMin_ AFFECT e = expr {
+  		match l with 
+  			|Elvalue (p,l) -> ElvalueAffect (l, e)
+  			|_ -> raise Ast.Parsing_Error
+  		}
   | pl = lvalue_wMin_ {let (p,l) = pl in Elvalue (p,l)}
   | RETURN e = expr {Ereturn (Some e)}
   | RETURN {Ereturn None}
@@ -174,7 +178,11 @@ expr_w_Ret:
   | PARG e = expr pi = PARD_IDENT {let (p,i) = pi in EparDIdent (p, e, i)}
   | pi = IDENT_PARG l = separated_list(COMMA, expr) PARD {let (p,i) = pi in Eapplication (p, i, l)}
   | NOT e = expr_w_Ret {Enot e}
-  | pl = lvalue AFFECT e = expr_w_Ret {let (p,l) = pl in ElvalueAffect (l, e)}
+  | l = expr AFFECT e = expr_w_Ret {
+  		match l with 
+  			|Elvalue (p,l) ->ElvalueAffect (l, e)
+  			|_ -> raise Ast.Parsing_Error
+  		}
   | pl = lvalue {let (p,l) = pl in Elvalue (p,l)}
   | MINUS e = expr_w_Ret %prec unary_minus{Eminus e}
   | RETURN e = expr_w_Ret {Ereturn (Some e)}
@@ -208,7 +216,11 @@ expr:
   | PARG e = expr pi = PARD_IDENT {let (p,i) = pi in EparDIdent (p, e, i)}
   | pi = IDENT_PARG l = separated_list(COMMA, expr) PARD {let (p,i) = pi in Eapplication (p, i, l)}
   | NOT e = expr {Enot e}
-  | pl = lvalue AFFECT e = expr {let (p,l) = pl in ElvalueAffect (l, e)}
+  | l = expr AFFECT e = expr {
+  		match l with 
+  			| Elvalue (p,l) ->ElvalueAffect (l, e)
+  			|_ -> raise Ast.Parsing_Error
+  		}
   | pl = lvalue {let (p,l) = pl in Elvalue (p,l)}
   | MINUS e = expr %prec unary_minus{Eminus e}
   | RETURN e = expr {Ereturn (Some e)}

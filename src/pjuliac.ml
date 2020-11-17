@@ -28,6 +28,7 @@ let handle () =
       match a with
         |Lexer.Lexing_error s -> Printf.printf "Lexical error at lexeme : \"%s\"\n" s
         |Parser.Error -> Printf.printf "Syntax error\n"
+        |Ast.Parsing_Error -> Printf.printf "Syntax error\n"
         |_ -> Printf.printf "Unkown error\n";
       exit 1
     end
