@@ -3,6 +3,7 @@ open Parser
 open Ast
 open Hyper
 open Utilities
+open Typer
 
 let notAffiche = ref false;;
 let parse_only = ref true;;
