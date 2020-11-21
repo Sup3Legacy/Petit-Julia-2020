@@ -1,5 +1,6 @@
 open Lexer
 open Parser
+open Typer
 open Ast
 open Hyper
 open Utilities
@@ -18,7 +19,7 @@ let startswith str motif =
       while !i < m && str.[!i] = motif.[!i] do
         i := !i + 1;
       done;
-    !i = n
+    !i = m
     end
 ;;
 
@@ -34,6 +35,7 @@ while !continue do
         begin
           let n = String.length !instr in
           print_int n;
+          print_endline (String.sub !instr 5 (n - 5));
           let file = open_in (String.sub !instr 5 (n - 5)) in
           Lexing.from_channel file
         end
@@ -41,5 +43,6 @@ while !continue do
         Lexing.from_string !instr
   in
   let e = clean_file (Parser.fichier Lexer.token lb) in
+  let () = Typer.verificationType e in
   print_endline (show_fichier e);
 done;
