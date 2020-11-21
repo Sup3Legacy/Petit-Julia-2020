@@ -6,7 +6,7 @@ open Utilities
 open Typer
 
 let notAffiche = ref false;;
-let parse_only = ref true;;
+let parse_only = ref false;;
 let type_only = ref false;;
 
 let handle () =
@@ -20,6 +20,7 @@ let handle () =
       else print_endline (show_fichier e); (* On peut switch entre afficher le nom (ie. compil réussie) et afficher l'arbre généré *)
       exit 0;
       end;
+    let () = Typer.verificationType e in
     print_endline !(Hyper.file);
     exit 0;
   with a -> begin
@@ -30,6 +31,8 @@ let handle () =
         |Lexer.Lexing_error s -> Printf.printf "Lexical error at lexeme : \"%s\"\n" s
         |Parser.Error -> Printf.printf "Syntax error\n"
         |Ast.Parsing_Error -> Printf.printf "Syntax error\n"
+        |Ast.Typing_Error -> Printf.printf "Typing error\n"
+        |Ast.Typing_Error_Msg m -> Printf.printf "Typing error : %s\n" m
         |_ -> Printf.printf "Unkown error\n";
       exit 1
     end

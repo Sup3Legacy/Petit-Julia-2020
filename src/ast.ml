@@ -7,6 +7,7 @@ open Astype
 
 exception Parsing_Error
 exception Typing_Error
+exception Typing_Error_Msg of string
 
 type ident = string
 [@@deriving show]

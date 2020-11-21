@@ -103,6 +103,8 @@ fonction:
       | Some "Int64" -> Int64
       | Some "Bool" -> Bool
       | Some "String" -> String
+      | Some "Any" -> Any
+      | Some "Nothing" -> Nothing
       | Some s -> S s
       | None -> Any
       in
@@ -119,6 +121,8 @@ param:
       | Some "Int64" -> Int64
       | Some "Bool" -> Bool
       | Some "String" -> String
+      | Some "Any" -> Any
+      | Some "Nothing" -> Nothing
       | Some s -> S s
       | None -> Any
       in
