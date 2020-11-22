@@ -1,6 +1,7 @@
 open Lexer
 open Parser
 open Ast
+open Astype
 open Hyper
 open Utilities
 open Typer
@@ -8,6 +9,11 @@ open Typer
 let notAffiche = ref false;;
 let parse_only = ref false;;
 let type_only = ref false;;
+
+let gVenv = ref (Tmap.singleton "nothing" Nothing)
+let gFenv = ref (Tmap.singleton "div" [[Int64; Int64], Int64])
+let gSenv = ref (Tmap.empty : structEnv)
+let gAenv = ref (Tmap.empty : argsEnv)
 
 let handle () =
   let c = open_in !(Hyper.file) in
@@ -20,7 +26,7 @@ let handle () =
       else print_endline (show_fichier e); (* On peut switch entre afficher le nom (ie. compil réussie) et afficher l'arbre généré *)
       exit 0;
       end;
-    let () = Typer.verificationType e in
+    let () = Typer.verificationType e gVenv gFenv gSenv gAenv in
     print_endline !(Hyper.file);
     exit 0;
   with a -> begin
@@ -28,12 +34,12 @@ let handle () =
       let e = Lexing.lexeme_end_p lb in
       Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(Hyper.file) b.pos_lnum (b.pos_cnum - b.pos_bol) (e.pos_cnum - e.pos_bol);
       match a with
-        |Lexer.Lexing_error s -> Printf.printf "Lexical error at lexeme : \"%s\"\n" s
-        |Parser.Error -> Printf.printf "Syntax error\n"
-        |Ast.Parsing_Error -> Printf.printf "Syntax error\n"
-        |Ast.Typing_Error -> Printf.printf "Typing error\n"
-        |Ast.Typing_Error_Msg m -> Printf.printf "Typing error : %s\n" m
-        |_ -> Printf.printf "Unkown error\n";
+        | Lexer.Lexing_error s -> Printf.printf "Lexical error at lexeme : \"%s\"\n" s
+        | Parser.Error -> Printf.printf "Syntax error\n"
+        | Ast.Parsing_Error -> Printf.printf "Syntax error\n"
+        | Ast.Typing_Error -> Printf.printf "Typing error\n"
+        | Ast.Typing_Error_Msg m -> Printf.printf "Typing error : %s\n" m
+        | _ -> Printf.printf "Unkown error\n";
       exit 1
     end
 ;;
@@ -52,7 +58,7 @@ let main () =
     ("--parse_only", Arg.Set parse_only, "Stop after parsing");
     ("--type_only", Arg.Set type_only, "Stop after typing");
     ] in
-    Arg.parse speclist (fun x -> ()) "Issouffle";
+    Arg.parse speclist (fun x -> ()) "";
     handle ();
   end
 ;;

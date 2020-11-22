@@ -146,7 +146,7 @@ expr_wMin_:
   | pi = IDENT_PARG l = separated_list(COMMA, expr) PARD {let (p,i) = pi in Eapplication (p, i, l)}
   | NOT e = expr {Enot e}
   | l = expr_wMin_ AFFECT e = expr {
-  		match l with 
+  		match l with
   			|Elvalue (p,l) -> ElvalueAffect (l, e)
   			|_ -> raise Ast.Parsing_Error
   		}
@@ -183,7 +183,7 @@ expr_w_Ret:
   | pi = IDENT_PARG l = separated_list(COMMA, expr) PARD {let (p,i) = pi in Eapplication (p, i, l)}
   | NOT e = expr_w_Ret {Enot e}
   | l = expr AFFECT e = expr_w_Ret {
-  		match l with 
+  		match l with
   			|Elvalue (p,l) ->ElvalueAffect (l, e)
   			|_ -> raise Ast.Parsing_Error
   		}
@@ -221,7 +221,7 @@ expr:
   | pi = IDENT_PARG l = separated_list(COMMA, expr) PARD {let (p,i) = pi in Eapplication (p, i, l)}
   | NOT e = expr {Enot e}
   | l = expr AFFECT e = expr {
-  		match l with 
+  		match l with
   			| Elvalue (p,l) ->ElvalueAffect (l, e)
   			|_ -> raise Ast.Parsing_Error
   		}

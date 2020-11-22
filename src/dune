@@ -4,6 +4,6 @@
   (modules parser)
   (flags (-v)))
 (executables
-  (names pjuliac pjuliainterp)
+  (names pjuliac pjuliarepl)
   (preprocess (pps ppx_deriving.show ppx_deriving.ord))
   (flags ()))
