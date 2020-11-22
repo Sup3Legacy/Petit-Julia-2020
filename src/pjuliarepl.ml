@@ -41,8 +41,6 @@ while !continue do
       then
         begin
           let n = String.length !instr in
-          print_int n;
-          print_endline (String.sub !instr 5 (n - 5));
           let file = open_in (String.sub !instr 5 (n - 5)) in
           Lexing.from_channel file
         end

@@ -280,7 +280,7 @@ and interp_declaration_list l vI fI sI =
     let res = interp_expression e vI fI sI in
     if res <> Vnothing then print_value res;
   | Dexpr e :: q -> interp_expression e vI fI sI; interp_declaration_list q vI fI sI;
-  | _ :: q -> interp_declaration_list l vI fI sI
+  | _ :: q -> interp_declaration_list q vI fI sI
 ;;
 
 let interp_file file vI fI sI =
