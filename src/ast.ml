@@ -38,7 +38,7 @@ and expr =
   | EentierIdent of position * int * ident
   | EentierParG of position * int * bloc
   | Ebloc1 of bloc
-  | EparDIdent of  expression * position * ident
+  | EparDIdent of expression * position * ident
   | Eapplication of position * ident * (expression list)
   | Enot of expression
   | Eminus of expression

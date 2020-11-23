@@ -1,8 +1,10 @@
 open Lexer
 open Parser
-open Typer
 open Ast
+(*
 open Astype
+open Typer
+*)
 open Hyper
 open Utilities
 open Interp
@@ -11,10 +13,12 @@ open Interp
 let continue = ref true;;
 let instr = ref "";;
 
+(*
 let gVenv = ref (Tmap.singleton "nothing" Nothing)
 let gFenv = ref (Tmap.singleton "div" [[Int64; Int64], Int64])
 let gSenv = ref (Tmap.empty : structEnv)
 let gAenv = ref (Tmap.empty : argsEnv)
+*)
 
 let startswith str motif =
   let n = String.length str in
@@ -47,8 +51,10 @@ while !continue do
       else
         Lexing.from_string !instr
   in
-  let e = clean_file (Parser.fichier Lexer.token lb) in
+  let e = Parser.fichier Lexer.token lb in
+  (*
   let () = Typer.verificationType e gVenv gFenv gSenv gAenv in
+  *)
   (* print_endline (show_fichier e); *)
   interp_file e globVenv globFenv globSenv;
 done;

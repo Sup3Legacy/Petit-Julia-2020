@@ -13,6 +13,7 @@ let rec clean_option_list liste =
   | t :: q -> t :: (clean_option_list q)
 ;;
 
+(*
 
 let rec clean_file x =
   match x with
@@ -61,3 +62,5 @@ and clean_bloc1 x =
     in
     Bloc1 (clean_expr e, b')
 ;;
+
+*)
