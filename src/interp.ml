@@ -27,6 +27,7 @@ let rec print_value = function
       let rec add_to_str point l =
         match l with
           | [] -> ()
+          | [(sp, v)] -> res := !res ^ (sp ^ " : " ^ (print_value v));
           | (sp, v) :: q -> res := !res ^ (sp ^ " : " ^ (print_value v) ^ "; "); add_to_str point q
       in
       add_to_str res l;
