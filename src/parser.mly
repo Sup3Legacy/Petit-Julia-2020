@@ -157,7 +157,7 @@ expr_wMin_:
   | p = TRUE {p, Etrue}
   | p = FALSE {p, Efalse}
   | pb = ENTIER_IDENT {
-  	  let (p,i,s) = pb in p, EentierIdent (i, s)
+  	  let (p,i,s) = pb in p, EentierIdent (p, i, s)
     }
   | pi = ENTIER_PARG pb = bloc1 p2 = PARD {
       let (p,i) = pi in
@@ -176,8 +176,8 @@ expr_wMin_:
   			|_ -> raise Ast.Parsing_Error
   		}
   | pl = lvalue_wMin_ {let (p,l) = pl in p, Elvalue l}
-  | p = RETURN e = expr {Hyper2.fusionPos p (fst e), Ereturn (Some e)}
-  | p = RETURN {p, Ereturn None}
+  | p = RETURN e = expr {Hyper2.fusionPos p (fst e), Ereturn (p,Some e)}
+  | p = RETURN {p, Ereturn (p, None)}
   | p1 = FOR pi = IDENT AFFECT e1 = expr COLON e2b = expr_bloc p2 = END {
   		let (p,i) = pi in
   		let (e2, b) = e2b in
@@ -200,7 +200,7 @@ expr_w_Ret:
   | p = TRUE {p, Etrue}
   | p = FALSE {p, Efalse}
   | pb = ENTIER_IDENT {
-  	  let (p,i,s) = pb in p, EentierIdent (i, s)
+  	  let (p,i,s) = pb in p, EentierIdent (p, i, s)
     }
   | pi = ENTIER_PARG pb = bloc1 p2 = PARD {
     let (p1,i) = pi in
@@ -220,7 +220,7 @@ expr_w_Ret:
   		}
   | pl = lvalue {let (p,l) = pl in p, Elvalue l}
   | p1 = MINUS e = expr_w_Ret %prec unary_minus{Hyper2.fusionPos p1 (fst e),Eminus e}
-  | p1 = RETURN e = expr_w_Ret {Hyper2.fusionPos p1 (fst e), Ereturn (Some e)}
+  | p1 = RETURN e = expr_w_Ret {Hyper2.fusionPos p1 (fst e), Ereturn (p1, Some e)}
   | p1 = FOR pi = IDENT AFFECT e1 = expr COLON e2b = expr_bloc p2 = END {
   		let (p,i) = pi in
   		let (e2, b) = e2b in
@@ -243,7 +243,7 @@ expr:
   | p = TRUE {p, Etrue}
   | p = FALSE {p, Efalse}
   | pb = ENTIER_IDENT {
-  	  let (p,i,s) = pb in p, EentierIdent (i, s)
+  	  let (p,i,s) = pb in p, EentierIdent (p, i, s)
     }
   | pi = ENTIER_PARG b = bloc1 p2 = PARD {
     let (p1,i) = pi in
@@ -263,8 +263,8 @@ expr:
   		}
   | pl = lvalue {let (p,l) = pl in p, Elvalue l}
   | p1 = MINUS e = expr %prec unary_minus {Hyper2.fusionPos p1 (fst e), Eminus e}
-  | p1 = RETURN e = expr {Hyper2.fusionPos p1 (fst e), Ereturn (Some e)}
-  | p = RETURN {p, Ereturn None}
+  | p1 = RETURN e = expr {Hyper2.fusionPos p1 (fst e), Ereturn (p, Some e)}
+  | p = RETURN {p, Ereturn (p, None)}
   | p1 = FOR pi = IDENT AFFECT e1 = expr COLON e2b = expr_bloc p2 = END {
   		let (p,i) = pi in
   		let (e2, b) = e2b in
@@ -289,14 +289,14 @@ whileExp:
 ;
 
 lvalue:
-  | pi = IDENT {let (p,i) = pi in p,Lident (i : ident)}
+  | pi = IDENT {let (p,i) = pi in p,Lident (p,i : ident)}
   | e = expr DOT pi = IDENT {
     let (p,i) = pi in
     Hyper2.fusionPos (fst e) p, Lindex (e, p, (i : ident))}
 ;
 
 lvalue_wMin_:
-  | pi = IDENT {let (p,i) = pi in p,Lident (i : ident)}
+  | pi = IDENT {let (p,i) = pi in p,Lident (p,i : ident)}
   | e = expr_wMin_ DOT pi = IDENT {
     let (p,i) = pi in
     Hyper2.fusionPos (fst e) p, Lindex (e, p, (i : ident))}

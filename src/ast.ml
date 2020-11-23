@@ -5,15 +5,16 @@
 *)
 open Astype
 
-exception Parsing_Error
-exception Typing_Error
-exception Typing_Error_Msg of string
-
-type ident = string
+type position = {ldeb : int; cdeb : int; lfin : int; cfin : int}
 [@@deriving show]
 ;;
 
-type position = {ldeb : int; cdeb : int; lfin : int; cfin : int}
+exception Parsing_Error
+exception Typing_Error
+exception Typing_Error_Msg of string
+exception Typing_Error_Msg_Pos of string * position
+
+type ident = string
 [@@deriving show]
 ;;
 
@@ -34,7 +35,7 @@ and expr =
   | Echaine of ident
   | Etrue
   | Efalse
-  | EentierIdent of  int * ident
+  | EentierIdent of position * int * ident
   | EentierParG of position * int * bloc
   | Ebloc1 of bloc
   | EparDIdent of  expression * position * ident
@@ -44,13 +45,13 @@ and expr =
   | Ebinop of position * operateur * expression * expression
   | Elvalue of lvalue
   | ElvalueAffect of position * lvalue * expression
-  | Ereturn of (expression option)
+  | Ereturn of position * (expression option)
   | Efor of ident * expression * expression * bloc
   | Ewhile of expression * bloc
   | Eif of expression * bloc * else_
 [@@deriving show]
 and lvalue =
-  | Lident of ident
+  | Lident of position * ident
   | Lindex of expression * position * ident
 [@@deriving show]
 and else_ =
