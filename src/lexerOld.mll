@@ -75,23 +75,23 @@ rule token = parse
           IDENT (Hyper.position lexbuf,s)
           end
     }
-  | "," {Hyper.disableEnd (); COMMA (Hyper.position lexbuf)}
-  | "+" {Hyper.disableEnd (); PLUS (Hyper.position lexbuf)}
-  | "-" {Hyper.disableEnd (); MINUS (Hyper.position lexbuf)}
-  | "=" {Hyper.disableEnd (); AFFECT (Hyper.position lexbuf)}
-  | "||" {Hyper.disableEnd (); OR (Hyper.position lexbuf)}
-  | "&&" {Hyper.disableEnd (); AND (Hyper.position lexbuf)}
-  | "==" {Hyper.disableEnd (); EQ (Hyper.position lexbuf)}
-  | "!=" {Hyper.disableEnd (); NEQ (Hyper.position lexbuf)}
-  | ">" {Hyper.disableEnd (); G (Hyper.position lexbuf)}
-  | "<" {Hyper.disableEnd (); L (Hyper.position lexbuf)}
-  | ">=" {Hyper.disableEnd (); GEQ (Hyper.position lexbuf)}
-  | "<=" {Hyper.disableEnd (); LEQ (Hyper.position lexbuf)}
-  | "*" {Hyper.disableEnd (); TIMES (Hyper.position lexbuf)}
-  | "^" {Hyper.disableEnd (); EXP (Hyper.position lexbuf)}
-  | "%" {Hyper.disableEnd (); MODULO (Hyper.position lexbuf)}
+  | "," {Hyper.disableEnd (); COMMA}
+  | "+" {Hyper.disableEnd (); PLUS}
+  | "-" {Hyper.disableEnd (); MINUS}
+  | "=" {Hyper.disableEnd (); AFFECT}
+  | "||" {Hyper.disableEnd (); OR}
+  | "&&" {Hyper.disableEnd (); AND}
+  | "==" {Hyper.disableEnd (); EQ}
+  | "!=" {Hyper.disableEnd (); NEQ}
+  | ">" {Hyper.disableEnd (); G}
+  | "<" {Hyper.disableEnd (); L}
+  | ">=" {Hyper.disableEnd (); GEQ}
+  | "<=" {Hyper.disableEnd (); LEQ}
+  | "*" {Hyper.disableEnd (); TIMES}
+  | "^" {Hyper.disableEnd (); EXP}
+  | "%" {Hyper.disableEnd (); MODULO}
   | "!" {Hyper.disableEnd (); NOT (Hyper.position lexbuf)}
-  | "." {Hyper.disableEnd (); DOT (Hyper.position lexbuf)}
+  | "." {Hyper.disableEnd (); DOT}
   | "(" {Hyper.enterPar (); Hyper.disableEnd (); PARG (Hyper.position lexbuf)}
   | unclosedPar {
     let p = Lexing.lexeme_start_p lexbuf in
@@ -109,14 +109,14 @@ rule token = parse
     PARD (Hyper.position lexbuf)
   }
   | "#" {comment lexbuf}
-  | ":" {Hyper.disableEnd ();COLON (Hyper.position lexbuf)}
-  | ";" {Hyper.disableEnd ();SEMICOLON (Hyper.position lexbuf)}
+  | ":" {Hyper.disableEnd ();COLON}
+  | ";" {Hyper.disableEnd ();SEMICOLON}
   | "::" {Hyper.disableEnd ();TYPE}
   | "\n" {
       new_line lexbuf;
       let b = !Hyper.canEnd in
       if b then Hyper.disableEnd ();
-      if b then SEMICOLON (Hyper.position lexbuf)
+      if b then SEMICOLON
       else token lexbuf
     }
   | space {token lexbuf}
@@ -135,7 +135,7 @@ and comment = parse
     new_line lexbuf;
     let b = !Hyper.canEnd in
     if b then Hyper.disableEnd ();
-    if b then SEMICOLON (Hyper.position lexbuf)
+    if b then SEMICOLON
     else token lexbuf
     }
   | _ {comment lexbuf}

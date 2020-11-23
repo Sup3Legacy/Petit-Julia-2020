@@ -21,34 +21,29 @@ type fichier =
   | DeclarationList of declaration list
 [@@deriving show]
 and declaration =
-  | Dstruct of structure
-  | Dfonction of fonction
+  | Dstruct of bool * position * ident * (param list)
+  | Dfonction of position * ident * (param list) * position * pjtype * bloc
   | Dexpr of expression
 [@@deriving show]
-and structure =
-  | Struct of bool * ident * (param option list)
-[@@deriving show]
-and fonction =
-  | Function of ident * (param list) * pjtype * bloc
-[@@deriving show]
 and param =
-  | Param of ident * pjtype
+  | Param of position * ident * position * pjtype
 [@@deriving show]
-and expression =
-  | Eentier of position * int
-  | Echaine of position * ident
-  | Etrue of position
-  | Efalse of position
-  | EentierIdent of position * int * ident
-  | EentierParG of position * int * bloc1
-  | Ebloc1 of bloc1
-  | EparDIdent of position * expression * ident
+and expression = position * expr
+and expr =
+  | Eentier of  int
+  | Echaine of ident
+  | Etrue
+  | Efalse
+  | EentierIdent of  int * ident
+  | EentierParG of position * int * bloc
+  | Ebloc1 of bloc
+  | EparDIdent of  expression * position * ident
   | Eapplication of position * ident * (expression list)
   | Enot of expression
   | Eminus of expression
-  | Ebinop of operateur * expression * expression
-  | Elvalue of position * lvalue
-  | ElvalueAffect of lvalue * expression
+  | Ebinop of position * operateur * expression * expression
+  | Elvalue of lvalue
+  | ElvalueAffect of position * lvalue * expression
   | Ereturn of (expression option)
   | Efor of ident * expression * expression * bloc
   | Ewhile of expression * bloc
@@ -56,18 +51,14 @@ and expression =
 [@@deriving show]
 and lvalue =
   | Lident of ident
-  | Lindex of expression * ident
+  | Lindex of expression * position * ident
 [@@deriving show]
 and else_ =
   | Iend
   | Ielse of bloc
   | Ielseif of expression * bloc * else_
 [@@deriving show]
-and bloc =
-  | Bloc of (expression option) list
-[@@deriving show]
-and bloc1 =
-  | Bloc1 of expression * (bloc option)
+and bloc = position * (expression list)
 [@@deriving show]
 and operateur =
   | Eq
