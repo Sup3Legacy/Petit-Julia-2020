@@ -112,7 +112,7 @@ fonction:
     {
     	let (p1,ig) = pig in
       let (pEnd, (p,eL)) = pb in
-      let b = match e with 
+      let b = match e with
         | None -> p, eL
         | Some e -> Hyper2.fusionPos (fst e) p, e::eL
       in let typ,p2 = match pt with
@@ -150,7 +150,7 @@ expr_wMin_:
   | pe1 = expr_wMin_ po = operateur pe2 = expr {
       let (p1, e1) = pe1 in
       let (p,o) = po in
-      let (p2,e2) = pe2 in 
+      let (p2,e2) = pe2 in
       (Hyper2.fusionPos p1 p2) , Ebinop (p, o, pe1, pe2) }
   | pi = INT {let (p,i) = pi in p,Eentier i}
   | ps = CHAINE {let (p,s) = ps in p, Echaine s}
@@ -281,10 +281,10 @@ expr:
 
 whileExp:
   | p1 = WHILE e = expr pb = bloc_END {
-    let (p2,b) = pb in 
+    let (p2,b) = pb in
     Hyper2.fusionPos p1 p2, Ewhile (e, b)}
   | p1 = WHILE e1 = expr_w_Ret e2 = expr_wMin_ pb = bloc_END {
-    let (p2,(p,eL)) = pb in 
+    let (p2,(p,eL)) = pb in
     Hyper2.fusionPos p1 p2, Ewhile (e1, (Hyper2.fusionPos (fst e2) p, e2::eL))}
 ;
 
@@ -305,7 +305,7 @@ lvalue_wMin_:
 else_exp:
   | p = END {p, Iend}
   | ELSE pb = bloc_END {
-    let (p2, b) = pb in 
+    let (p2, b) = pb in
     p2, Ielse b}
   | ELSE e = expr pb = bloc_END {
     let (p2, (p,b)) = pb in
@@ -353,17 +353,17 @@ expr_bloc:
     let (p2, eL) = pb in
     (e1, (Hyper2.fusionPos p1 p2, pe2::eL))}
 	| e1 = expr_w_Ret pe2 = expr_wMin_ {
-    let (p, e2) = pe2 in 
+    let (p, e2) = pe2 in
     (e1, (p, [pe2]))}
 ;
 
 expr_bloc2:
 	| p = SEMICOLON {p, []}
 	| p1 = SEMICOLON e = expr pb = expr_bloc2 {
-    let (p2, eL) = pb in 
+    let (p2, eL) = pb in
     Hyper2.fusionPos p1 p2, (e::eL)}
 	| p1 = SEMICOLON pb = expr_bloc2 {
-    let p2,eL = pb in 
+    let p2,eL = pb in
     Hyper2.fusionPos p1 p2, eL}
 	| p = SEMICOLON e = expr {
     Hyper2.fusionPos p (fst e), [e]}
@@ -376,7 +376,7 @@ bloc_END:
     pEnd, (Hyper2.fusionPos p1 p2, (e::eL))
   }
 	| p1 = SEMICOLON pb = bloc_END {
-    let pEnd, (p2, eL) = pb in 
+    let pEnd, (p2, eL) = pb in
     pEnd, (Hyper2.fusionPos p1 p2, eL)}
 ;
 
