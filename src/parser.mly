@@ -263,7 +263,7 @@ expr:
   		}
   | pl = lvalue {let (p,l) = pl in p, Elvalue l}
   | p1 = MINUS e = expr %prec unary_minus {Hyper2.fusionPos p1 (fst e), Eminus e}
-  | p1 = RETURN e = expr {Hyper2.fusionPos p1 (fst e), Ereturn (p, Some e)}
+  | p1 = RETURN e = expr {Hyper2.fusionPos p1 (fst e), Ereturn (p1, Some e)}
   | p = RETURN {p, Ereturn (p, None)}
   | p1 = FOR pi = IDENT AFFECT e1 = expr COLON e2b = expr_bloc p2 = END {
   		let (p,i) = pi in
@@ -289,14 +289,14 @@ whileExp:
 ;
 
 lvalue:
-  | pi = IDENT {let (p,i) = pi in p,Lident (p,i : ident)}
+  | pi = IDENT {let (p,i) = pi in p,Lident (p,i)}
   | e = expr DOT pi = IDENT {
     let (p,i) = pi in
     Hyper2.fusionPos (fst e) p, Lindex (e, p, (i : ident))}
 ;
 
 lvalue_wMin_:
-  | pi = IDENT {let (p,i) = pi in p,Lident (p,i : ident)}
+  | pi = IDENT {let (p,i) = pi in p,Lident (p,i)}
   | e = expr_wMin_ DOT pi = IDENT {
     let (p,i) = pi in
     Hyper2.fusionPos (fst e) p, Lindex (e, p, (i : ident))}
