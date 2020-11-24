@@ -47,8 +47,7 @@ let parcoursStruct sE (aE:argsEnv) (b,p,str,l) =
   else
     let rec aux m a = function
       |[] -> (m, a)
-      |None::tl -> aux m a tl
-      |Some (Param (p1,i,p2,t))::tl -> begin
+      |(Param (p1,i,p2,t))::tl -> begin
         if Tmap.mem i a then error ("already existing param name : "^str) p1;
         if exists t sE
         then aux (Tmap.add i t m) (Tmap.add i (b,t,str) a) tl
@@ -88,7 +87,7 @@ let rec parcoursExpr vE fE (aE:argsEnv) (sE:structEnv) = function
   | EparDIdent ((_, e), _, _) -> parcoursExpr vE fE aE sE e
   | Eapplication (pStr, str, eL) ->
       if Tmap.mem str sE || Tmap.mem str fE || str = "print" || str = "println"
-      then List.fold_left (fun ve (e, p) -> parcoursExpr ve fE aE sE e) vE eL
+      then List.fold_left (fun ve (p, e) -> parcoursExpr ve fE aE sE e) vE eL
       else error ("undefined function 1 "^str) pStr
   | Enot (_, e) | Eminus (_, e) -> parcoursExpr vE fE aE sE e
   | Ebinop (_, _, (_, e1), (_, e2)) -> parcoursExpr (parcoursExpr vE fE aE sE e1) fE aE sE e2
@@ -100,23 +99,23 @@ let rec parcoursExpr vE fE (aE:argsEnv) (sE:structEnv) = function
     end
   | ElvalueAffect (_, Lident (_, str), (_, e)) ->
       parcoursExpr (Tmap.add str Any vE) fE aE sE e
-  | ElvalueAffect (Lindex ((_, e1), p, str), (_, e2)) ->
+  | ElvalueAffect (_, Lindex ((_, e1), p, str), (_, e2)) ->
     if argExists str aE then
         let env1 = parcoursExpr vE fE aE sE e1 in
         parcoursExpr env1 fE aE sE e2
     else error ("undefined attribute name "^str) p
-  | Ereturn None -> vE
-  | Ereturn (Some (_, e)) -> parcoursExpr vE fE aE sE e
-  | Efor (str, (_, e1), (_, e2), b) ->
+  | Ereturn (p,None) -> vE
+  | Ereturn (p, Some (_, e)) -> parcoursExpr vE fE aE sE e
+  | Efor (str, (_, e1), (_, e2), (_, eL)) ->
       let env1 = parcoursExpr vE fE aE sE e1 in
       let env2 = parcoursExpr env1 fE aE sE e2 in
       let env3 = Tmap.add str Int64 env2 in
-      let _ = parcoursBloc env3 fE aE sE b in
+      let _ = parcoursBloc env3 fE aE sE eL in
       vE
-  | Ewhile (e, (_, eL)) ->
+  | Ewhile ((_, e), (_, eL)) ->
       let _ = parcoursBloc (parcoursExpr vE fE aE sE e) fE aE sE eL
       in vE
-  | Eif (e, (_, eL), els) ->
+  | Eif ((_, e), (_, eL), els) ->
       let env1 = parcoursExpr vE fE aE sE e in
       let env2 = parcoursBloc env1 fE aE sE eL in
       parcoursElse env2 fE aE sE els
@@ -126,7 +125,7 @@ and parcoursBloc vE fE aE sE = function
 and parcoursElse vE fE aE sE = function
   |Iend -> vE
   |Ielse (_, eL) -> parcoursBloc vE fE aE sE eL
-  |Ielseif (e, (_, eL), els) ->
+  |Ielseif ((_, e), (_, eL), els) ->
       let env1 = parcoursExpr vE fE aE sE e in
       let env2 = parcoursBloc env1 fE aE sE eL in
       parcoursElse env2 fE aE sE els
@@ -141,12 +140,12 @@ let rec parcours1 (vEnv:varEnv) (fEnv:funcEnv) (sEnv:structEnv) (aEnv:argsEnv) =
       let fEnv2 = parcoursFonction fEnv sEnv (p1, i, pL, p2, pT, b) in
       parcours1 vEnv fEnv2 sEnv aEnv tl
       end
-  |Dexpr (_, e))::tl -> begin
+  |Dexpr (_, e)::tl -> begin
       let vEnv2 = parcoursExpr vEnv fEnv aEnv sEnv e in
       parcours1 vEnv2 fEnv sEnv aEnv tl
       end
 
-let rec testTypageE vE fE sE aE rT = function
+let rec testTypageE vE fE sE aE rT b = function
   | Eentier _ -> Int64
   | Echaine _ -> String
   | Etrue | Efalse -> Bool
@@ -155,14 +154,14 @@ let rec testTypageE vE fE sE aE rT = function
       then Int64
     else error ("not compatible Int64 with "^typeName (Tmap.find str vE)) p
   | EentierParG (_, _, (pb, eL)) ->
-      let t = (testTypEBloc vE fE sE aE rT eL) in
+      let t = (testTypEBloc vE fE sE aE rT b eL) in
       if compatible Int64 t
       then Int64
       else error ("not compatible Int64 with "^typeName t) pb
-  | Ebloc1 (_,eL) -> testTypEBloc1 vE fE sE aE rT b1
+  | Ebloc1 (_,eL) -> testTypEBloc vE fE sE aE rT b eL
   | EparDIdent ((pE, e), pI, ident) ->
     if compatible Int64 (Tmap.find ident vE) then
-      let t = (testTypageE vE fE sE aE rT e) in
+      let t = (testTypageE vE fE sE aE rT b e) in
       if compatible Int64 t
         then Int64
         else error ("not compatible Int64 with"^typeName t) pE
@@ -171,14 +170,14 @@ let rec testTypageE vE fE sE aE rT = function
     if ident = "print" || ident = "println"
     then
       let () = List.iter (fun (_, e) ->
-        let _ = testTypageE vE fE sE aE rT e in ()) eL in Nothing
+        let _ = testTypageE vE fE sE aE rT b e in ()) eL in Nothing
     else
       if Tmap.mem ident fE then
         let l = Tmap.find ident fE in
         let rec aux l1 l2 = match l1,l2 with
           |[],[] -> (0,true)
           |t::tl1, (_, e)::tl2 -> begin
-            let t2 = testTypageE vE fE sE aE rT e in
+            let t2 = testTypageE vE fE sE aE rT b e in
             let (nb, b) = aux tl1 tl2 in
             if b && compatible t t2
             then if t=t2 then (nb+1, true) else (nb, true)
@@ -203,7 +202,7 @@ let rec testTypageE vE fE sE aE rT = function
         then if TypeSet.cardinal tSet = 1 then TypeSet.choose tSet
           else Any
         else if nb > 1 then
-          if fst (List.fold_left (fun (b,l1) hd ->
+          if not b && fst (List.fold_left (fun (b,l1) hd ->
               if b then (true,[])
               else
                   if compatibleFInL hd l1
@@ -221,18 +220,18 @@ let rec testTypageE vE fE sE aE rT = function
         else error ("undeclared function "^ident) pName
         end
   | Enot (p, e) ->
-    let t = testTypageE vE fE sE aE rT e in
+    let t = testTypageE vE fE sE aE rT b e in
     if compatible Bool t
     then Bool
     else error ("incompatibility of type in Not "^typeName t) p
   | Eminus (p, e) ->
-    let t = testTypageE vE fE sE aE rT e in
+    let t = testTypageE vE fE sE aE rT b e in
     if compatible Int64 t
     then Int64
     else error ("incompatibility of type in Minus "^typeName t) p
   | Ebinop (p, o, (p1, e1), (p2, e2)) -> begin
-    let t1 = testTypageE vE fE sE aE rT e1 in
-    let t2 = testTypageE vE fE sE aE rT e2 in
+    let t1 = testTypageE vE fE sE aE rT b e1 in
+    let t2 = testTypageE vE fE sE aE rT b e2 in
     match o with
       |Eq | Neq -> Bool
       |Lo | Gr | Leq | Geq ->
@@ -252,80 +251,89 @@ let rec testTypageE vE fE sE aE rT = function
           else error ("expected an Int64 but got a "^typeName t2) p2
         else error ("expected an Int64 but got a "^typeName t1) p1
     end
-  | Elvalue (_,lv) -> begin
+  | Elvalue lv -> begin
     match lv with
-      |Lident str -> Tmap.find str vE
-      |Lindex (e,n) ->
+      |Lident (p,str) -> Tmap.find str vE
+      |Lindex ((_, e), p, n) ->
         let (b,t2, nm) = Tmap.find n aE in
-        let t3 = testTypageE vE fE sE aE e in
-        if compatible t3 (S nm) then t2 else error ("type incompatibility in index "^typeName t3^" not compatible with struct "^nm)
+        let t3 = testTypageE vE fE sE aE rT b e in
+        if compatible t3 (S nm) then t2 else error ("type incompatibility in index "^typeName t3^" not compatible with struct "^nm) p
     end
-  | ElvalueAffect (lv,e) -> begin
-    let t = testTypageE vE fE sE aE e in
+  | ElvalueAffect (pEqual, lv, (pe, e)) -> begin
+    let t = testTypageE vE fE sE aE rT b e in
     match lv with
-      | Lident str ->
+      | Lident (p, str) ->
         let t2 = Tmap.find str vE in
-        if compatible t (Tmap.find str vE) then t
-        else error ("type incompatibility in affectation : "^typeName t^" can't be given to "^str^" who has type "^typeName t2)
-      | Lindex (e,n) ->
-        let (b,t2,nm) = Tmap.find n aE in
+        if compatible t t2 then t
+        else error ("type incompatibility in affectation : "^typeName t^" can't be given to "^str^" who has type "^typeName t2) pEqual
+      | Lindex ((pb, eL), pDot, n) ->
+        let (b, t2, nm) = Tmap.find n aE in
         if b then
-          let t3 = testTypageE vE fE sE aE e in
-          if compatible t3 (S nm) then if compatible t t2 then t
-            else error ("type incompatibility in index affectation : "^typeName t^" can't be given to var who has type "^typeName t2)
-          else error ("type incompatibility in index affectation : "^typeName t3^" is not compatible with "^nm)
-        else error ("type incompatibility in index affectation : "^nm^" who has "^n^" as an attribute is not mutable")
+          let t3 = testTypageE vE fE sE aE rT b e in
+          if compatible t3 (S nm)
+          then if compatible t t2
+            then t
+            else error ("type incompatibility in index affectation : "^typeName t^" can't be given to var who has type "^typeName t2) pEqual
+          else error ("type incompatibility in index affectation : "^typeName t3^" is not compatible with Struct "^nm) pDot
+        else error ("type incompatibility in index affectation : "^nm^" who has "^n^" as an attribute is not mutable") pDot
     end
-  | Ereturn _ -> error "can't have a return outside of a function"
-  | Efor (i,e1,e2,Bloc b) ->
+  | Ereturn (p, opt) -> if b 
+    then begin
+      match opt with
+        | None -> if compatible rT Nothing then Nothing else error ("Expected a "^typeName rT^" but found a Nothing") p
+        | Some (pe, e) -> let t = testTypageE vE fE sE aE rT b e in 
+          if compatible rT t then Nothing
+          else  error ("Expected a "^typeName rT^" but found a "^typeName t) pe
+      end
+    else error "Returns must appear inside functions" p
+  | Efor (i, (p1, e1), (p2, e2), (pb, eL)) ->
     let vE1 = parcoursExpr vE fE aE sE e1 in
     let vE2 = parcoursExpr vE1 fE aE sE e2 in
-    let vE3 = parcoursBloc (Tmap.add i Int64 vE2) fE aE sE (Bloc b) in
-    if compatible (testTypageE vE1 fE sE aE  e1) Int64 && compatible (testTypageE vE2 fE sE aE e2) Int64
-    then let _ = testTypEBloc vE3 fE sE aE b in Nothing
-    else error "type incompatibility in a for"
-  | Ewhile (e,Bloc b) ->
-    let vE = parcoursBloc vE fE aE sE (Bloc b) in
-    let t = testTypageE vE fE sE aE e in
+    let vE3 = parcoursBloc (Tmap.add i Int64 vE2) fE aE sE eL in
+    let t1 = testTypageE vE1 fE sE aE rT b e1 in
+    if compatible t1 Int64 
+    then let t2 = testTypageE vE2 fE sE aE rT b e2 in
+      if compatible t2 Int64
+      then let _ = testTypEBloc vE3 fE sE aE rT b eL in Nothing
+      else error ("expected an Int64 but got an "^typeName t2) p2
+    else error ("expected an Int64 but got an "^typeName t1) p1
+  | Ewhile ((pe, e), (pb, eL)) ->
+    let vE = parcoursBloc vE fE aE sE eL in
+    let t = testTypageE vE fE sE aE rT b e in
     if compatible Bool t
-    then let _ = testTypEBloc vE fE sE aE b in Nothing
-    else error ("you need a boolean not a "^typeName t^" as a while condition")
-  | Eif (e,Bloc b,els) ->
-      let t = testTypageE vE fE sE aE e in
+    then let _ = testTypEBloc vE fE sE aE rT b eL in Nothing
+    else error ("expected a Bool but got an "^typeName t) pe
+  | Eif ((pe, e), (pb, eL), els) ->
+      let t = testTypageE vE fE sE aE rT b e in
       if compatible Bool t
-      then let t1 = testTypEBloc vE fE sE aE b in
+      then let t1 = testTypEBloc vE fE sE aE rT b eL in
         begin
-          match testTypEElse vE fE sE aE els with
+          match testTypEElse vE fE sE aE rT b els with
             |None -> t1
             |Some t2 -> if t1 = t2 then t1 else Any
         end
-      else error ("you need a boolean not a "^typeName t^" as a if condition")
-and testTypEBloc1 vE fE sE aE = function
-  |Bloc1 (e,None) -> testTypageE vE fE sE aE e
-  |Bloc1 (e,Some (Bloc b)) ->
-      let _ = testTypageE vE fE sE aE e
-      in testTypEBloc vE fE sE aE b
-and testTypEBloc vE fE sE aE = function
+      else error ("expected a Bool but got an "^typeName t) pe
+and testTypEBloc vE fE sE aE rT b = function
   |[] -> Nothing
-  |None::tl -> testTypEBloc vE fE sE aE tl
-  |[Some e] -> testTypageE vE fE sE aE e
-  |Some e::tl ->
-      let _ = testTypageE vE fE sE aE e
-      in testTypEBloc vE fE sE aE tl
-and testTypEElse vE fE sE aE = function
+  |[(p,e)] -> testTypageE vE fE sE aE rT b e
+  |(p,e)::tl ->
+      let _ = testTypageE vE fE sE aE rT b e
+      in testTypEBloc vE fE sE aE rT b tl
+and testTypEElse vE fE sE aE rT b = function
   |Iend -> None
-  |Ielse (Bloc b) -> Some (testTypEBloc vE fE sE aE b)
-  |Ielseif (e,Bloc b, els) ->
-    let te = testTypageE vE fE sE aE e in
+  |Ielse (pb, eL) -> Some (testTypEBloc vE fE sE aE rT b eL)
+  |Ielseif ((pe, e), (pb, eL), els) ->
+    let te = testTypageE vE fE sE aE rT b e in
     if compatible te Bool then
-      let t1 = testTypEBloc vE fE sE aE b in
+      let t1 = testTypEBloc vE fE sE aE rT b eL in
       begin
-        match testTypEElse vE fE sE aE els with
+        match testTypEElse vE fE sE aE rT b els with
           |None -> Some t1
           |Some t2 -> if t1 = t2 then Some t1 else Some Any
       end
-    else error (" not the good type")
+    else error ("expected a Bool but got a "^typeName te) pe
 
+(*
 let rec testTypageBlocF vE fE sE aE pjT = function
   |[] -> Nothing
   |None::tl -> testTypageBlocF vE fE sE aE pjT tl
@@ -476,62 +484,57 @@ and testTypFElse vE fE sE aE pjT = function
           |Some t2 -> if t1 = t2 then Some t1 else Some Any
       end
     else error ("not the good type")
-
+*)
 let rec containsNotRetBloc = function
   | [] -> true
-  | None::tl -> containsNotRetBloc tl
-  | Some e::tl -> containsNotRetE e && containsNotRetBloc tl
+  | (_,e)::tl -> containsNotRetE e && containsNotRetBloc tl
 and containsNotRetE e = match e with
-  | Eentier _ | Echaine _ | Etrue _ | Efalse _ | EentierIdent _ -> true
-  | EentierParG (_,_,Bloc1 (e,b)) | Ebloc1 (Bloc1 (e,b)) -> containsNotRetBloc1 (e,b)
-  | EparDIdent (_,e,_) | Enot e | Eminus e -> containsNotRetE e
-  | Eapplication (_,_,eL) -> List.fold_left (fun b e -> b && containsNotRetE e) true eL
-  | Ebinop (o, e1, e2) -> containsNotRetE e1 && containsNotRetE e2
-  | Elvalue (_,lv) -> begin
+  | Eentier _ | Echaine _ | Etrue | Efalse | EentierIdent _ -> true
+  | EentierParG (_, _, (_, eL)) | Ebloc1 (_, eL) -> containsNotRetBloc eL
+  | EparDIdent ((_, e), _, _) | Enot (_, e) | Eminus (_, e) -> containsNotRetE e
+  | Eapplication (_, _, eL) -> List.fold_left (fun b (_, e) -> b && containsNotRetE e) true eL
+  | Ebinop (_, _, (_, e1), (_, e2)) -> containsNotRetE e1 && containsNotRetE e2
+  | Elvalue lv -> begin
     match lv with
     | Lident _ -> true
-    | Lindex (e,_) -> containsNotRetE e
+    | Lindex ((_, e), _, _) -> containsNotRetE e
     end
-  | ElvalueAffect (lv,e) -> containsNotRetE e && (match lv with
+  | ElvalueAffect (_, lv, (_, e)) -> containsNotRetE e && (match lv with
     | Lident _ -> true
-    | Lindex (e2,_) -> containsNotRetE e2)
+    | Lindex ((_, e2), _, _) -> containsNotRetE e2)
   | Ereturn _ -> false
-  | Efor (_,e1,e2,Bloc b) -> containsNotRetE e1 && containsNotRetE e2 && containsNotRetBloc b
-  | Ewhile (e,Bloc b) -> containsNotRetE e && containsNotRetBloc b
-  | Eif (e,Bloc b, els) -> containsNotRetE e && containsNotRetBloc b && containsNotRetElse els
-and containsNotRetBloc1 b1 = match b1 with
-  |e,None -> containsNotRetE e
-  |e,Some (Bloc b) -> containsNotRetE e && containsNotRetBloc b
+  | Efor (_, (_, e1), (_, e2), (_, eL)) -> containsNotRetE e1 && containsNotRetE e2 && containsNotRetBloc eL
+  | Ewhile ((_, e), (_, eL)) -> containsNotRetE e && containsNotRetBloc eL
+  | Eif ((_, e), (_, eL), els) -> containsNotRetE e && containsNotRetBloc eL && containsNotRetElse els
 and containsNotRetElse els = match els with
   | Iend -> true
-  | Ielse (Bloc b) -> containsNotRetBloc b
-  | Ielseif (e,Bloc b, els) -> containsNotRetE e && containsNotRetBloc b && containsNotRetElse els
+  | Ielse (_, eL) -> containsNotRetBloc eL
+  | Ielseif ((_, e), (_, eL), els) -> containsNotRetE e && containsNotRetBloc eL && containsNotRetElse els
 
 let rec lastInstruction v = function
   |[] -> v
-  |None::tl -> lastInstruction v tl
-  |Some v2::tl -> lastInstruction v2 tl
+  |v2::tl -> lastInstruction v2 tl
 
-let testTypageF (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:argsEnv) f =
-  let Function (str,pL,pjT, Bloc b) = f in
-  let vE1 = List.fold_right (fun (Param (str,t)) m -> if exists t sE then Tmap.add str t m else raise Ast.Typing_Error) pL vE in
-  let vE2 = parcoursBloc vE1 fE aE sE (Bloc b) in
-  let vE3 = List.fold_right (fun (Param (str,t)) m -> if exists t sE then Tmap.add str t m else raise Ast.Typing_Error) pL vE2 in
-  let _ = testTypageBlocF vE3 fE sE aE pjT b in
-  if (not (compatible pjT Nothing)) && (containsNotRetBloc b)
+let testTypageF (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:argsEnv) (posN, str, pL, posT, pjT, (pb, eL)) =
+  let vE1 = List.fold_right (fun (Param (_, str, _, t)) m -> if exists t sE then Tmap.add str t m else raise Ast.Typing_Error) pL vE in
+  let vE2 = parcoursBloc vE1 fE aE sE eL in
+  let vE3 = List.fold_right (fun (Param (_, str,_, t)) m -> if exists t sE then Tmap.add str t m else raise Ast.Typing_Error) pL vE2 in
+  let _ = testTypEBloc vE3 fE sE aE pjT true eL in
+  if (not (compatible pjT Nothing)) && (containsNotRetBloc eL)
   then
-    let lt = testTypBlocF2 vE3 fE sE aE pjT (lastInstruction (Elvalue ({ldeb = 0;cdeb = 0; lfin = 0; cfin = 0}, Lident "nothing")) b) in
+    let (pe, lastE) = lastInstruction ({ldeb = 0;cdeb = 0; lfin = 0; cfin = 0}, Elvalue (Lident ({ldeb = 0;cdeb = 0; lfin = 0; cfin = 0}, "nothing"))) eL in
+    let lt = testTypageE vE3 fE sE aE pjT true lastE in
     if compatible pjT lt
     then ()
-    else error ("last intruction not compatible "^typeName lt^"-"^typeName pjT)
+    else error ("last intruction not compatible "^typeName lt^"-"^typeName pjT) pe
   else ()
 
 
 let rec parcours2 (vEnv:varEnv) (fEnv:funcEnv) (sEnv:structEnv) (aEnv:argsEnv) = function
   |[] ->  (vEnv, fEnv, sEnv, aEnv)
   |Dstruct _::tl -> parcours2 vEnv fEnv sEnv aEnv tl
-  |Dfonction  (Function (str,_,_,_) as f)::tl -> let () = (try testTypageF vEnv fEnv sEnv aEnv f  with Not_found -> (print_string ("- f "^str^" -");print_newline ();raise Not_found)) in parcours2 vEnv fEnv sEnv aEnv tl
-  |Dexpr e::tl -> let _ = (try testTypageE vEnv fEnv sEnv aEnv e with Not_found -> (print_string "- e -";print_newline ();raise Not_found)) in parcours2 vEnv fEnv sEnv aEnv tl
+  |Dfonction  (a, str, b, c, d, e)::tl -> let () = (try testTypageF vEnv fEnv sEnv aEnv (a, str, b, c, d, e)  with Not_found -> (print_string ("- f "^str^" -");print_newline ();raise Not_found)) in parcours2 vEnv fEnv sEnv aEnv tl
+  |Dexpr (_, e)::tl -> let _ = (try testTypageE vEnv fEnv sEnv aEnv Any false e with Not_found -> (print_string "- e -";print_newline ();raise Not_found)) in parcours2 vEnv fEnv sEnv aEnv tl
 
 
 let verificationType declL envV envF envS envA=

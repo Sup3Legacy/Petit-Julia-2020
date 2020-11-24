@@ -19,7 +19,7 @@ let handle () =
   let c = open_in !(Hyper.file) in
   let lb = Lexing.from_channel c in
   try
-    let e = clean_file (Parser.fichier Lexer.token lb)
+    let e = Parser.fichier Lexer.token lb
     in
     if !parse_only then begin
       if !notAffiche then print_endline !(Hyper.file)
@@ -39,6 +39,7 @@ let handle () =
         | Ast.Parsing_Error -> Printf.printf "Syntax error\n"
         | Ast.Typing_Error -> Printf.printf "Typing error\n"
         | Ast.Typing_Error_Msg m -> Printf.printf "Typing error : %s\n" m
+        | Ast.Typing_Error_Msg_Pos (m,p) -> Printf.printf "Typing error : %s at line %i on char %i to %i\n" m p.ldeb p.cdeb p.cfin
         | _ -> Printf.printf "Unkown error\n";
       exit 1
     end
