@@ -266,10 +266,10 @@ let rec testTypageE vE fE sE aE rT b = function
         let t2 = Tmap.find str vE in
         if compatible t t2 then t
         else error ("type incompatibility in affectation : "^typeName t^" can't be given to "^str^" who has type "^typeName t2) pEqual
-      | Lindex ((pb, eL), pDot, n) ->
+      | Lindex ((pe2, e2), pDot, n) ->
         let (b, t2, nm) = Tmap.find n aE in
         if b then
-          let t3 = testTypageE vE fE sE aE rT b e in
+          let t3 = testTypageE vE fE sE aE rT b e2 in
           if compatible t3 (S nm)
           then if compatible t t2
             then t
