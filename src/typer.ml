@@ -280,9 +280,9 @@ let rec testTypageE vE fE sE aE rT b = function
   | Ereturn (p, opt) -> if b 
     then begin
       match opt with
-        | None -> if compatible rT Nothing then Nothing else error ("Expected a "^typeName rT^" but found a Nothing") p
+        | None -> if compatible rT Nothing then Any else error ("Expected a "^typeName rT^" but found a Nothing") p
         | Some (pe, e) -> let t = testTypageE vE fE sE aE rT b e in 
-          if compatible rT t then Nothing
+          if compatible rT t then Any
           else  error ("Expected a "^typeName rT^" but found a "^typeName t) pe
       end
     else error "Returns must appear inside functions" p
