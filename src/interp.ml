@@ -103,6 +103,7 @@ let construct_struct s fI sI =
   | Dstruct (b, _, i, params) ->
     let sn = (b, i, params) in(* Nouvelle structure *)
     sI := Imap.add i sn !sI;
+  | _ -> ()
 ;;
 
 let construct_function f fI sI =
@@ -115,6 +116,7 @@ let construct_function f fI sI =
       end
     else
       fI := Imap.add i [(i, params, ty, bloc)] !fI;
+  | _ -> ()
 ;;
 
 let rec construct_declaration_list l fI sI =
@@ -248,8 +250,14 @@ let rec interp_expression e vI fI sI =
       | Times, Vint i1, Vint i2 -> Vint (i1 * i2)
       | Modulo, Vint i1, Vint i2 -> Vint (i1 mod i2)
       | Exp, Vint i1, Vint i2 -> Vint (puissance i1 i2)
-      | Eq, Vint i1, Vint i2 -> Vbool (i1 = i2)
-
+      | Eq, _, _ ->
+        let res =
+        match e1p, e2p with
+        | Vint i1, Vint i2 -> Vbool (i1 = i2)
+        | Vbool i1, Vbool i2 -> Vbool (i1 = i2)
+        | Vstring i1, Vstring i2 -> Vbool (i1 = i2)
+        | _ -> failwith "Incompatible types" (* À améliorer *)
+        in res
       | Neq, Vint i1, Vint i2 -> Vbool (i1 <> i2)
       | Lo, Vint i1, Vint i2 -> Vbool (i1 < i2)
       | Gr, Vint i1, Vint i2 -> Vbool (i1 > i2)
@@ -319,7 +327,7 @@ and interp_declaration_list l vI fI sI =
   | [Dexpr e] ->
     let res = interp_expression e vI fI sI in
     if res != Vnothing then print_endline (print_value res);
-  | Dexpr e :: q -> interp_expression e vI fI sI; interp_declaration_list q vI fI sI;
+  | Dexpr e :: q -> let _ = interp_expression e vI fI sI in (); interp_declaration_list q vI fI sI;
   | _ :: q -> interp_declaration_list q vI fI sI
 ;;
 
