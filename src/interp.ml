@@ -2,9 +2,7 @@ open Lexer
 open Parser
 open Ast
 open Astype
-(*
 open Typer
-*)
 open Hyper
 open Utilities
 open Astinterp
