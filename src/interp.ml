@@ -175,30 +175,55 @@ let rec interp_expression e vI fI sI =
       | Param (_, a, _, _) :: q1, t2 :: q2 -> (a, t2) :: (create_struct q1 q2)
       | _ -> failwith "Wrong number of arguments when constructing structure" (* À améliorer *)
     in
-    if Imap.mem i !fI then (* Essaye d'appliquer une fonction *)
-      begin
-        let (i, params, t, (p, b)) = parcours_fonctions (Imap.find i !fI) expr in
-        let vIp = ref !vI in
-        let () = add_arguments params expr vIp in
-        let resultat = ref Vnothing in
-        try
-          let liste = List.map (fun x -> Dexpr x) b in
-          let _ = interp_declaration_list liste vIp fI sI in
-          !resultat
-        with Return vali ->
-          resultat := vali;
-          !resultat
-      end
+    let rec print_function l acc =
+      match l with
+      | [] -> print_endline acc; Vnothing
+      | t :: q -> print_function q (acc ^ (print_value t))
+    in
+    if i = "print" then
+        print_function expr ""
     else
       begin
-        if Imap.mem i !sI then (* Essaye de construire une structure *)
-          begin
-            let (b, i, pList) = Imap.find i !sI in
-            Vstruct (ref (i, b, create_struct pList expr))
-          end
+        if i = "println"
+          then print_function (expr @ [Vstring "\n"]) ""
         else
-          failwith ("Unknown function or structure " ^ i); (* À améliorer *)
-    end
+          begin
+            if i = "div"
+              then
+                begin
+                  match expr with
+                  | [Vint n1; Vint n2] -> Vint (n1 / n2)
+                  | _ -> failwith "Wrong arguments for div" (* À améliorer *)
+                end
+            else
+              begin
+                if Imap.mem i !fI then (* Essaye d'appliquer une fonction *)
+                  begin
+                    let (i, params, t, (p, b)) = parcours_fonctions (Imap.find i !fI) expr in
+                    let vIp = ref !vI in
+                    let () = add_arguments params expr vIp in
+                    let resultat = ref Vnothing in
+                    try
+                      let liste = List.map (fun x -> Dexpr x) b in
+                      let _ = interp_declaration_list liste vIp fI sI in
+                      !resultat
+                    with Return vali ->
+                      resultat := vali;
+                      !resultat
+                  end
+                else
+                  begin
+                    if Imap.mem i !sI then (* Essaye de construire une structure *)
+                      begin
+                        let (b, i, pList) = Imap.find i !sI in
+                        Vstruct (ref (i, b, create_struct pList expr))
+                      end
+                    else
+                      failwith ("Unknown function or structure " ^ i); (* À améliorer *)
+                end
+              end
+          end
+        end
   | Enot e ->
     let res = interp_expression e vI fI sI in
     let vali =
@@ -224,6 +249,7 @@ let rec interp_expression e vI fI sI =
       | Modulo, Vint i1, Vint i2 -> Vint (i1 mod i2)
       | Exp, Vint i1, Vint i2 -> Vint (puissance i1 i2)
       | Eq, Vint i1, Vint i2 -> Vbool (i1 = i2)
+
       | Neq, Vint i1, Vint i2 -> Vbool (i1 <> i2)
       | Lo, Vint i1, Vint i2 -> Vbool (i1 < i2)
       | Gr, Vint i1, Vint i2 -> Vbool (i1 > i2)
@@ -249,7 +275,7 @@ let rec interp_expression e vI fI sI =
       match i with
       | (p, e) -> ()
       in res
-    in Vnothing
+    in ep
   | Ereturn (p, e) ->
     let res =
       match e with
