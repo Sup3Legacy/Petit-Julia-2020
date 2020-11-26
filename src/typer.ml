@@ -142,7 +142,7 @@ let rec parcours1 (vEnv:varEnv) (fEnv:funcEnv) (sEnv:structEnv) (aEnv:argsEnv) =
       let s,a,f = parcoursStruct sEnv aEnv fEnv (b, p, i, pL) in
       parcours1 vEnv f s a tl
       end
-  |Dfonction (p1, i, pL, p2, pT, b)::tl -> begin
+  |Dfonction (p1, i, pL, p2, pT, b, _)::tl -> begin
       let fEnv2 = parcoursFonction fEnv sEnv (p1, i, pL, p2, pT, b) in
       parcours1 vEnv fEnv2 sEnv aEnv tl
       end
@@ -384,7 +384,7 @@ let testTypageF (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:argsEnv) (posN, str,
 let rec parcours2 (vEnv:varEnv) (fEnv:funcEnv) (sEnv:structEnv) (aEnv:argsEnv) = function
   |[] ->  (vEnv, fEnv, sEnv, aEnv)
   |Dstruct _::tl -> parcours2 vEnv fEnv sEnv aEnv tl
-  |Dfonction  (a, str, b, c, d, e)::tl -> let () = (try testTypageF vEnv fEnv sEnv aEnv (a, str, b, c, d, e)  with Not_found -> (print_string ("- f "^str^" -");print_newline ();raise Not_found)) in parcours2 vEnv fEnv sEnv aEnv tl
+  |Dfonction  (a, str, b, c, d, e, _)::tl -> let () = (try testTypageF vEnv fEnv sEnv aEnv (a, str, b, c, d, e)  with Not_found -> (print_string ("- f "^str^" -");print_newline ();raise Not_found)) in parcours2 vEnv fEnv sEnv aEnv tl
   |Dexpr (_, e)::tl -> let _ = (try testTypageE vEnv fEnv sEnv aEnv Any false e with Not_found -> (print_string "- e -";print_newline ();raise Not_found)) in parcours2 vEnv fEnv sEnv aEnv tl
 
 
