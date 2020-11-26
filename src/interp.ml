@@ -205,11 +205,10 @@ let rec interp_expression e vI fI sI =
                     let resultat = ref Vnothing in
                     try
                       let liste = List.map (fun x -> Dexpr x) b in
-                      let _ = interp_declaration_list liste vIp fI sI in
-                      !resultat
+                      let res = interp_declaration_list liste vIp fI sI false in
+                      res
                     with Return vali ->
-                      resultat := vali;
-                      !resultat
+                      vali;
                   end
                 else
                   begin
@@ -299,7 +298,7 @@ let rec interp_expression e vI fI sI =
     let liste = List.map (fun x -> Dexpr x) b in
     for i = n1 to n2 do
       vIp := Imap.add id (Vint i) !vIp;
-      interp_declaration_list liste vIp fI sI;
+      interp_declaration_list liste vIp fI sI false;
     done;
     Vnothing
   | Ewhile (e, (p, b)) ->
@@ -309,7 +308,7 @@ let rec interp_expression e vI fI sI =
     in
     let liste = List.map (fun x -> Dexpr x) b in
     while (extract_bool (interp_expression e vI fI sI)) do
-      let _ = (interp_declaration_list liste vI fI sI) in ();
+      let _ = (interp_declaration_list liste vI fI sI false) in ();
     done;
     Vnothing
   | Eif (exp, b, els) -> Vint 0
@@ -319,20 +318,20 @@ and interp_expression_list_one liste vI fI sI=
   | [e] -> interp_expression e vI fI sI
   | e :: q -> let _ = interp_expression e vI fI sI in
     interp_expression_list_one q vI fI sI
-and interp_declaration_list l vI fI sI =
+and interp_declaration_list l vI fI sI p =
   match l with
-  | [] -> ()
+  | [] -> Vnothing
   | [Dexpr e] ->
     let res = interp_expression e vI fI sI in
-    if res != Vnothing then print_endline (print_value res);
-  | Dexpr e :: q -> let _ = interp_expression e vI fI sI in (); interp_declaration_list q vI fI sI;
-  | _ :: q -> interp_declaration_list q vI fI sI
+    if res != Vnothing && p then print_endline (print_value res); res
+  | Dexpr e :: q -> let _ = interp_expression e vI fI sI in (); interp_declaration_list q vI fI sI p;
+  | _ :: q -> interp_declaration_list q vI fI sI p
 ;;
 
 let interp_file file vI fI sI =
   construct file fI sI;
   match file with
-  | DeclarationList l -> interp_declaration_list l vI fI sI
+  | DeclarationList l -> let _ = interp_declaration_list l vI fI sI true in ()
 ;;
 
 (*
