@@ -23,7 +23,7 @@ type fichier =
 [@@deriving show]
 and declaration =
   | Dstruct of bool * position * ident * (param list)
-  | Dfonction of position * ident * (param list) * position * pjtype * bloc
+  | Dfonction of position * ident * (param list) * position * pjtype * bloc * string (* docstring *)
   | Dexpr of expression
 [@@deriving show]
 and param =

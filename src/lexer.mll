@@ -23,7 +23,10 @@ let notPar = [^'('-')']
 let unclosedPar = '('(notPar*)eof
 let space = (' ' | '\t')*
 
+let docstring = "\"\"\""(car*)"\"\"\""
+
 rule token = parse
+  | docstring as s {Hyper.enableEnd (); DOCSTRING (String.sub s 3 (String.length s - 6))}
   | nombre as i { Hyper.enableEnd (); INT (Hyper.position lexbuf,
       try Hyper.int_from_string i
       with _ -> raise (Lexing_error ("Overflowing integer : "^i))) }

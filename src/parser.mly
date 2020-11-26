@@ -52,6 +52,8 @@
 %token <Ast.position> SEMICOLON
 %token <Ast.position> COMMA
 
+%token <string> DOCSTRING
+
 %nonassoc RETURN
 %right AFFECT
 %left OR
@@ -107,9 +109,14 @@ typage:
 ;
 
 fonction:
-  | FUNCTION pig = IDENT_PARG parameters = separated_list(COMMA, param)
+  | doc = DOCSTRING? FUNCTION pig = IDENT_PARG parameters = separated_list(COMMA, param)
     PARD pt = typage? e = expr? pb = bloc_END
     {
+      let docstring =
+        match doc with
+        | None -> "No docstring associated to this function"
+        | Some s -> s
+      in
     	let (p1,ig) = pig in
       let (pEnd, (p,eL)) = pb in
       let b = match e with
@@ -124,7 +131,7 @@ fonction:
         | Some (p, s) -> S s, p
         | None -> Any, p1
       in
-      Dfonction (p1,ig, parameters, p2, typ, b)
+      Dfonction (p1,ig, parameters, p2, typ, b, docstring)
     }
 ;
 
