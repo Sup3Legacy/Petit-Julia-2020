@@ -6,11 +6,12 @@ open Typer
 open Hyper
 open Utilities
 open Interp
-open Unix
+open Logo
 
 
 let continue = ref true;;
 let instr = ref "";;
+let logo_file = "logo";;
 
 let gVenv = ref (Tmap.singleton "nothing" Nothing)
 let gFenv = ref (Tmap.singleton "div" [[Int64; Int64], Int64])
@@ -43,32 +44,13 @@ let flush () =
   flushed := true
 ;;
 
-type command_stack = (string list) ref;;
-
-let stack = (ref [] : command_stack);;
-
-let push s =
-  stack := s :: !stack;
-;;
-
-let is_empty () =
-  match !stack with
-  | [] -> true
-  | _ -> false
-;;
-
-let peek () =
-  match ! stack with
-  | t :: q -> t
-  | _ -> ""
-;;
+print_string logo2;;
 
 while !continue do
   (* boucle principale *)
   print_newline();
-  print_string "λ>";
+  print_string "ρjυλια> ";
   instr := read_line();
-  push !instr;
   if startswith !instr "#exit" then exit 0;
   if startswith !instr "#flush" then flush ();
   try
