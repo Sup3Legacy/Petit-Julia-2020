@@ -220,10 +220,7 @@ let rec testTypageE vE fE sE aE rT b = function
             if TypeSet.cardinal tSet = 1 then TypeSet.choose tSet
             else Any
           else error ("no compatible function for "^ident) pName
-       else
-        if Tmap.mem ident sE
-        then S ident
-        else error ("undeclared function "^ident) pName
+       else error ("undeclared function "^ident) pName
         end
   | Enot (p, e) ->
     let t = testTypageE vE fE sE aE rT b e in
