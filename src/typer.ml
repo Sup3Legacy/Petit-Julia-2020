@@ -53,7 +53,7 @@ let parcoursStruct sE (aE:argsEnv) fE (b,p,str,l) =
         then aux (Tmap.add i t m) (Tmap.add i (b,t,str) a) tl
         else error ("undefined type "^typeName t) p2
         end
-    in let rec tList = function 
+    in let rec tList = function
       |[] -> []
       |Param (_,_,_,t)::tl -> t::tList tl
     in let (ajout,aE2) = aux Tmap.empty aE l in
@@ -156,7 +156,11 @@ let rec testTypageE vE fE sE aE rT b = function
   | Echaine _ -> String
   | Etrue | Efalse -> Bool
   | EentierIdent (p, _, str) ->
-      if compatible Int64 (Tmap.find str vE)
+      let var =
+        try Tmap.find str vE
+        with _ -> error ("undefined variable name " ^ str) p
+      in
+      if compatible Int64 var
       then Int64
     else error ("not compatible Int64 with "^typeName (Tmap.find str vE)) p
   | EentierParG (_, _, (pb, eL)) ->
