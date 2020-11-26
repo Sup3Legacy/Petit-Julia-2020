@@ -104,7 +104,7 @@ let construct_struct s fI sI =
 
 let construct_function f fI sI =
   match f with
-  | Dfonction (_, i, params, _, ty, bloc) ->
+  | Dfonction (_, i, params, _, ty, bloc, _) ->
     if Imap.mem i !fI then
       begin
         let l = Imap.find i !fI in
