@@ -66,7 +66,7 @@ let parcoursFonction fE sE (posStr, nameFunc, pL, posT, pjT, _) =
   let (tL,tS) = List.fold_right
     (fun (Param (p1, str, p2, t)) (l,tSet) ->
       if exists t sE
-        then if Tset.mem str tSet 
+        then if Tset.mem str tSet
           then error ("already defined argument name : "^str^" in function "^nameFunc) p1
           else (t::l,Tset.add str tSet)
         else error ("undefined type : "^typeName t^" in function "^nameFunc) p2)
@@ -280,11 +280,11 @@ let rec testTypageE vE fE sE aE rT b = function
           else error ("type incompatibility in index affectation : "^typeName t3^" is not compatible with Struct "^nm) pDot
         else error ("type incompatibility in index affectation : "^nm^" who has "^n^" as an attribute is not mutable") pDot
     end
-  | Ereturn (p, opt) -> if b 
+  | Ereturn (p, opt) -> if b
     then begin
       match opt with
         | None -> if compatible rT Nothing then Any else error ("Expected a "^typeName rT^" but found a Nothing") p
-        | Some (pe, e) -> let t = testTypageE vE fE sE aE rT b e in 
+        | Some (pe, e) -> let t = testTypageE vE fE sE aE rT b e in
           if compatible rT t then Any
           else  error ("Expected a "^typeName rT^" but found a "^typeName t) pe
       end
@@ -294,7 +294,7 @@ let rec testTypageE vE fE sE aE rT b = function
     let vE2 = parcoursExpr vE1 fE aE sE e2 in
     let vE3 = parcoursBloc (Tmap.add i Int64 vE2) fE aE sE eL in
     let t1 = testTypageE vE1 fE sE aE rT b e1 in
-    if compatible t1 Int64 
+    if compatible t1 Int64
     then let t2 = testTypageE vE2 fE sE aE rT b e2 in
       if compatible t2 Int64
       then let _ = testTypEBloc vE3 fE sE aE rT b eL in Nothing
@@ -396,4 +396,3 @@ let verificationType declL envV envF envS envA=
     envF := fp;
     envS := sp;
     envA := ap;
-

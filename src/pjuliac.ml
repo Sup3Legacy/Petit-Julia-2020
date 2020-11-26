@@ -33,11 +33,11 @@ let handle () =
       let b = Lexing.lexeme_start_p lb in
       let e = Lexing.lexeme_end_p lb in
       match a with
-        | Lexer.Lexing_error s -> begin 
+        | Lexer.Lexing_error s -> begin
             Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(Hyper.file) b.pos_lnum (b.pos_cnum - b.pos_bol) (e.pos_cnum - e.pos_bol);
             Printf.printf "Lexical error at lexeme : \"%s\"\n" s
           end
-        | Parser.Error -> begin 
+        | Parser.Error -> begin
             Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(Hyper.file) b.pos_lnum (b.pos_cnum - b.pos_bol) (e.pos_cnum - e.pos_bol);
             Printf.printf "Syntax error\n"
           end
@@ -49,7 +49,7 @@ let handle () =
             Printf.printf "File \"%s\", unknown position:\n" !(Hyper.file);
             Printf.printf "Typing error\n"
           end
-        | Ast.Typing_Error_Msg m -> begin 
+        | Ast.Typing_Error_Msg m -> begin
             Printf.printf "File \"%s\", unknown position\n" !(Hyper.file);
             Printf.printf "Typing error : %s\n" m
           end
