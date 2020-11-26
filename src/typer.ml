@@ -42,7 +42,7 @@ let typeName t = match t with
   | S s -> "Struct \""^s^"\""
   | Any -> "Any"
 
-let parcoursStruct sE (aE:argsEnv) (b,p,str,l) =
+let parcoursStruct sE (aE:argsEnv) fE (b,p,str,l) =
   if Tmap.mem str sE then error ("already defined structuture of name :"^str) p
   else
     let rec aux m a = function
@@ -53,8 +53,14 @@ let parcoursStruct sE (aE:argsEnv) (b,p,str,l) =
         then aux (Tmap.add i t m) (Tmap.add i (b,t,str) a) tl
         else error ("undefined type "^typeName t) p2
         end
+    in let rec tList = function 
+      |[] -> []
+      |Param (_,_,_,t)::tl -> t::tList tl
     in let (ajout,aE2) = aux Tmap.empty aE l in
-    (Tmap.add str ajout sE, aE2)
+    let fE2 = if Tmap.mem str fE
+      then let liste = Tmap.find str fE in Tmap.add str ((tList l, S str)::liste) fE
+    else Tmap.add str [(tList l,S str)] fE
+    in (Tmap.add str ajout sE, aE2, fE2)
 
 let parcoursFonction fE sE (posStr, nameFunc, pL, posT, pjT, _) =
   let (tL,tS) = List.fold_right
@@ -133,8 +139,8 @@ and parcoursElse vE fE aE sE = function
 let rec parcours1 (vEnv:varEnv) (fEnv:funcEnv) (sEnv:structEnv) (aEnv:argsEnv) = function
   |[] -> (vEnv, fEnv, sEnv, aEnv)
   |Dstruct (b, p, i, pL)::tl -> begin
-      let s,a = parcoursStruct sEnv aEnv (b, p, i, pL) in
-      parcours1 vEnv fEnv s a tl
+      let s,a,f = parcoursStruct sEnv aEnv fEnv (b, p, i, pL) in
+      parcours1 vEnv f s a tl
       end
   |Dfonction (p1, i, pL, p2, pT, b)::tl -> begin
       let fEnv2 = parcoursFonction fEnv sEnv (p1, i, pL, p2, pT, b) in
