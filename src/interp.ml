@@ -6,7 +6,6 @@ open Typer
 open Hyper
 open Utilities
 open Astinterp
-open Format
 
 let rec print_value = function
   | Vnothing -> "Nothing"
@@ -177,7 +176,7 @@ let rec interp_expression e vI fI sI =
     in
     let rec print_function l acc =
       match l with
-      | [] -> print_endline acc; Vnothing
+      | [] -> Printf.printf "%s" acc; Vnothing
       | t :: q -> print_function q (acc ^ (print_value t))
     in
     if i = "print" then
@@ -323,7 +322,7 @@ and interp_declaration_list l vI fI sI p =
   | [] -> Vnothing
   | [Dexpr e] ->
     let res = interp_expression e vI fI sI in
-    if res != Vnothing && p then print_endline (print_value res); res
+    if res != Vnothing && p then print_string (print_value res); res
   | Dexpr e :: q -> let _ = interp_expression e vI fI sI in (); interp_declaration_list q vI fI sI p;
   | _ :: q -> interp_declaration_list q vI fI sI p
 ;;
