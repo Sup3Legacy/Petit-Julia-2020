@@ -93,7 +93,6 @@ let rec bloc_to_expressionlist_bis l =
   | None :: q -> bloc_to_expressionlist_bis q
 ;;
 
-
 (* Construction des talbes de fonctions et structures *)
 let construct_struct s fI sI =
   match s with
@@ -201,7 +200,6 @@ let rec interp_expression e vI fI sI =
                     let (i, params, t, (p, b)) = parcours_fonctions (Imap.find i !fI) expr in
                     let vIp = ref !vI in
                     let () = add_arguments params expr vIp in
-                    let resultat = ref Vnothing in
                     try
                       let liste = List.map (fun x -> Dexpr x) b in
                       let res = interp_declaration_list liste vIp fI sI false in
@@ -297,7 +295,7 @@ let rec interp_expression e vI fI sI =
     let liste = List.map (fun x -> Dexpr x) b in
     for i = n1 to n2 do
       vIp := Imap.add id (Vint i) !vIp;
-      interp_declaration_list liste vIp fI sI false;
+      let _ = interp_declaration_list liste vIp fI sI false in ();
     done;
     Vnothing
   | Ewhile (e, (p, b)) ->
