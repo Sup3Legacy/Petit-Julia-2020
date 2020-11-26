@@ -5,7 +5,7 @@ compil: pjuliac.exe
 	dune exec ./pjuliac.exe
 
 repl: pjuliarepl.exe
-	dune exec ./pjuliarepl.exe
+	rlwrap dune exec ./pjuliarepl.exe
 
 pjuliac.exe:
 	dune build pjuliac.exe

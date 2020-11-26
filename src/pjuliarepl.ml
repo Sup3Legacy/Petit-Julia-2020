@@ -6,6 +6,7 @@ open Typer
 open Hyper
 open Utilities
 open Interp
+open Unix
 
 
 let continue = ref true;;
@@ -32,13 +33,44 @@ let startswith str motif =
     end
 ;;
 
+let flushed = ref false;;
+
+let flush () =
+  gVenv := Tmap.singleton "nothing" Nothing;
+  gFenv := Tmap.singleton "div" [[Int64; Int64], Int64];
+  gSenv := Tmap.empty;
+  gAenv := Tmap.empty;
+  flushed := true
+;;
+
+type command_stack = (string list) ref;;
+
+let stack = (ref [] : command_stack);;
+
+let push s =
+  stack := s :: !stack;
+;;
+
+let is_empty () =
+  match !stack with
+  | [] -> true
+  | _ -> false
+;;
+
+let peek () =
+  match ! stack with
+  | t :: q -> t
+  | _ -> ""
+;;
 
 while !continue do
   (* boucle principale *)
   print_newline();
   print_string "λ>";
   instr := read_line();
+  push !instr;
   if startswith !instr "#exit" then exit 0;
+  if startswith !instr "#flush" then flush ();
   try
     begin
       let lb =
@@ -91,8 +123,10 @@ while !continue do
               Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(file_name) p.ldeb p.cdeb p.cfin;
               Printf.printf "Typing error : %s\n" m
             end
+          | _ when !flushed -> Printf.printf "Flushed";
           | _ -> Printf.printf "Unkown error in file %s\n" !(file_name);
         end
     end
     with Sys_error s -> Printf.printf "%s" s;
+  flushed := false;
 done;
