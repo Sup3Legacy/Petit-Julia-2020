@@ -315,11 +315,11 @@ let rec interp_expression e vI fI sI =
       | Vint t1, Vint t2 -> t1, t2
       | _ -> failwith "Expected integer values in for bounds" (* À améliorer *)
     in
-    let vIp = ref !vI in
+    (* let vIp = ref !vI in *)
     let liste = List.map (fun x -> Dexpr x) b in
     for i = n1 to n2 do
-      vIp := Imap.add id (Vint i) !vIp;
-      let _ = interp_declaration_list liste vIp fI sI false in ();
+      vI := Imap.add id (Vint i) !vI;
+      let _ = interp_declaration_list liste vI fI sI false in ();
     done;
     Vnothing
   | Ewhile (e, (p, b)) ->
