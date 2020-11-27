@@ -5,5 +5,5 @@
   (flags (-v)))
 (executables
   (names pjuliac pjuliarepl)
-  (preprocess (pps ppx_deriving.show ppx_deriving.ord))
+  (preprocess (pps ppx_deriving.show ppx_deriving.ord unix))
   (flags ()))

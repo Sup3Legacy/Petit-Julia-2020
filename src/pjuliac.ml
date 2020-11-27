@@ -5,6 +5,7 @@ open Astype
 open Hyper
 open Utilities
 open Typer
+open Unix
 
 let notAffiche = ref false;;
 let parse_only = ref false;;
@@ -77,6 +78,13 @@ let main () =
     ("--type_only", Arg.Set type_only, "Stop after typing");
     ] in
     Arg.parse speclist (fun x -> ()) "";
+    let file = open_out "out.s" in
+    Printf.fprintf file "%s\n" "hahaha";
+    close_out file;
+    let ic = Unix.open_process_in "uname" in
+    let uname = input_line ic in
+    let () = close_in ic in
+    print_string uname;
     handle ();
   end
 ;;
