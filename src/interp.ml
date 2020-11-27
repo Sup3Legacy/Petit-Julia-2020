@@ -287,6 +287,7 @@ let rec interp_expression e vI fI sI =
         let vali = interp_expression e vI fI sI in
         match vali with
         | Vstruct (i0, b0, pList0, htbl0) -> Hashtbl.find htbl0 i
+        | _ -> failwith "Value not a structure" (* À améliorer *)
    in res
   | ElvalueAffect (p, lval, e) ->
     let ep = interp_expression e vI fI sI in
