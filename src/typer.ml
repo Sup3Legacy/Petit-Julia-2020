@@ -43,24 +43,27 @@ let typeName t = match t with
   | Any -> "Any"
 
 let parcoursStruct sE (aE:argsEnv) fE (b,p,str,l) =
-  if Tmap.mem str sE then error ("already defined structuture of name :"^str) p
+  if str = "print" || str = "println" || str = "div" then 
+    error (str^" is not an allowed function name") p
   else
-    let rec aux m a = function
-      |[] -> (m, a)
-      |(Param (p1,i,p2,t))::tl -> begin
-        if Tmap.mem i a then error ("already existing param name : "^str) p1;
-        if exists t sE
-        then aux (Tmap.add i t m) (Tmap.add i (b,t,str) a) tl
-        else error ("undefined type "^typeName t) p2
-        end
-    in let rec tList = function
-      |[] -> []
-      |Param (_,_,_,t)::tl -> t::tList tl
-    in let (ajout,aE2) = aux Tmap.empty aE l in
-    let fE2 = if Tmap.mem str fE
-      then let liste = Tmap.find str fE in Tmap.add str ((tList l, S str)::liste) fE
-    else Tmap.add str [(tList l,S str)] fE
-    in (Tmap.add str ajout sE, aE2, fE2)
+    if Tmap.mem str sE then error ("already defined structuture of name :"^str) p
+    else
+      let rec aux m a = function
+        |[] -> (m, a)
+        |(Param (p1,i,p2,t))::tl -> begin
+          if Tmap.mem i a then error ("already existing param name : "^str) p1;
+          if exists t sE
+          then aux (Tmap.add i t m) (Tmap.add i (b,t,str) a) tl
+          else error ("undefined type "^typeName t) p2
+          end
+      in let rec tList = function
+        |[] -> []
+        |Param (_,_,_,t)::tl -> t::tList tl
+      in let (ajout,aE2) = aux Tmap.empty aE l in
+      let fE2 = if Tmap.mem str fE
+        then let liste = Tmap.find str fE in Tmap.add str ((tList l, S str)::liste) fE
+      else Tmap.add str [(tList l,S str)] fE
+      in (Tmap.add str ajout sE, aE2, fE2)
 
 let parcoursFonction fE sE (posStr, nameFunc, pL, posT, pjT, _) =
   let (tL,tS) = List.fold_right
@@ -170,7 +173,7 @@ let rec testTypageE vE fE sE aE rT b = function
       else error ("not compatible Int64 with "^typeName t) pb
   | Ebloc1 (_,eL) -> testTypEBloc vE fE sE aE rT b eL
   | EparDIdent ((pE, e), pI, ident) ->
-    if compatible Int64 (Tmap.find ident vE) then
+    if compatible Int64 (try Tmap.find ident vE with _ -> error ("undefined variable name " ^ ident) pI) then
       let t = (testTypageE vE fE sE aE rT b e) in
       if compatible Int64 t
         then Int64
