@@ -5,7 +5,7 @@ open Astype
 open Hyper
 open Utilities
 open Typer
-open Unix
+open X86_64
 
 let notAffiche = ref false;;
 let parse_only = ref false;;
@@ -81,10 +81,6 @@ let main () =
     let file = open_out "out.s" in
     Printf.fprintf file "%s\n" "hahaha";
     close_out file;
-    let ic = Unix.open_process_in "uname" in
-    let uname = input_line ic in
-    let () = close_in ic in
-    print_string uname;
     handle ();
   end
 ;;

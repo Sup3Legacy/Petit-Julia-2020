@@ -5,7 +5,12 @@
 *)
 
 open Format
+open Unix
 
+let estMac = 
+    let ic = Unix.open_process_in "uname" in
+    let uname = input_line ic in
+    let () = close_in ic in uname = "Darwin"
 type size = [`B | `W | `L | `Q]
 
 type 'size register =  string
@@ -88,7 +93,7 @@ type 'size operand = formatter -> unit -> unit
 
 let mangle_none fmt (l: label) = fprintf fmt "%s" l
 let mangle_leading_underscore fmt (l: label) = fprintf fmt "_%s" l
-let mangle = mangle_none
+let mangle = if estMac then mangle_leading_underscore else mangle_none
 
 let reg r = fun fmt () -> fprintf fmt "%s" r
 let (!%) = reg
@@ -100,7 +105,7 @@ let ind ?(ofs=0) ?index ?(scale=1) r = fun fmt () -> match index with
   | Some r1 -> fprintf fmt "%d(%s,%s,%d)" ofs r r1 scale
 let abslab (l: label) = fun fmt () -> fprintf fmt "%a" mangle l
 let rellab (l: label) = fun fmt () -> fprintf fmt "%a(%%rip)" mangle l
-let lab = abslab
+let lab = if estMac then rellab else abslab
 let ilab (l: label) = fun fmt () -> fprintf fmt "$%a" mangle l
 
 type 'a asm =
