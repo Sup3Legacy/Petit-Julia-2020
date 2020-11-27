@@ -7,6 +7,18 @@ open Hyper
 open Utilities
 open Astinterp
 
+let rec len liste =
+  match liste with
+  | [] -> 0
+  | _ :: q -> 1 + (len q)
+;;
+
+let rec appartient elt liste =
+  match liste with
+  | [] -> false
+  | t :: q -> t = elt || appartient elt q
+;;
+
 let rec print_value = function
   | Vnothing -> "Nothing"
   | Vbool true -> "true"
@@ -16,18 +28,18 @@ let rec print_value = function
   | Vfloat f -> string_of_float f
   | Vstruct s ->
     begin
-      let (n, b, l) = !s in
+      let (n, b, identlist, htbl) = s in
       let res = ref "" in
       if b then begin res := !res ^ "mutable " end;
       res := !res ^ n;
       res := !res ^ "{";
-      let rec add_to_str point l =
-        match l with
+      let rec add_to_str point liste =
+        match liste with
           | [] -> ()
-          | [(sp, v)] -> res := !res ^ (sp ^ " : " ^ (print_value v));
-          | (sp, v) :: q -> res := !res ^ (sp ^ " : " ^ (print_value v) ^ "; "); add_to_str point q
+          | [t] -> res := !res ^ (t ^ " : " ^ (print_value (Hashtbl.find htbl t)));
+          | t :: q -> res := !res ^ (t ^ " : " ^ (print_value (Hashtbl.find htbl t)) ^ "; "); add_to_str point q
       in
-      add_to_str res l;
+      add_to_str res identlist;
       res := !res ^ "}";
       !res
     end
@@ -63,7 +75,7 @@ let rec compatible pList expr =
   | Param (_, _, _, Bool) :: q1, Vbool _ :: q2 -> compatible q1 q2
   | Param (_, _, _, String) :: q1, Vstring _ :: q2 -> compatible q1 q2
   | Param (_, _, _, S s1) :: q1, Vstruct s2 :: q2 ->
-    let (i, _, _) = !s2 in (s1 = i) && (compatible q1 q2)
+    let (i, _, _, _) = s2 in (s1 = i) && (compatible q1 q2)
   | _, _ ->false
 ;;
 
@@ -75,7 +87,7 @@ let compatible_un t1 t2 =
   | Bool, Vbool _ -> true
   | String, Vstring _ -> true
   | S s1, Vstruct s2 ->
-    let (i, _, _) = !s2 in (s1 = i)
+    let (i, _, _, _) = s2 in (s1 = i)
   | _, _ ->false
 ;;
 
@@ -166,12 +178,11 @@ let rec interp_expression e vI fI sI =
       | (Param (_, i, _, _)) :: q1, a :: q2 -> vI := Imap.add i a !vI; add_arguments q1 q2 vI
       | _ -> failwith "Error wtf"
     in
-    let rec create_struct pList expr =
-      match pList, expr with
-      | [], [] -> []
-      | Param (_, a, _, t) :: q1, t2 :: q2 when not (compatible_un t t2) -> failwith "Wrong type in structure" (* À améliorer *)
-      | Param (_, a, _, _) :: q1, t2 :: q2 -> (a, t2) :: (create_struct q1 q2)
-      | _ -> failwith "Wrong number of arguments when constructing structure" (* À améliorer *)
+    let rec add_elements_to_struct identList values htbl =
+      match identList, values with
+      | [], [] -> ()
+      | t1 :: q1, t2 :: q2 -> Hashtbl.add htbl t1 t2; add_elements_to_struct q1 q2 htbl
+      | _, _ -> failwith "Incorrect number of arguments for struct" (* À améliorer *)
     in
     let rec print_function l acc =
       match l with
@@ -212,7 +223,10 @@ let rec interp_expression e vI fI sI =
                     if Imap.mem i !sI then (* Essaye de construire une structure *)
                       begin
                         let (b, i, pList) = Imap.find i !sI in
-                        Vstruct (ref (i, b, create_struct pList expr))
+                        let identList = List.map (fun (Param (a, i, b, e)) -> i) pList in
+                        let htbl = Hashtbl.create (len pList) in
+                        add_elements_to_struct identList expr htbl;
+                        Vstruct (i, b, identList, htbl)
                       end
                     else
                       failwith ("Unknown function or structure " ^ i); (* À améliorer *)
@@ -265,18 +279,23 @@ let rec interp_expression e vI fI sI =
     let res =
       match lval with
       | Lident (p, i) -> Imap.find i !vI
-      | Lindex (e, p, i) -> Vint 0
+      | Lindex (e, p, i) ->
+        let vali = interp_expression e vI fI sI in
+        match vali with
+        | Vstruct (i0, b0, pList0, htbl0) -> Hashtbl.find htbl0 i
    in res
   | ElvalueAffect (p, lval, e) ->
     let ep = interp_expression e vI fI sI in
     let () =
     match lval with
     | Lident (p, i) -> vI := Imap.add i ep !vI
-    | Lindex (i, p, e) ->
-      let res =
-      match i with
-      | (p, e) -> ()
-      in res
+    | Lindex (e, p, i) ->
+      begin
+      let res = interp_expression e vI fI sI in
+      match res with
+      | Vstruct (i0, true, pList0, htbl0) when appartient i pList0 -> Hashtbl.add htbl0 i ep;
+      | _ -> failwith "Structure non mutable ou alors pas de champ correspondant"; (* *)
+      end
     in ep
   | Ereturn (p, e) ->
     let res =
