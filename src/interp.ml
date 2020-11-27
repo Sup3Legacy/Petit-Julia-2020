@@ -7,6 +7,8 @@ open Hyper
 open Utilities
 open Astinterp
 
+let print_limit = 4;;
+
 let rec len liste =
   match liste with
   | [] -> 0
@@ -19,7 +21,7 @@ let rec appartient elt liste =
   | t :: q -> t = elt || appartient elt q
 ;;
 
-let rec print_value = function
+let rec print_value nombre = function
   | Vnothing -> "Nothing"
   | Vbool true -> "true"
   | Vbool false -> "false"
@@ -27,17 +29,19 @@ let rec print_value = function
   | Vstring s -> s
   | Vfloat f -> string_of_float f
   | Vstruct s ->
+    if nombre > print_limit then "..."
+    else
     begin
       let (n, b, identlist, htbl) = s in
       let res = ref "" in
       if b then begin res := !res ^ "mutable " end;
       res := !res ^ n;
       res := !res ^ "{";
-      let rec add_to_str point liste =
+      let rec add_to_str point liste=
         match liste with
           | [] -> ()
-          | [t] -> res := !res ^ (t ^ " : " ^ (print_value (Hashtbl.find htbl t)));
-          | t :: q -> res := !res ^ (t ^ " : " ^ (print_value (Hashtbl.find htbl t)) ^ "; "); add_to_str point q
+          | [t] -> res := !res ^ (t ^ " : " ^ (print_value (nombre + 1) (Hashtbl.find htbl t)));
+          | t :: q -> res := !res ^ (t ^ " : " ^ (print_value (nombre + 1) (Hashtbl.find htbl t)) ^ "; "); add_to_str point q
       in
       add_to_str res identlist;
       res := !res ^ "}";
@@ -187,7 +191,7 @@ let rec interp_expression e vI fI sI =
     let rec print_function l acc =
       match l with
       | [] -> Printf.printf "%s" acc; Vnothing
-      | t :: q -> print_function q (acc ^ (print_value t))
+      | t :: q -> print_function q (acc ^ (print_value 0 t))
     in
     if i = "print" then
         print_function expr ""
@@ -294,7 +298,7 @@ let rec interp_expression e vI fI sI =
       let res = interp_expression e vI fI sI in
       match res with
       | Vstruct (i0, true, pList0, htbl0) when appartient i pList0 -> Hashtbl.add htbl0 i ep;
-      | _ -> failwith "Structure non mutable ou alors pas de champ correspondant"; (* *)
+      | _ -> print_endline "lol"; failwith "Structure non mutable ou alors pas de champ correspondant"; (* *)
       end
     in ep
   | Ereturn (p, e) ->
@@ -339,7 +343,7 @@ and interp_declaration_list l vI fI sI p =
   | [] -> Vnothing
   | [Dexpr e] ->
     let res = interp_expression e vI fI sI in
-    if res != Vnothing && p then print_string (print_value res); res
+    if res != Vnothing && p then print_string (print_value 0 res); res
   | Dexpr e :: q -> let _ = interp_expression e vI fI sI in (); interp_declaration_list q vI fI sI p;
   | _ :: q -> interp_declaration_list q vI fI sI p
 ;;

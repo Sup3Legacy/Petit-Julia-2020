@@ -5,7 +5,7 @@ compil: pjuliac.exe
 	dune exec ./pjuliac.exe
 
 repl: pjuliarepl.exe
-	clear
+	#clear
 	rlwrap -f pjulia-words -c -pCyan dune exec ./pjuliarepl.exe
 
 pjuliac.exe:
