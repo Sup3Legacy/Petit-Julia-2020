@@ -11,7 +11,7 @@ let notAffiche = ref false;;
 let parse_only = ref false;;
 let type_only = ref false;;
 
-let gVenv = ref (Tmap.singleton "nothing" Nothing)
+let gVenv = ref (Tmap.singleton "nothing" (false,Nothing))
 let gFenv = ref (Tmap.singleton "div" [[Int64; Int64], Int64])
 let gSenv = ref (Tmap.empty : structEnv)
 let gAenv = ref (Tmap.empty : argsEnv)
@@ -27,7 +27,7 @@ let handle () =
       else print_endline (show_fichier e); (* On peut switch entre afficher le nom (ie. compil réussie) et afficher l'arbre généré *)
       exit 0;
       end;
-    let () = Typer.verificationType e gVenv gFenv gSenv gAenv in
+    let () = Typer.typerCompilateur e gVenv gFenv gSenv gAenv in
     print_endline !(Hyper.file);
     exit 0;
   with a -> begin

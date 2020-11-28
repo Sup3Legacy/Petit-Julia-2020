@@ -12,7 +12,7 @@ let continue = ref true;;
 let instr = ref "";;
 let logo_file = "logo";;
 
-let gVenv = ref (Tmap.singleton "nothing" Nothing)
+let gVenv = ref (Tmap.singleton "nothing" (false,Nothing))
 let gFenv = ref (Tmap.singleton "div" [[Int64; Int64], Int64])
 let gSenv = ref (Tmap.empty : structEnv)
 let gAenv = ref (Tmap.empty : argsEnv)
@@ -36,7 +36,7 @@ let startswith str motif =
 let flushed = ref false;;
 
 let flush () =
-  gVenv := Tmap.singleton "nothing" Nothing;
+  gVenv := Tmap.singleton "nothing" (false,Nothing);
   gFenv := Tmap.singleton "div" [[Int64; Int64], Int64];
   gSenv := Tmap.empty;
   gAenv := Tmap.empty;
@@ -72,7 +72,7 @@ while !continue do
       try
         begin
           let e = Parser.fichier Lexer.token lb in
-          let () = Typer.verificationType e gVenv gFenv gSenv gAenv in
+          let () = Typer.typerRepl e gVenv gFenv gSenv gAenv in
           (* print_endline (show_fichier e); *)
           interp_file e globVenv globFenv globSenv;
         end
