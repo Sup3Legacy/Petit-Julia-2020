@@ -262,8 +262,24 @@ let rec interp_expression e vI fI sI =
       | Times, Vint i1, Vint i2 -> Vint (i1 * i2)
       | Modulo, Vint i1, Vint i2 -> Vint (i1 mod i2)
       | Exp, Vint i1, Vint i2 -> Vint (puissance i1 i2)
-      | Eq, _, _ -> Vbool (e1p == e2p)
-      | Neq, _, _ -> Vbool (not (e1p == e2p))
+      | Eq, _, _ ->
+        let res =
+        match e1p, e2p with
+        | Vint i1, Vint i2 -> Vbool (i1 = i2)
+        | Vbool i1, Vbool i2 -> Vbool (i1 = i2)
+        | Vstring i1, Vstring i2 -> Vbool (i1 = i2)
+        | Vstruct (str1,_,_,l1), Vstruct (str2,_,_,l2) -> Vbool (str1==str2 && l1 == l2)
+        | _ -> Vbool false
+        in res
+      | Neq, _, _ ->
+        let res =
+        match e1p, e2p with
+        | Vint i1, Vint i2 -> Vbool (i1 <> i2)
+        | Vbool i1, Vbool i2 -> Vbool (i1 <> i2)
+        | Vstring i1, Vstring i2 -> Vbool (i1 <> i2)
+        | Vstruct (str1,_,_,l1), Vstruct (str2,_,_,l2) -> Vbool (str1<>str2 || not (l1 == l2))
+        | _ -> Vbool true
+        in res
       | Lo, Vint i1, Vint i2 -> Vbool (i1 < i2)
       | Gr, Vint i1, Vint i2 -> Vbool (i1 > i2)
       | Leq, Vint i1, Vint i2 -> Vbool (i1 <= i2)
