@@ -21,7 +21,14 @@ let rec appartient elt liste =
   | t :: q -> t = elt || appartient elt q
 ;;
 
-let rec print_value nombre = function
+let positionDansPile element pile = 
+  let rec aux n = function
+    |[] -> None
+    |hd::tl when hd==element -> Some n 
+    | _::tl -> aux (n+1) tl
+  in aux 1 pile
+
+let rec print_value pile = function
   | Vnothing -> "Nothing"
   | Vbool true -> "true"
   | Vbool false -> "false"
@@ -29,8 +36,8 @@ let rec print_value nombre = function
   | Vstring s -> s
   | Vfloat f -> string_of_float f
   | Vstruct s ->
-    if nombre > print_limit then "..."
-    else
+    (*if nombre > print_limit then "..."
+    else*)
     begin
       let (n, b, identlist, htbl) = s in
       let res = ref "" in
@@ -40,8 +47,17 @@ let rec print_value nombre = function
       let rec add_to_str point liste=
         match liste with
           | [] -> ()
-          | [t] -> res := !res ^ (t ^ " : " ^ (print_value (nombre + 1) (Hashtbl.find htbl t)));
-          | t :: q -> res := !res ^ (t ^ " : " ^ (print_value (nombre + 1) (Hashtbl.find htbl t)) ^ "; "); add_to_str point q
+          | [t] -> begin let valeur = (Hashtbl.find htbl t) in 
+            match positionDansPile valeur pile with 
+            |None -> res := !res ^ (t ^ " : " ^ (print_value (valeur::pile) valeur))
+            |Some i -> res := !res ^ ("#= circular reference @-"^string_of_int i^" =#")
+            end 
+          | t :: q -> begin let valeur = (Hashtbl.find htbl t) in 
+            match positionDansPile valeur pile with 
+              |None -> res := !res ^ (t ^ " : " ^ (print_value (valeur::pile) valeur) ^ "; "); add_to_str point q
+              |Some i -> res := !res ^ ("#= circular reference @-"^string_of_int i^" =#; ");
+            add_to_str point q
+            end
       in
       add_to_str res identlist;
       res := !res ^ "}";
@@ -191,7 +207,7 @@ let rec interp_expression e vI fI sI =
     let rec print_function l acc =
       match l with
       | [] -> Printf.printf "%s" acc; Vnothing
-      | t :: q -> print_function q (acc ^ (print_value 0 t))
+      | t :: q -> print_function q (acc ^ (print_value [] t))
     in
     if i = "print" then
         print_function expr ""
@@ -269,6 +285,7 @@ let rec interp_expression e vI fI sI =
         | Vbool i1, Vbool i2 -> Vbool (i1 = i2)
         | Vstring i1, Vstring i2 -> Vbool (i1 = i2)
         | Vstruct (str1,_,_,l1), Vstruct (str2,_,_,l2) -> Vbool (str1==str2 && l1 == l2)
+        | Vnothing, Vnothing -> Vbool true
         | _ -> Vbool false
         in res
       | Neq, _, _ ->
@@ -278,6 +295,7 @@ let rec interp_expression e vI fI sI =
         | Vbool i1, Vbool i2 -> Vbool (i1 <> i2)
         | Vstring i1, Vstring i2 -> Vbool (i1 <> i2)
         | Vstruct (str1,_,_,l1), Vstruct (str2,_,_,l2) -> Vbool (str1<>str2 || not (l1 == l2))
+        | Vnothing, Vnothing -> Vbool false
         | _ -> Vbool true
         in res
       | Lo, Vint i1, Vint i2 -> Vbool (i1 < i2)
@@ -353,7 +371,7 @@ and interp_declaration_list l vI fI sI p =
   | [] -> Vnothing
   | [Dexpr e] ->
     let res = interp_expression e vI fI sI in
-    if res != Vnothing && p then print_string (print_value 0 res); res
+    if res != Vnothing && p then print_string (print_value [] res); res
   | Dexpr e :: q -> let _ = interp_expression e vI fI sI in (); interp_declaration_list q vI fI sI p;
   | _ :: q -> interp_declaration_list q vI fI sI p
 ;;
