@@ -262,15 +262,8 @@ let rec interp_expression e vI fI sI =
       | Times, Vint i1, Vint i2 -> Vint (i1 * i2)
       | Modulo, Vint i1, Vint i2 -> Vint (i1 mod i2)
       | Exp, Vint i1, Vint i2 -> Vint (puissance i1 i2)
-      | Eq, _, _ ->
-        let res =
-        match e1p, e2p with
-        | Vint i1, Vint i2 -> Vbool (i1 = i2)
-        | Vbool i1, Vbool i2 -> Vbool (i1 = i2)
-        | Vstring i1, Vstring i2 -> Vbool (i1 = i2)
-        | _ -> failwith "Incompatible types" (* À améliorer *)
-        in res
-      | Neq, Vint i1, Vint i2 -> Vbool (i1 <> i2)
+      | Eq, _, _ -> Vbool (e1p == e2p)
+      | Neq, _, _ -> Vbool (not (e1p == e2p))
       | Lo, Vint i1, Vint i2 -> Vbool (i1 < i2)
       | Gr, Vint i1, Vint i2 -> Vbool (i1 > i2)
       | Leq, Vint i1, Vint i2 -> Vbool (i1 <= i2)

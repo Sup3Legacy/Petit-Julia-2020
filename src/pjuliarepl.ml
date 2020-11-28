@@ -104,8 +104,9 @@ while !continue do
               Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(file_name) p.ldeb p.cdeb p.cfin;
               Printf.printf "Typing error : %s\n" m
             end
-          | _ when !flushed -> Printf.printf "Flushed";
-          | _ -> Printf.printf "Unkown error in file %s\n" !(file_name);
+          | a -> raise a
+         (* | _ when !flushed -> Printf.printf "Flushed";
+          | _ -> Printf.printf "Unkown error in file %s\n" !(file_name);*)
         end
     end
     with Sys_error s -> Printf.printf "%s" s;
