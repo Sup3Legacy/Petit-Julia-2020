@@ -9,6 +9,8 @@ open Astinterp
 
 let print_limit = 4;;
 
+let interp_error s = raise (Ast.Interp_Error_Msg s);;
+
 let rec len liste =
   match liste with
   | [] -> 0
@@ -21,10 +23,10 @@ let rec appartient elt liste =
   | t :: q -> t = elt || appartient elt q
 ;;
 
-let positionDansPile element pile = 
+let positionDansPile element pile =
   let rec aux n = function
     |[] -> None
-    |hd::tl when hd==element -> Some n 
+    |hd::tl when hd==element -> Some n
     | _::tl -> aux (n+1) tl
   in aux 1 pile
 
@@ -47,13 +49,13 @@ let rec print_value pile = function
       let rec add_to_str point liste=
         match liste with
           | [] -> ()
-          | [t] -> begin let valeur = (Hashtbl.find htbl t) in 
-            match positionDansPile valeur pile with 
+          | [t] -> begin let valeur = (Hashtbl.find htbl t) in
+            match positionDansPile valeur pile with
             |None -> res := !res ^ (t ^ " : " ^ (print_value (valeur::pile) valeur))
             |Some i -> res := !res ^ ("#= circular reference @-"^string_of_int i^" =#")
-            end 
-          | t :: q -> begin let valeur = (Hashtbl.find htbl t) in 
-            match positionDansPile valeur pile with 
+            end
+          | t :: q -> begin let valeur = (Hashtbl.find htbl t) in
+            match positionDansPile valeur pile with
               |None -> res := !res ^ (t ^ " : " ^ (print_value (valeur::pile) valeur) ^ "; "); add_to_str point q
               |Some i -> res := !res ^ ("#= circular reference @-"^string_of_int i^" =#; ");
             add_to_str point q
@@ -184,7 +186,7 @@ let rec interp_expression e vI fI sI =
     let expr = List.map (fun x -> interp_expression x vI fI sI) liste in
     let rec parcours_fonctions l expr =
       match l with
-      | [] -> failwith ("Bad arguments for function "^i) (* À améliorer *)
+      | [] -> interp_error ("Bad arguments for function "^i) (* À améliorer *)
       | (_, pList, _, fBloc) as f :: q ->
         if compatible pList expr then f else parcours_fonctions q expr
     in
@@ -196,13 +198,13 @@ let rec interp_expression e vI fI sI =
       match params, expr with
       | [], _ -> ()
       | (Param (_, i, _, _)) :: q1, a :: q2 -> vI := Imap.add i a !vI; add_arguments q1 q2 vI
-      | _ -> failwith "Error wtf"
+      | _ -> interp_error "Error wtf"
     in
     let rec add_elements_to_struct identList values htbl =
       match identList, values with
       | [], [] -> ()
       | t1 :: q1, t2 :: q2 -> Hashtbl.add htbl t1 t2; add_elements_to_struct q1 q2 htbl
-      | _, _ -> failwith "Incorrect number of arguments for struct" (* À améliorer *)
+      | _, _ -> interp_error "Incorrect number of arguments for struct" (* À améliorer *)
     in
     let rec print_function l acc =
       match l with
@@ -222,7 +224,7 @@ let rec interp_expression e vI fI sI =
                 begin
                   match expr with
                   | [Vint n1; Vint n2] -> Vint (n1 / n2)
-                  | _ -> failwith "Wrong arguments for div" (* À améliorer *)
+                  | _ -> interp_error "Wrong arguments for div" (* À améliorer *)
                 end
             else
               begin
@@ -249,7 +251,7 @@ let rec interp_expression e vI fI sI =
                         Vstruct (i, b, identList, htbl)
                       end
                     else
-                      failwith ("Unknown function or structure " ^ i); (* À améliorer *)
+                      interp_error ("Unknown function or structure " ^ i); (* À améliorer *)
                 end
               end
           end
@@ -259,14 +261,14 @@ let rec interp_expression e vI fI sI =
     let vali =
       match res with
       | Vbool b -> Vbool (not b)
-      | _ -> failwith "Erreur de type" (* À améliorer *)
+      | _ -> interp_error "Erreur de type" (* À améliorer *)
     in vali
   | Eminus e ->
     let res = interp_expression e vI fI sI in
     let vali =
       match res with
       | Vint i -> Vint (- i)
-      | _ -> failwith "Erreur de type" (* À améliorer *)
+      | _ -> interp_error "Erreur de type" (* À améliorer *)
     in vali
   | Ebinop (p, op, e1, e2) ->
     let e1p = interp_expression e1 vI fI sI in
@@ -304,7 +306,7 @@ let rec interp_expression e vI fI sI =
       | Geq, Vint i1, Vint i2 -> Vbool (i1 >= i2)
       | And, Vbool b1, Vbool b2 -> Vbool (b1 && b2)
       | Or, Vbool b1, Vbool b2 -> Vbool (b1 || b2)
-      | _ -> failwith "Erreur de typage dans un opérateur binaire" (* À améliorer *)
+      | _ -> interp_error "Erreur de typage dans un opérateur binaire" (* À améliorer *)
     in vali
   | Elvalue lval ->
     let res =
@@ -314,7 +316,7 @@ let rec interp_expression e vI fI sI =
         let vali = interp_expression e vI fI sI in
         match vali with
         | Vstruct (i0, b0, pList0, htbl0) -> Hashtbl.find htbl0 i
-        | _ -> failwith "Value not a structure" (* À améliorer *)
+        | _ -> interp_error "Value not a structure" (* À améliorer *)
    in res
   | ElvalueAffect (p, lval, e) ->
     let ep = interp_expression e vI fI sI in
@@ -326,7 +328,7 @@ let rec interp_expression e vI fI sI =
       let res = interp_expression e vI fI sI in
       match res with
       | Vstruct (i0, true, pList0, htbl0) when appartient i pList0 -> Hashtbl.add htbl0 i ep;
-      | _ -> print_endline "lol"; failwith "Structure non mutable ou alors pas de champ correspondant"; (* *)
+      | _ -> interp_error "Structure non mutable ou alors pas de champ correspondant"; (* *)
       end
     in ep
   | Ereturn (p, e) ->
@@ -340,7 +342,7 @@ let rec interp_expression e vI fI sI =
     let n1, n2 =
       match v1, v2 with
       | Vint t1, Vint t2 -> t1, t2
-      | _ -> failwith "Expected integer values in for bounds" (* À améliorer *)
+      | _ -> interp_error "Expected integer values in for bounds" (* À améliorer *)
     in
     (* let vIp = ref !vI in *)
     let liste = List.map (fun x -> Dexpr x) b in
@@ -352,17 +354,26 @@ let rec interp_expression e vI fI sI =
   | Ewhile (e, (p, b)) ->
     let extract_bool = function
       | Vbool b -> b
-      | _ -> failwith "Expected a boolean as while condition" (* À améliorer *)
+      | _ -> interp_error "Expected a boolean as while condition" (* À améliorer *)
     in
     let liste = List.map (fun x -> Dexpr x) b in
     while (extract_bool (interp_expression e vI fI sI)) do
       let _ = (interp_declaration_list liste vI fI sI false) in ();
     done;
     Vnothing
-  | Eif (exp, b, els) -> Vint 0
+  | Eif (exp, (p, expList), els) ->
+    match (interp_expression exp vI fI sI) with
+    | Vbool true -> interp_expression_list_one expList vI fI sI
+    | Vbool false -> interp_else els vI fI sI
+    | _ -> interp_error "Need a bool in condition of if statement" (* À améliorer *)
+and interp_else els vI fI sI =
+    match els with
+    | Iend -> Vnothing
+    | Ielse (p, expList) -> interp_expression_list_one expList vI fI sI
+    | Ielseif ((p, exp), b, els) -> interp_expression (p, Eif ((p, exp), b, els)) vI fI sI
 and interp_expression_list_one liste vI fI sI=
   match liste with
-  | [] -> failwith "Error empty bloc1" (* À améliorer *)
+  | [] -> interp_error "Error empty bloc1" (* À améliorer *)
   | [e] -> interp_expression e vI fI sI
   | e :: q -> let _ = interp_expression e vI fI sI in
     interp_expression_list_one q vI fI sI

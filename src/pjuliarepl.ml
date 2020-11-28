@@ -104,6 +104,10 @@ while !continue do
               Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(file_name) p.ldeb p.cdeb p.cfin;
               Printf.printf "Typing error : %s\n" m
             end
+          | Ast.Interp_Error_Msg m -> begin
+              Printf.printf "File \"%s\", unknown position:\n" !(file_name);
+              Printf.printf "Interpretation error : %s\n" m
+            end
           | a -> raise a
          (* | _ when !flushed -> Printf.printf "Flushed";
           | _ -> Printf.printf "Unkown error in file %s\n" !(file_name);*)

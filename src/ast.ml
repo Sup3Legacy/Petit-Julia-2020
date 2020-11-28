@@ -13,6 +13,7 @@ exception Parsing_Error
 exception Typing_Error
 exception Typing_Error_Msg of string
 exception Typing_Error_Msg_Pos of string * position
+exception Interp_Error_Msg of string
 
 type ident = string
 [@@deriving show]
