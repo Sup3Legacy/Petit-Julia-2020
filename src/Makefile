@@ -1,12 +1,17 @@
-all:pjuliac.exe pjuliarepl.exe
-
+all:pjuliac.exe pjuliarepl.exe #samenhir.exe
+	echo "Built everything! \n"
 
 compil: pjuliac.exe
 	dune exec ./pjuliac.exe
 
 repl: pjuliarepl.exe
-	#clear
+	clear
 	rlwrap -f pjulia-words -c -pCyan dune exec ./pjuliarepl.exe
+
+samenhir.exe:
+		cd Samenhir
+		ocamlbuild samenhir.byte
+		./samenhir.byte
 
 pjuliac.exe:
 	dune build pjuliac.exe
