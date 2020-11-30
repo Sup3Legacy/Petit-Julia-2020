@@ -8,3 +8,5 @@ src/easy-format-master/
 src/.merlin
 
 src/test.jl
+
+src/Samenhir/_build
