@@ -1,7 +1,7 @@
 {
 
 	open Lexing
-	open Parser
+	open SamenhirParser
 	open SamenhirAst	
 
 

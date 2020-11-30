@@ -2,7 +2,6 @@
 {
 
 	open Lexing
-	open Parser
 	open SamenhirAst	
 	open Parser2
 
