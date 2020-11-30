@@ -1,0 +1,35 @@
+
+
+%{  open Ast %}
+
+%token <int> INT
+%token LP RP ADD MUL
+%token EOF
+
+
+
+%start start
+
+/* Type des valeurs retournées par l'analyseur syntaxique */
+
+%%
+
+start<Ast.expr>:
+	| expr = e EOF {expr }
+;
+
+e<Ast.expr>:
+	| expr = e ADD t1 = t {Add (expr, t1) }
+	| t1 = t {t1}
+;
+
+t<Ast.expr>:
+	| t1 = t MUL f1 = f { Mul (t1, f1) }
+	| f1 = f { f1 }
+;
+
+f<Ast.expr>:
+	| LP e1 = e RP { e1 }
+	| i = INT {Int i}
+;
+
