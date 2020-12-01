@@ -26,7 +26,7 @@ explain:
 	menhir --base /tmp/parser --dump --explain parser.mly
 	cat /tmp/parser.conflicts
 
-tests:
+testExec:
 	for g in ../test/exec/*.jl; do ./_build/default/pjuliac.exe -disable_print -f $$g; done
 
 testSyntax:
