@@ -30,7 +30,7 @@ let null g :nulls =
 	let step nulls = 
 		let nulSet = ref nulls in 
 		let t = ref false in
-		let aux (nom,prod) = 
+		let aux (nom, prod, _) = 
 			if Ntset.mem nom nulls then () else begin
 				if is_null_production nulls prod then begin
 						nulSet := Ntset.add nom !nulSet;
@@ -43,7 +43,7 @@ let null g :nulls =
 
 let empty_map g = 
 	let dico = ref Ntmap.empty in 
-	List.iter (fun (n,p) -> dico := Ntmap.add n Tset.empty !dico) g.rules;
+	List.iter (fun (n, _, _) -> dico := Ntmap.add n Tset.empty !dico) g.rules;
 	!dico
 
 let empty_mapS g = failwith "Not Implemented empty_mapS"
@@ -65,7 +65,7 @@ let first g (nul:nulls) :first =
 		print_int (List.length g.rules);
 		print_newline () end;
 	let step fst = 
-		let aux fst2 (nom,prod) = 
+		let aux fst2 (nom, prod, _) = 
 			Ntmap.add
 				nom
 				(Tset.union
@@ -99,7 +99,7 @@ let follow g (n:nulls) (fst:first) :follow =
 			update_prod acc3 nt tl
 	in 
 	let step follows = 
-		List.fold_left (fun acc (nt,p) -> update_prod acc nt p) (follows,false) g.rules
+		List.fold_left (fun acc (nt, p, _) -> update_prod acc nt p) (follows,false) g.rules
 	in fixpoint step (empty_map g)
 
 let add_entry (trans:transitionTable) (state1:stateND) (term:string) (state2:stateND) :transitionTable =
@@ -120,7 +120,7 @@ let rec affichePD = function
 	|Dot::tl -> (print_string " *";affichePD tl)
 
 let afficheState s = 
-	StateSet.iter (fun (nt, pd, t) -> print_string (nt^" - "^t^" -> "); affichePD pd) s
+	StateSet.iter (fun (nt, pd, _, t) -> print_string (nt^" - "^t^" -> "); affichePD pd) s
 
 let rec pos n = function 
 	|[] -> failwith "vide"
@@ -140,12 +140,12 @@ let buildAutom g =
 		|[] -> []
 		|(Terminal t)::tl -> (TerminalD t)::convert tl
 		|(NonTerminal t)::tl -> (NonTerminalD t)::convert tl 
-	in let rajouteRule m (n,p) =
+	in let rajouteRule m (n, p, prio) =
 		if Smap.mem n m then
 			let oldSet = Smap.find n m in 
-			let newSet = PDset.add (Dot::convert p) oldSet in
+			let newSet = PDset.add (Dot::convert p, prio) oldSet in
 			Smap.add n newSet m
-		else Smap.add n (PDset.singleton (Dot::convert p)) m
+		else Smap.add n (PDset.singleton (Dot::convert p, prio)) m
 	in let mapDotRules = List.fold_left rajouteRule Smap.empty g.rules in
 	let rec rajouteDeb e = function
 		|[] -> []
@@ -153,12 +153,12 @@ let buildAutom g =
 	in let rec listStates l = match l with
 		|[] -> [[Dot]]
 		|hd::tl -> (Dot::l)::rajouteDeb hd (listStates tl)
-	in let rajouteRules m n p t = 
-		List.fold_left (fun map pd -> StateMap.add (n,pd,t) Smap.empty map) m (listStates (convert p))
-	in let rajouteRule m (n,p) = 
+	in let rajouteRules m n p prio t = 
+		List.fold_left (fun map pd -> StateMap.add (n, pd, prio, t) Smap.empty map) m (listStates (convert p))
+	in let rajouteRule m (n, p, prio) = 
 		let after = Ntmap.find n flw in
-		if Tset.cardinal after > 0 then Tset.fold (fun t m2 -> rajouteRules m2 n p t) after m
-		else if n=g.start then rajouteRules m n p endString
+		if Tset.cardinal after > 0 then Tset.fold (fun t m2 -> rajouteRules m2 n p prio t) after m
+		else if n=g.start then rajouteRules m n p prio endString
 		else m 
 	in let mapEmpty = List.fold_left rajouteRule StateMap.empty g.rules
 	in let rec miroir l1 l2 = match l1 with
@@ -173,32 +173,32 @@ let buildAutom g =
 		|Dot::tl -> failwith "Not possible to have a Dot in following" in
 	if !print_all then begin 
 		print_newline ();
-		Smap.iter (fun str stateSet -> print_string str;PDset.iter (fun pd -> print_string " | "; affichePD pd) stateSet;print_newline ()) mapDotRules;
+		Smap.iter (fun str stateSet -> print_string str;PDset.iter (fun (pd, prio) -> print_string " | "; affichePD pd) stateSet;print_newline ()) mapDotRules;
 		end;
-	let rajouteEntry (m:transitionTable) (s1:stateND) (t:terminal) (nm:non_terminal) (pd:productionD) (set:Tset.t):transitionTable = 
-		Tset.fold (fun str m2 -> add_entry m2 s1 t (nm,pd,str)) set m
-	in let rec rajouteTrans (m:transitionTable) (nm:non_terminal) (deb:productionD) (fin:productionD) (suivant:terminal):transitionTable =  match fin with
+	let rajouteEntry (m:transitionTable) (s1:stateND) (t:terminal) (nm:non_terminal) (pd:productionD) (prio:string option) (set:Tset.t):transitionTable = 
+		Tset.fold (fun str m2 -> add_entry m2 s1 t (nm, pd, prio, str)) set m
+	in let rec rajouteTrans (m:transitionTable) (nm:non_terminal) (deb:productionD) (fin:productionD) (prio:string option) (suivant:terminal):transitionTable =  match fin with
 		|[] -> m
 		|(TerminalD t)::tl ->
 			let premier = miroir deb (Dot::fin) in
 			let deuxieme = miroir deb ((TerminalD t)::Dot::tl) in
-			rajouteTrans (add_entry m (nm,premier,suivant) t (nm,deuxieme,suivant)) nm ((TerminalD t)::deb) tl suivant
+			rajouteTrans (add_entry m (nm, premier, prio ,suivant) t (nm, deuxieme, prio, suivant)) nm ((TerminalD t)::deb) tl prio suivant
 		|(NonTerminalD t)::tl ->
 			let premier = miroir deb (Dot::fin) in 
 			let deuxieme = miroir deb ((NonTerminalD t)::Dot::tl) in
 			let suite = Smap.find t mapDotRules in
-			let m3 = PDset.fold (fun (pd:productionD) (m2:transitionTable) -> rajouteEntry m2 (nm,premier,suivant) "" t pd (following suivant tl)) suite m in
-			rajouteTrans (add_entry m3 (nm,premier,suivant) t (nm,deuxieme,suivant)) nm ((NonTerminalD t)::deb) tl suivant
+			let m3 = PDset.fold (fun (pd, prio2) (m2:transitionTable) -> rajouteEntry m2 (nm, premier, prio, suivant) "" t pd prio2 (following suivant tl)) suite m in
+			rajouteTrans (add_entry m3 (nm, premier, prio, suivant) t (nm,deuxieme, prio, suivant)) nm ((NonTerminalD t)::deb) tl prio suivant
 		|Dot::tl -> failwith "Pattern error cant have Dot in rajouteTrans"
-	in let rajouteTransAll (m:transitionTable) (n:non_terminal) (p:production):transitionTable = 
+	in let rajouteTransAll (m:transitionTable) (n:non_terminal) (p:production) (prio:string option) :transitionTable = 
 		let after = Ntmap.find n flw in
-		if Tset.cardinal after > 0 then Tset.fold (fun t m1 -> rajouteTrans m1 n [] (convert p) t) after m
-		else if n = g.start then rajouteTrans m n [] (convert p) endString
+		if Tset.cardinal after > 0 then Tset.fold (fun t m1 -> rajouteTrans m1 n [] (convert p) prio t) after m
+		else if n = g.start then rajouteTrans m n [] (convert p) prio endString
 		else m  in
-	let transition = List.fold_left (fun m (n,p) -> rajouteTransAll m n p) mapEmpty g.rules in
+	let transition = List.fold_left (fun m (n, p, prio) -> rajouteTransAll m n p prio) mapEmpty g.rules in
 	if !print_all then print_string "transitions non det finished\n";
 	let prem = try Smap.find g.start mapDotRules with Not_found -> failwith ("First rule "^g.start^" not found in mapDotRules") in
-	let prem2 = PDset.fold (fun pd m -> StateSet.add (g.start,pd,endString) m) prem StateSet.empty in
+	let prem2 = PDset.fold (fun (pd,prio) m -> StateSet.add (g.start, pd, prio, endString) m) prem StateSet.empty in
 	if !print_all then print_string "non deterministic automaton calculated\n";
 	{startND = prem2; transND = transition}
 
@@ -210,15 +210,15 @@ let successor g :successor =
 	in let debut = StateMap.fold init g.transND StateMap.empty in
 	if !print_all then print_string "first calculated\n";
 	let union set m =
-		StateSet.fold (fun ((n,pd,suiv) as r) s -> StateSet.union s (try StateMap.find r m with Not_found -> failwith (n^suiv^" not found in successor"))) set StateSet.empty
+		StateSet.fold (fun ((n, _, _, suiv) as r) s -> StateSet.union s (try StateMap.find r m with Not_found -> failwith (n^suiv^" not found in successor"))) set StateSet.empty
 	in let step m =
 		if !print_all then print_string "set\n";
-		let newmap = StateMap.mapi (fun (n,pd,suiv) s -> union s m) m in
+		let newmap = StateMap.mapi (fun _ s -> union s m) m in
 		(newmap, not (StateMap.equal (fun s1 s2 -> StateSet.equal s1 s2) newmap m))
 	in fixpoint step debut
 
 let calcReal (suiv:successor) (st:state):state =
-	StateSet.fold (fun ((n,pd,suv) as r) s -> StateSet.union s (StateMap.find r suiv)) st StateSet.empty
+	StateSet.fold (fun r s -> StateSet.union s (StateMap.find r suiv)) st StateSet.empty
 
 let calcNext (st:state) (suiv:successor) (transname:string) (trans:transitionTable):state =
 	let next (r:stateND):state =
@@ -245,9 +245,9 @@ let rajouteTransition (s:state) (str:string) (next:state) (m:transitionTableD) =
 let nbTrans s = if Smap.mem "" s then StateSet.cardinal (Smap.find "" s) else 0
 
 let determinisation g = 
-	if !print_all then StateMap.iter (fun (n,pd,s) su ->print_string (n^s^" ");print_int (nbTrans su);print_string " <> ";affichePD pd) g.transND;
+	if !print_all then StateMap.iter (fun (n, pd, prio, s) su ->print_string (n^s^" ");print_int (nbTrans su);print_string " <> ";affichePD pd) g.transND;
 	let succ = successor g in
-	if !print_all then StateMap.iter (fun (n,pd,s) su ->print_string (n^s^" ");print_int (StateSet.cardinal su);print_string " -> ";affichePD pd) succ;
+	if !print_all then StateMap.iter (fun (n, pd, prio, s) su ->print_string (n^s^" ");print_int (StateSet.cardinal su);print_string " -> ";affichePD pd) succ;
 	if !print_all then print_int (StateMap.cardinal succ);
 	if !print_all then print_string " nb succ calculated\n";
 	if !print_all then print_int (StateMap.cardinal g.transND);
@@ -273,7 +273,7 @@ let buildAutomateD g =
 	if !print_all then print_string "fin build autom non det\n";
 	determinisation a
 
-let canReduce ((n,p,suiv):stateND) = 
+let canReduce ((n, p, suiv, _):stateND) = 
 	let rec aux = function 
 		| [] -> failwith "Empty rule"
 		| [Dot] -> true
@@ -327,7 +327,7 @@ let rec termnailsIn = function
 
 let rec buildTset = function
 	|[] -> Tset.empty 
-	|(n,p)::tl -> Tset.union (termnailsIn p) (buildTset tl)
+	|(n, p, _)::tl -> Tset.union (termnailsIn p) (buildTset tl)
 
 let rec nonTermnailsIn = function
 	| [] -> Ntset.empty
@@ -336,7 +336,7 @@ let rec nonTermnailsIn = function
 
 let rec buildNtset = function
 	|[] -> Ntset.empty 
-	|(n,p)::tl -> begin 
+	|(n, p, _)::tl -> begin 
 		let dansEq = (nonTermnailsIn p) in
 		if !print_all && Ntset.mem endString dansEq then print_string n;
 		Ntset.union dansEq (buildNtset tl)
@@ -366,12 +366,36 @@ let rajouteR_Rset (t:terminal) (r:rule) (m:Rset.t Tmap.t) =
 	if Tmap.mem t m then Tmap.add t (Rset.add r (Tmap.find t m)) m
 	else Tmap.add t (Rset.singleton r) m
 
+let rec calcPrioPD pMap = function
+	| [] -> failwith "empty rule"
+	| [Dot] -> max_int
+	| Dot::tl -> failwith "not a rule"
+	| NonTerminalD _::tl -> calcPrioPD pMap tl
+	| TerminalD t::tl -> min (calcPrioPD pMap tl) (Tmap.find t pMap)
+
+let rec calcPrioP pMap = function
+	| [] -> max_int
+	| NonTerminal _::tl -> calcPrioP pMap tl
+	| Terminal t::tl -> min (calcPrioP pMap tl) (Tmap.find t pMap)
+
+let calcPrio pMap (p:production) = function
+	|None -> calcPrioP pMap p
+	|Some t -> Tmap.find t pMap
+
 let findHighestPrio (ruleSet:Rset.t) pMap aMap:action =
-	if Rset.cardinal ruleSet > 1 then failwith "reduce/reduce conflict"
+	if Rset.cardinal ruleSet > 1 then 
+		let v =  Rset.fold (fun (n, p, prio) m -> let v = calcPrio pMap p prio in
+			match m with
+				|None -> Some (v, n, p, prio)
+				|Some (v2,n2,p2,prio2) -> if v>v2 then Some (v2, n2, p2, prio2) else Some (v, n, p, prio)
+			) ruleSet None in
+		match v with
+			|None -> assert false
+			|Some (_, n, p, prio) -> REDUCE (n, p, prio)
 	else REDUCE (Rset.choose ruleSet)
 
 let fusionSR (shift_line:action Tmap.t) (rules:StateSet.t) pMap aMap (tset: Tset.t) =
-	let ruleMap = StateSet.fold (fun (n,pd,suiv) m -> rajouteR_Rset suiv (n,unconvertPD_P pd) m) rules Tmap.empty in 
+	let ruleMap = StateSet.fold (fun (n, pd, prio, suiv) m -> rajouteR_Rset suiv (n, unconvertPD_P pd, prio) m) rules Tmap.empty in 
 	let aux t m = match Tmap.mem t shift_line, Tmap.mem t ruleMap with
 		|false, false -> m
 		|true, false -> Tmap.add t (Tmap.find t shift_line) m
@@ -388,7 +412,7 @@ let rajouteAction (i:int) (t:terminal) (act:action) (m:actionTable) =
 let firstNT g = 
 	let rec aux = function
 		|[] -> failwith "inexistant rule"
-		|(n,p)::tl when n = g.start -> begin
+		|(n, p, _)::tl when n = g.start -> begin
 			match p with
 			| [] -> failwith "empty first rule"
 			|(Terminal t)::tl -> failwith "wrong format first rule"
@@ -437,7 +461,7 @@ let rec unRawProd = function
 	|AssocTerminal (v,t)::tl -> Terminal t::unRawProd tl
 	|AssocNonTerminal (v,t)::tl -> NonTerminal t::unRawProd tl
 
-let unrawGrammar g = {start = g.startR; rules = List.fold_left (fun l (n,_,pr,_,_) -> (n,unRawProd pr)::l) [] g.raw_rules}
+let unrawGrammar g = {start = g.startR; rules = List.fold_left (fun l (n,_,pr,prio,_) -> (n, unRawProd pr, prio)::l) [] g.raw_rules}
 
 let pp_non_terminal fmt s = Format.fprintf fmt "%s" s
 
@@ -488,7 +512,7 @@ let pp_goto fmt nt i = Format.fprintf fmt "\t\t%s -> %i\n" nt i
 
 let pp_action fmt t = function
 	| SHIFT i -> Format.fprintf fmt "\t\t%s -> s%i@\n" t i
-	| REDUCE (n,p) -> Format.fprintf fmt "\t\t%s -> r(%s -> %a)@\n" t n pp_production p
+	| REDUCE (n, p ,_) -> Format.fprintf fmt "\t\t%s -> r(%s -> %a)@\n" t n pp_production p
 	| SUCCESS -> Format.fprintf fmt "\t\t%s -> SUCCESS\n" t
 
 let pp_parseTables fmt (pt:parseTables) = 
@@ -576,7 +600,7 @@ let pp_action fmt pos t a rMap tokenTypeMap =
 		 match a with
 			| SUCCESS -> Format.fprintf fmt "\t\traise (FailureParse pileMem)"
 			| SHIFT i -> Format.fprintf fmt "\t\taction%i (%i::pileEtats) (TOKEN (%s data)::pileMem) None newToken" i pos t2
-			| REDUCE ((n,p) as r) -> begin
+			| REDUCE ((n, p, _) as r) -> begin
 				pp_reduce true pos fmt (Rmap.find r rMap);
 				Format.fprintf fmt "\t\tgoto (List.hd pileEtats) pileEtats ((%s valeur)::pileMem) \"%s\" (Some (%s data)) newToken" (String.uppercase_ascii n) n t2
 
@@ -587,7 +611,7 @@ let pp_action fmt pos t a rMap tokenTypeMap =
 		match a with 
 			| SUCCESS -> Format.fprintf fmt "\t\traise (FailureParse pileMem)"
 			| SHIFT i -> Format.fprintf fmt "\t\taction%i (%i::pileEtats) (TOKEN %s::pileMem) None newToken" i pos t2
-			| REDUCE ((n,p) as r) -> begin
+			| REDUCE ((n, p, _) as r) -> begin
 				pp_reduce (t<>endString) pos fmt (Rmap.find r rMap);
 				if t = endString then Format.fprintf fmt "\t\traise (Output valeur)"
 				else Format.fprintf fmt "\t\tgoto (List.hd pileEtats) pileEtats ((%s valeur)::pileMem) \"%s\" (Some %s) newToken" (String.uppercase_ascii n) n t2
@@ -617,7 +641,7 @@ let pp_buildProg fmt program =
 	Format.fprintf fmt "\n\n%a\n" pp_tokenDecl program.tokenList;
 	Format.fprintf fmt "%a\n" pp_declarationTypes program;
 	let tokenTypeMap = List.fold_left (fun m (t,dT) -> if dT = None then m else Tmap.add t dT m) Tmap.empty program.tokenList in
-	let rMap = List.fold_left (fun m (nm,tipe, rawProd, opt, cons) -> Rmap.add (nm,unRawProd rawProd) (rawProd,cons) m) Rmap.empty program.gR.raw_rules in
+	let rMap = List.fold_left (fun m (nm,tipe, rawProd, opt, cons) -> Rmap.add (nm,unRawProd rawProd, opt) (rawProd,cons) m) Rmap.empty program.gR.raw_rules in
 	Imap.iter (fun i act -> if Tmap.cardinal act > 0 then pp_actionStates fmt i act rMap tokenTypeMap) program.actionTab;
 	Format.fprintf fmt "and goto i pileEtats pileMem readRule nextToken newToken = match i, readRule with\n";
 	Imap.iter (fun i got ->if Ntmap.cardinal got > 0 then pp_gotoStates fmt i got rMap) program.gotoTab;

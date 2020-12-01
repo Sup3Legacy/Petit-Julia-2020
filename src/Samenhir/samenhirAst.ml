@@ -7,7 +7,7 @@ type symbol =
 
 type production = symbol list
 
-type rule = non_terminal * production
+type rule = non_terminal * production * (string option)
 
 type grammar = {
 	start : non_terminal;
@@ -36,9 +36,9 @@ type symbolD =
 	| Dot
 
 type productionD = symbolD list
-type ruleD = non_terminal * productionD
+type ruleD = non_terminal * productionD * (string option)
 
-module PDset = Set.Make(struct type t = productionD let compare = compare end)
+module PDset = Set.Make(struct type t = productionD * (string option) let compare = compare end)
 type strStr = non_terminal * terminal
 
 module SSmap = Map.Make(struct type t = strStr let compare = compare end)
@@ -48,7 +48,7 @@ type grammarD = {
 	rulesD : ruleD list
 }
 
-type stateND = non_terminal * productionD * terminal
+type stateND = non_terminal * productionD * (string option) * terminal
 
 module StateMap = Map.Make(struct type t = stateND let compare = compare end)
 module Smap = Map.Make(String)

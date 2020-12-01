@@ -11,7 +11,7 @@ let notAffiche = ref false;;
 let parse_only = ref false;;
 let type_only = ref false;;
 
-let gVenv = ref (Tmap.singleton "nothing" (false,Nothing))
+let gVenv = ref (Tmap.singleton "nothing" Nothing)
 let gFenv = ref (Tmap.singleton "div" [[Int64; Int64], Int64])
 let gSenv = ref (Tmap.empty : structEnv)
 let gAenv = ref (Tmap.empty : argsEnv)

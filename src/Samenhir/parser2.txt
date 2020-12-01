@@ -6,7 +6,8 @@
 %token LP RP ADD MUL
 %token EOF
 
-
+%nonassoc bad
+%nonassoc good
 
 %start start
 
@@ -15,7 +16,8 @@
 %%
 
 start<Ast.expr>:
-	| expr = e EOF {expr }
+	| expr = e EOF %prec good {expr }
+	| expr = e EOF %prec bad {failwith "hahahaha"}
 ;
 
 e<Ast.expr>:
