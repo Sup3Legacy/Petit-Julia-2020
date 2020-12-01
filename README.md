@@ -6,6 +6,9 @@
 
 # I] Lexer/Parser
 
+LA première étape a été de définir les types qui seront utilisées par les différentes étpes d'analyse. Dans un premeir temps, nous avons suivi la grammaire donnée dans le sujet, que ce soit pour la définition de l'`ast`  ou bien pour le lexer et le parser. Cela nous a donné un analyseur à peu près fonctionnel mais souffrant de dizaines de conflits (par exemple au niweau de la construction `while expr bloc`). Cela a été résolu par un remodelage du parser progressif, éléminant tous les conflits un par un!
+
+
 # II] Typer
 
 # III] Samenhir
@@ -55,3 +58,5 @@ Nous retrouvons :
 # VI] Conclusion partielle
 
 Cette première partie du projet nous aura beaucoup occupés, d'autant plus que nous nous sommes posé des défis supplémentaires plus ou moins conséquents!
+
+Nous avons pu mettre en place tous les outils nécessaires à la suite du projet, ainsi que d'autres outils nous permettant de l'approfondir. Samenhir n'est pas encore totalement fonctionnel (problèmes de conflits non réglés, etc.) mais devrait l'être bientôt et pourra remplacer l'outil Menhir comme parser!

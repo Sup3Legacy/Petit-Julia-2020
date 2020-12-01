@@ -2,6 +2,7 @@ open Lexer
 open Parser
 open Ast
 open Astype
+open Astinterp
 open Typer
 open Hyper
 open Utilities
@@ -47,6 +48,7 @@ print_string logo2;;
 
 while !continue do
   (* boucle principale *)
+  print_newline();
   print_newline();
   print_string "ρjυλια> ";
   instr := read_line();
@@ -108,9 +110,8 @@ while !continue do
               Printf.printf "File \"%s\", unknown position:\n" !(file_name);
               Printf.printf "Interpretation error : %s\n" m
             end
-          | a -> raise a
-         (* | _ when !flushed -> Printf.printf "Flushed";
-          | _ -> Printf.printf "Unkown error in file %s\n" !(file_name);*)
+          | _ when !flushed -> Printf.printf "Flushed";
+          | _ -> Printf.printf "Unkown error in file %s\n" !(file_name);
         end
     end
     with Sys_error s -> Printf.printf "%s" s;

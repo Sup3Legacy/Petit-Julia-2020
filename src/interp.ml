@@ -69,7 +69,8 @@ let rec print_value pile = function
 
 module Imap = Map.Make(String);; (* Map contenant les environnements typage *)
 
-let globVenv = ref (Imap.empty : value Imap.t);;
+let globVenv = ref (Imap.singleton "nothing" Vnothing : value Imap.t);;
+
 let globFenv = ref (Imap.empty : ((Ast.ident * (Ast.param list) * Astype.pjtype * Ast.bloc) list) Imap.t);;
 let globSenv = ref (Imap.empty : (bool * Ast.ident * (Ast.param list)) Imap.t);;
 
