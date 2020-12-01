@@ -4,3 +4,8 @@ struct
 print(
 println(
 function
+mutable
+
+while
+for
+end
