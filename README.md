@@ -14,17 +14,19 @@
 
 ## 1) Interpreter
 
-Tandis que l'on avançait sur la construction du compilateur, il nous a semblé utile d'implémenter un interpréteur pour pouvoir facilement tester et débugger les étapes d'analyse syntaxique et de typage.
+Tandis que l'on avançait sur la construction du compilateur, il nous a semblé utile d'implémenter un interpréteur pour pouvoir facilement tester et débugger les étapes d'analyse syntaxique et de typage. L'implémentation de cet interpréteur n'a pas été très difficile. Les quelques difficultés rencontrées avaient souvent rapport aux différences de comportement de Julia (que nous prenions comme référence pour certaines subtilités) entre le mode interpréteur et le mode compilateur
 
 
 ## 2) REPL
 
-Pour rendre l'utilisation de l'interpréteur plus intuitive et interractive, nous avons aussi implémenté un **REPL**, très semblable aux différents REPL OCaml ou Python (nos modèles) ou même à celui de Julia.
+**/!\\ cette partie nécessite l'installation préalable de rlwrap**
+
+Pour rendre l'utilisation de l'interpréteur plus intuitive et interractive, nous avons aussi implémenté un **REPL**, très semblable aux REPL OCaml ou Python (nos modèles) ou même à celui de Julia.
 
 L'utilisation du REPL est très simple : entrer du code Petitjulia™ l'envoie vers l'interpréteur. Toutes les variables/functions/structures sont ajoutées à l'environnement global.
 
 En plus de cela, nous avons ajouté quelques commandes spéciales :
-- `#run file` permet de charger et exécuter un fichier. Cette commande diffère de la commande présente dans le REPL Julia (`include(file)`) car il nous semblait plus simple d'utiliser une syntaxe spéciale pour que le REPL puisse décider simplement s'il doti charger un fichier et le faire suivre à l'interpréteur ou bien s'il doit directement lui faire suivre l'entrée.
+- `#run file` permet de charger et exécuter un fichier. Cette commande diffère de la commande présente dans le REPL Julia (`include(file)`) car il nous semblait plus simple d'utiliser une syntaxe spéciale pour que le REPL puisse décider simplement s'il doit charger un fichier et le faire suivre à l'interpréteur ou bien s'il doit directement lui faire suivre l'entrée.
 - `#flush` vide entièrement les environnement de typage et interprétation; un peu comme si on relançait le REPL. Cette commande est la solution à un problème que nous avons rencontré. Il peut arriver que l'utilisateur ait besoin de redéfinir une fonction précédemment définie. Les environnement de typage et d'interprétion restant les mêmes lors d'une session REPL, le typeur soulèverait une erreur de double définitio nd'une fonction, ce qui n'est pas autorisé par le langage.
 - `#exit` permet de fermer proprement le REPL, au lieu de le faire sauvagement planter à grand renfort de `Ctrl+C`!
 
@@ -44,9 +46,12 @@ En l'état actuel des choses, la compilation du compilateur (`pjuliac.exe`) et d
 
 Nous retrouvons :
 - `make` : construit les deux fichiers.
+- ` make clean` : efface les fichiers engendrés par la compilation du projet.
 - `make repl`/`make compil` : construit et exécute le fichier (le `pjuliarepl.exe` ou `pjuliac.exe`)
 - `make testExec`/`make failsExec` : exécute les tests d'exécution positifs/négatifs. (dans `/test/exec/` et `/test/exec-fail`)
 - `make testSyntax`/`make failsSyntax` : de même pour la syntaxe. (NB : nous utilisons aussi les tests d'exécution et de typage, ici, pour ajouter une batterie de tests positifs!)
 - `make testTyping`/`make failsTyping` : de même pour le typage. (NB : nous utilisons aussi les tests d'exécution. Notre but étant de faire un typer un peu plus puissant que demandé, nous cherchons à faire en sorte que certains fichiers qui devraient planter à l'exécution plantent au typage!).
 
 # VI] Conclusion partielle
+
+Cette première partie du projet nous aura beaucoup occupés, d'autant plus que nous nous sommes posé des défis supplémentaires plus ou moins conséquents!
