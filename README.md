@@ -6,12 +6,70 @@
 
 # I] Lexer/Parser
 
-LA première étape a été de définir les types qui seront utilisées par les différentes étpes d'analyse. Dans un premeir temps, nous avons suivi la grammaire donnée dans le sujet, que ce soit pour la définition de l'`ast`  ou bien pour le lexer et le parser. Cela nous a donné un analyseur à peu près fonctionnel mais souffrant de dizaines de conflits (par exemple au niweau de la construction `while expr bloc`). Cela a été résolu par un remodelage du parser progressif, éléminant tous les conflits un par un!
+LA première étape a été de définir les types qui seront utilisées par les différentes étpes d'analyse. Dans un premeir temps, nous avons suivi la grammaire donnée dans le sujet, que ce soit pour la définition de l'`ast`  ou bien pour le lexer et le parser. Cela nous a donné un analyseur à peu près fonctionnel mais souffrant de dizaines de conflits (par exemple au niveau de la construction `while expr bloc`). Cela a été résolu par un remodelage du parser progressif, éléminant tous les conflits un par un!
 
 
 # II] Typer
 
+
+Le typeur est une étape importante du projet et certaines décisions ont été prise par rapport à ce que l'on autorisait ou non. C'est décision ont été prise en prenant en compte que l'on pouvait revenir dessus par la suite.
+
+Pour cela le fichier est parcouru deux fois. Il s'agit des parcours 1 et 2 (vive l'originalité !):
+
+### Parcours 1 :
+
+Le fichier est découpé en une liste de déclaration de fonctions, déclarations de structures et expressions.
+
+On fait le parcours en utilisant 4 environnements Map :
+- un pour les variables définies
+- un pour toutes les fonctions
+- un pour tous les noms de structures
+- un pour tous les noms d'attribus associés à leur types, si la structure les contenant est mutable et le nom de la structure associé
+
+
+Si l'on rencontre une strucutre on vérifie dans l'ordre :
+- que son nom n'est pas "print", "println" ou "div"
+- que l'on a pas d'autre structure du même nom
+- on parcours les attribus de la struture en vérifiant que les types sont bien définies et les noms pas attribué. Il a été autorisé de ne pas autorisé un attribu d'une structure S d'être du type Struct `S` car comme on ne peut pas définir directement u
+
+La première différence notable avec ce qui est demandé dans le sujet est que le typeur teste si les variables sont bien définie AVANT leur utilisation et pas uniquement si elle sont bien définies dans le même champs.
+
+
+
+
 # III] Samenhir
+
+Ce projet, si l'on se contente de rester dans le cadre restreint du sujet laisse un sentiment de vide, on a l'impression d'avoir sauté des étapes, d'avoir triché pour arriver au bout. Cette étape ainsi sauté c'est le parser! Car dans ce projet on se contente d'utiliser menhir pour faire notre parser sans comprendre réellement ce qui se passe derrière. C'est de là qu'est venu l'idée de Samenhir (contraction de Samuel et de menhir) : l'idée d'implémenter une version simplifié de menhir afin de l'utiliser dans le projet.
+
+Actuellement Samenhir est totalement indépendant de menhir, c'est à dire capable de générer lui même son propre parser. Cependant il n'est pas encore assez efficace pour être utilisé dans le projet, il faut encore réussir à lui faire utiliser les régles priorité. Mais il est pleinement capable de générer un parser pour la grammaire fourni slide 83 du cours `analyse syntaxique (1/2)`.
+
+### Grammaire à fournir à samenhir :
+
+Samenhir a besoin d'une grammaire ressemblant fortement à celle demandé par menhir, cependant par soucis de simplification de l'implémentation certaines décisions ont été prises :
+- Le parser doit être écrit dans un fichier .txt car en utilisant un fichier .mly menhir voulait le parser
+- la première lettre du nom d'une régle doit être écrit en minuscule et la première lettre du nom d'un token en majuscule
+- il est possible de mettre un bout de code au dessus (`%{ code ocaml %}`}) du parser mais pas en dessous
+- une déclaration de régle nécessite de renseigner le type de la valeur de renvoie, cela permet d'éviter de faire du typage ou d'utiliser la librairies obj_magic
+- en raison de la décision ci-dessus, il n'est plus nécessaire de renseigner le type de la règle de départ
+```
+rule<int * int>:
+	| i1 = INT i2 = INT {(i1, i2)}
+;
+```
+- pour les régles de priorité (mais qui actuellement ne sont pas utilisé ensuite), on ne peut mettre que 1 mot par régle d'associativité
+- il n'est pas possible d'utiliser des outils tel que `%inline` et les différents outils `list`, `separated_list`, et cetera.
+
+Il y a peut être d'autres spécificité lié à l'ignorance de ces contraires/opportunité lié à l'utilisation de menhir.
+
+
+### Algorithme utilisé pour construire l'analyseur :
+
+Pour pouvoir construire l'analyseur syntaxique Samenhir utilise l'algorithme présenté slides 81-82 du cours `analyse syntaxique (1/2)`. Cependant il reste encore la gestion des régles de priorité à implémenter afin de pouvoir réssoudre les conflits shift/reduce et reduce/reduce. Si cela est fait alors, on pourras utiliser Samenhir dans le projet à la place de menhir
+
+### Inconvénients : 
+
+Actuellement Samenhir est très peu optimisé, il faut compter 5 minutes d'exécution pour réussir à générer le parser de Petitjulia™
+
 
 # IV] Interpreter/REPL
 
