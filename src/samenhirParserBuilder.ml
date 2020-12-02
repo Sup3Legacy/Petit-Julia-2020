@@ -48,8 +48,8 @@ let rawRules = [
 	("list_assocDecl", "SamenhirAst.priority", [], None, "[]");
 	("list_assocDecl", "SamenhirAst.priority", [AssocNonTerminal ("a", "assocDecl"); AssocNonTerminal ("aL","list_assocDecl")], None, "a::aL");
 
-	("assocDecl", "(SamenhirAst.assoc * string)",[AssocNonTerminal ("a", "associativity"); AssocTerminal ("t", "TERM")], None, "(a, t)");
-	("assocDecl", "(SamenhirAst.assoc * string)",[AssocNonTerminal ("a", "associativity"); AssocTerminal ("t", "N_TERM_IDENT")], None, "(a, t)");
+	("assocDecl", "(SamenhirAst.assoc * string list)",[AssocNonTerminal ("a", "associativity"); AssocNonTerminal ("tL", "list_TERM")], None, "(a, tL)");
+	("assocDecl", "(SamenhirAst.assoc * string list)",[AssocNonTerminal ("a", "associativity"); AssocTerminal ("t", "N_TERM_IDENT")], None, "(a, [t])");
 
 	("associativity", "SamenhirAst.assoc", [TerminalR "LEFT"], None, "Left");
 	("associativity", "SamenhirAst.assoc", [TerminalR "RIGHT"], None, "Right");

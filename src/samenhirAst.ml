@@ -85,7 +85,7 @@ type action =
 
 module Imap = Map.Make(Int)
 
-type priority = (assoc * non_terminal) list
+type priority = (assoc * non_terminal list) list
 type actionTable = action Tmap.t Imap.t
 type gotoTable = int Ntmap.t Imap.t
 
@@ -124,5 +124,7 @@ type program = {
 	actionTab : actionTable;
 	tokenList : (string * (string option)) list;
 	head : string;
-
 }
+
+exception Samenhir_Parsing_Error of int
+;;

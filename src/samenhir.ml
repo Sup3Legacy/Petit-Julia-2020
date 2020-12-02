@@ -6,7 +6,6 @@ open Samenhir_utilities
 
 let file = ref "";;
 
-print_all := true;;
 
 let main () =
 	let spectlist = [("-f", Arg.Set_string file, "file to process")]
@@ -20,7 +19,7 @@ let main () =
 			let outfile = (Filename.chop_suffix !file ".txt" ^ ".ml") in
 			let f = open_in !file in
 			let buf = Lexing.from_channel f in
-			let parsed = SamenhirParser.parse SamenhirLexer.token buf in
+			let parsed = SamenhirParser.fichier SamenhirLexer.token buf in
 			let () = close_in f in
 			let table = buildTable (unrawGrammar parsed.g) parsed.prio in
 			let p = {gR = parsed.g; startLTable = table.startLine; gotoTab = table.goto; actionTab = table.action; tokenList = parsed.tokenList; head = parsed.header} in

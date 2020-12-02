@@ -304,11 +304,11 @@ let giveNumbers (t:transitionTableD) =
 
 let rec buildPriorityMap n = function 
 	|[] -> Ntmap.empty 
-	|(_,s)::tl -> Ntmap.add s n (buildPriorityMap (n+1) tl)
+	|(_,sL)::tl -> List.fold_left (fun m str -> Ntmap.add str n m) (buildPriorityMap (n+1) tl) sL
 
 let rec buildAssocMap = function 
 	| [] -> Tmap.empty 
-	| (a,n)::tl -> Tmap.add n a (buildAssocMap tl)
+	| (a,nL)::tl -> List.fold_left (fun m str -> Tmap.add str a m) (buildAssocMap tl) nL
 
 let rec unconvertPD_P = function
 	|[] -> []
@@ -383,7 +383,7 @@ let findHighestPrio (ruleSet:Rset.t) pMap:action =
 		let v =  Rset.fold (fun (n, p, prio) m -> let v = calcPrio pMap p prio in
 			match m with
 				|None -> Some (v, n, p, prio)
-				|Some (v2,n2,p2,prio2) -> if v>v2 then Some (v2, n2, p2, prio2) else Some (v, n, p, prio)
+				|Some (v2,n2,p2,prio2) -> if v < v2 then Some (v2, n2, p2, prio2) else Some (v, n, p, prio)
 			) ruleSet None in
 		match v with
 			|None -> assert false
@@ -394,9 +394,9 @@ let findPrioToken p pMap =
 	let rec aux i l = function
 		|[] -> l
 		| NonTerminal _::tl -> aux i l tl
-		| Terminal t::tl -> if Tmap.mem t pMap then let v = Tmap.find t pMap in if v < i then aux v (Some t) tl else aux i l tl else aux i l tl
-	in match aux max_int None p with
-		|None -> failwith "can't solve conflict because so prio token"
+		| Terminal t::tl -> if Tmap.mem t pMap then let v = Tmap.find t pMap in if v > i then aux v (Some t) tl else aux i l tl else aux i l tl
+	in match aux min_int None p with
+		|None -> failwith "can't solve conflict because no prio token"
 		|Some t -> t
 
 
@@ -416,8 +416,8 @@ let fusionSR (shift_line:action Tmap.t) (rules:StateSet.t) pMap aMap (tset: Tset
 					|Some t -> t
 				in let pS = Tmap.find t pMap in
 				let pR = Tmap.find priorityToken pMap in
-				if pS < pR then Tmap.find t shift_line
-				else if pS > pR then REDUCE (n, p, prio)
+				if pS > pR then Tmap.find t shift_line
+				else if pS < pR then REDUCE (n, p, prio)
 				else match Tmap.find t aMap with
 					|Left -> REDUCE (n, p, prio)
 					|Right -> Tmap.find t shift_line
@@ -564,7 +564,7 @@ let rec findType start = function
 let pp_declarationTypes (fmt:Format.formatter) p = 
 	Format.fprintf fmt "type rulesType =\n";
 	let nameMap = List.fold_left (fun set (nm,t,_,_,_) -> Smap.add nm t set) Smap.empty p.gR.raw_rules in 
-	Smap.iter (fun nm t -> Format.fprintf fmt "\t| %s  of %s\n" (String.uppercase_ascii nm) t) nameMap;
+	Smap.iter (fun nm t -> Format.fprintf fmt "\t| %s  of %s\n" (String.uppercase_ascii nm) ("("^t^")")) nameMap;
 	Format.fprintf fmt "\t|TOKEN of token\n";
 	let t = findType p.gR.startR p.gR.raw_rules in 
 	Format.fprintf fmt "exception Output of (%s)\n" t;
@@ -575,16 +575,15 @@ let pp_tokenDecl fmt liste =
 	Format.fprintf fmt "\t|Not_a_token\n";
 	let afficheToken (t,dataT) = match dataT with 
 		|None -> Format.fprintf fmt "\t|%s\n" t
-		|Some data -> Format.fprintf fmt "\t|%s of %s\n" t data
+		|Some data -> Format.fprintf fmt "\t|%s of %s\n" t ("("^data^")")
 	in List.iter (fun t -> afficheToken t) liste
 
 let pp_header fmt str =
 	Format.fprintf fmt "%s\n\n" str;
-	Format.fprintf fmt "exception End_of_File\n";
-	Format.fprintf fmt "exception Samenhir_Parsing_Error of int\n"
+	Format.fprintf fmt "exception End_of_File\n"
 
 let pp_end fmt startS =
-	Format.fprintf fmt "let parse lexer lexbuf =
+	Format.fprintf fmt "let fichier lexer lexbuf =
 		let newTok = (fun () -> lexer lexbuf) in
 		try 
 			action%i [%i] [] None newTok
@@ -615,7 +614,7 @@ let pp_reduce b i fmt (raw_prod,cons) =
 	aux raw_prod;
 	Format.fprintf fmt "\t\t\tlet valeur = (%s) in\n" cons
 
-let pp_action fmt pos t a rMap tokenTypeMap = 
+let pp_action fmt starter pos t a rMap tokenTypeMap = 
 	let t2 = if t = endString then "EOF" else t in
 	if Tmap.mem t tokenTypeMap then begin
 		Format.fprintf fmt "\t| Some (%s data) -> \n" t2;
@@ -634,14 +633,14 @@ let pp_action fmt pos t a rMap tokenTypeMap =
 			| SUCCESS -> Format.fprintf fmt "\t\traise (FailureParse pileMem)"
 			| SHIFT i -> Format.fprintf fmt "\t\taction%i (%i::pileEtats) (TOKEN %s::pileMem) None newToken" i pos t2
 			| REDUCE ((n, p, _) as r) -> begin
-				pp_reduce (t<>endString) pos fmt (Rmap.find r rMap);
-				if t = endString then Format.fprintf fmt "\t\traise (Output valeur)"
+				pp_reduce (t<>endString || n <> starter) pos fmt (Rmap.find r rMap);
+				if t = endString  && n = starter then Format.fprintf fmt "\t\traise (Output valeur)"
 				else Format.fprintf fmt "\t\tgoto (List.hd pileEtats) pileEtats ((%s valeur)::pileMem) \"%s\" (Some %s) newToken" (String.uppercase_ascii n) n t2
 				end 
 		end;
 	Format.fprintf fmt "\n"
 
-let pp_actionStates fmt i actionT ruleMap tokenTypeMap = 
+let pp_actionStates fmt startR i actionT ruleMap tokenTypeMap = 
 	Format.fprintf fmt (if i = 1 then "let rec " else "and ");
 	Format.fprintf fmt "action%i (pileEtats: int list) (pileMem:rulesType list) (nextToken:token option) (newToken:unit -> token) =\n\tmatch nextToken with\n" i;
 	Format.fprintf fmt "\t|None -> let t = try newToken ()\n";
@@ -649,8 +648,8 @@ let pp_actionStates fmt i actionT ruleMap tokenTypeMap =
 	Format.fprintf fmt (if Tmap.mem endString actionT then "raise (FailureParse pileMem)" else "Not_a_token");
 	Format.fprintf fmt "\n";
 	Format.fprintf fmt "\t\tin action%i pileEtats pileMem (Some t) newToken\n" i;
-	Tmap.iter (fun t a -> pp_action fmt i t a ruleMap tokenTypeMap) actionT;
-	Format.fprintf fmt "\t| _ -> raise (Samenhir_Parsing_Error %i)\n" i
+	Tmap.iter (fun t a -> pp_action fmt startR i t a ruleMap tokenTypeMap) actionT;
+	Format.fprintf fmt "\t| _ -> raise (SamenhirAst.Samenhir_Parsing_Error %i)\n" i
 
 let pp_goto fmt i t target =
 	Format.fprintf fmt "\t|%i,\"%s\" -> action%i pileEtats pileMem nextToken newToken\n" i t target
@@ -664,17 +663,16 @@ let pp_buildProg fmt program =
 	Format.fprintf fmt "%a\n" pp_declarationTypes program;
 	let tokenTypeMap = List.fold_left (fun m (t,dT) -> if dT = None then m else Tmap.add t dT m) Tmap.empty program.tokenList in
 	let rMap = List.fold_left (fun m (nm,tipe, rawProd, opt, cons) -> Rmap.add (nm,unRawProd rawProd, opt) (rawProd,cons) m) Rmap.empty program.gR.raw_rules in
-	Imap.iter (fun i act -> if Tmap.cardinal act > 0 then pp_actionStates fmt i act rMap tokenTypeMap) program.actionTab;
+	Imap.iter (fun i act -> if Tmap.cardinal act > 0 then pp_actionStates fmt program.gR.startR i act rMap tokenTypeMap) program.actionTab;
 	Format.fprintf fmt "and goto i pileEtats pileMem readRule nextToken newToken = match i, readRule with\n";
 	Imap.iter (fun i got ->if Ntmap.cardinal got > 0 then pp_gotoStates fmt i got rMap) program.gotoTab;
-	Format.fprintf fmt "\t|_,_ -> raise (Samenhir_Parsing_Error (-1))\n";
+	Format.fprintf fmt "\t|_,_ -> raise (SamenhirAst.Samenhir_Parsing_Error (-1))\n";
 	Format.fprintf fmt "\n\n%a\n" pp_end program.startLTable;
 	Format.pp_print_flush fmt ()
 ;;
 
 let pp_mli fmt program =
 	pp_tokenDecl fmt program.tokenList;
-	Format.fprintf fmt "\nexception Samenhir_Parsing_Error of int\n\n";
-	Format.fprintf fmt "val parse: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (%s)\n" (findType program.gR.startR program.gR.raw_rules)
+	Format.fprintf fmt "\nval fichier: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (%s)\n" (findType program.gR.startR program.gR.raw_rules)
 ;;
 

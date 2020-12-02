@@ -1,0 +1,38 @@
+%{
+type expr = 
+	|EQUA gval * dval
+	|DVAL dval
+and dval =
+	| D gval
+and gval =
+	|Id int
+	|Mul dval
+
+%}
+
+%token EOF
+%token EQUAL
+%token TIMES
+%token<int> ID
+
+%start s
+
+%%
+
+s<expr>:
+	| eV = e EOF {eV}
+;
+
+e<expr>:
+	| g1 = g EQUAL d1 = d {EQUA (g1, d1)}
+	| d1 = d {DVAL d1}
+;
+
+g<gval>:
+	| TIMES d1 = d {Mul d1}
+	| i = ID {id}
+;
+
+d<dval>:
+	| g1 = g {D g1}
+;

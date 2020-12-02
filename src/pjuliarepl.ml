@@ -86,8 +86,8 @@ while !continue do
             Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(file_name) b.pos_lnum (b.pos_cnum - b.pos_bol) (e.pos_cnum - e.pos_bol);
               Printf.printf "Lexical error at lexeme : \"%s\"\n" s
             end
-          | Parser.Error -> begin
-              Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(file_name) b.pos_lnum (b.pos_cnum - b.pos_bol) (e.pos_cnum - e.pos_bol);
+          | SamenhirAst.Samenhir_Parsing_Error i -> begin
+              Printf.printf "File \"%s\", line %d, character %d-%d %i:\n" !(file_name) b.pos_lnum (b.pos_cnum - b.pos_bol) (e.pos_cnum - e.pos_bol) i;
               Printf.printf "Syntax error\n"
             end
           | Ast.Parsing_Error -> begin

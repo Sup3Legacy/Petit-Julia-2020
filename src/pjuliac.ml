@@ -38,7 +38,7 @@ let handle () =
             Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(Hyper.file) b.pos_lnum (b.pos_cnum - b.pos_bol) (e.pos_cnum - e.pos_bol);
             Printf.printf "Lexical error at lexeme : \"%s\"\n" s
           end
-        | Parser.Error -> begin
+        | SamenhirAst.Samenhir_Parsing_Error _ -> begin
             Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(Hyper.file) b.pos_lnum (b.pos_cnum - b.pos_bol) (e.pos_cnum - e.pos_bol);
             Printf.printf "Syntax error\n"
           end
