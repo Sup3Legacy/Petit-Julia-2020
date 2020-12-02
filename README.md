@@ -22,15 +22,23 @@ Le fichier est découpé en une liste de déclaration de fonctions, déclaration
 
 On fait le parcours en utilisant 4 environnements Map :
 - un pour les variables définies
-- un pour toutes les fonctions
+- un pour toutes les fonctions qui à tous les noms de fonctions associe l'ensemble des types (types de paramètres et type de l'image)
 - un pour tous les noms de structures
 - un pour tous les noms d'attribus associés à leur types, si la structure les contenant est mutable et le nom de la structure associé
 
 
-Si l'on rencontre une strucutre on vérifie dans l'ordre :
+Si l'on rencontre une déclaration de structure on vérifie dans l'ordre :
 - que son nom n'est pas "print", "println" ou "div"
 - que l'on a pas d'autre structure du même nom
-- on parcours les attribus de la struture en vérifiant que les types sont bien définies et les noms pas attribué. Il a été autorisé de ne pas autorisé un attribu d'une structure S d'être du type Struct `S` car comme on ne peut pas définir directement u
+- on parcours les attribus de la struture en vérifiant que les types sont bien définies et les noms pas attribué, puis on rajoute ses attribus à l'ensemble des attribus existants. Il a été décidé de ne pas autorisé un attribu d'une structure S d'être du type Struct `S` car sinon on n'arriverais pas à construire la première variable de type `S`
+- on ajoute la structure à l'ensemble des fonction du même noms, ainsi que à l'ensemble des structures
+
+Si l'on rencontre une déclaration de fonction on vérifie dans l'ordre : 
+- que son nom n'est pas déjà associé à une variable
+- que son nom n'est pas "print", "println" ou "div"
+- que ses arguments possèdent bien un type existant et sont deux à deux disjoints
+- que sont type d'image est bien existant
+- rajoute la fonction à l'ensemble des fonctions du même noms en vérifiant qu'il n'existe pas déjà une autre fonction du même nom ayant exactement les mêmes types d'entrée
 
 La première différence notable avec ce qui est demandé dans le sujet est que le typeur teste si les variables sont bien définie AVANT leur utilisation et pas uniquement si elle sont bien définies dans le même champs.
 
@@ -41,9 +49,9 @@ La première différence notable avec ce qui est demandé dans le sujet est que 
 
 Ce projet, si l'on se contente de rester dans le cadre restreint du sujet laisse un sentiment de vide, on a l'impression d'avoir sauté des étapes, d'avoir triché pour arriver au bout. Cette étape ainsi sauté c'est le parser! Car dans ce projet on se contente d'utiliser menhir pour faire notre parser sans comprendre réellement ce qui se passe derrière. C'est de là qu'est venu l'idée de Samenhir (contraction de Samuel et de menhir) : l'idée d'implémenter une version simplifié de menhir afin de l'utiliser dans le projet.
 
-Actuellement Samenhir est totalement indépendant de menhir, c'est à dire capable de générer lui même son propre parser. Cependant il n'est pas encore assez efficace pour être utilisé dans le projet, il faut encore réussir à lui faire utiliser les régles priorité. Mais il est pleinement capable de générer un parser pour la grammaire fourni slide 83 du cours `analyse syntaxique (1/2)`.
+Actuellement Samenhir est totalement indépendant de menhir, c'est à dire capable de générer lui même son propre parser. Les tests du mercredi 2 décmebre à 23h40 affirment que Samenhir est pleinement opérationnel et qu'il valide tous les tests de syntaxe et de typage.
 
-### Grammaire à fournir à samenhir :
+### Grammaire à fournir à Samenhir :
 
 Samenhir a besoin d'une grammaire ressemblant fortement à celle demandé par menhir, cependant par soucis de simplification de l'implémentation certaines décisions ont été prises :
 - Le parser doit être écrit dans un fichier .txt car en utilisant un fichier .mly menhir voulait le parser
@@ -59,16 +67,16 @@ rule<int * int>:
 - pour les régles de priorité (mais qui actuellement ne sont pas utilisé ensuite), on ne peut mettre que 1 mot par régle d'associativité
 - il n'est pas possible d'utiliser des outils tel que `%inline` et les différents outils `list`, `separated_list`, et cetera.
 
-Il y a peut être d'autres spécificité lié à l'ignorance de ces contraires/opportunité lié à l'utilisation de menhir.
+Il y a peut être d'autres spécificité lié à l'ignorance de notre part de ces contraires/opportunité lié à l'utilisation de menhir.
 
 
 ### Algorithme utilisé pour construire l'analyseur :
 
-Pour pouvoir construire l'analyseur syntaxique Samenhir utilise l'algorithme présenté slides 81-82 du cours `analyse syntaxique (1/2)`. Cependant il reste encore la gestion des régles de priorité à implémenter afin de pouvoir réssoudre les conflits shift/reduce et reduce/reduce. Si cela est fait alors, on pourras utiliser Samenhir dans le projet à la place de menhir
+Pour pouvoir construire l'analyseur syntaxique Samenhir utilise l'algorithme présenté slides 81-82 du cours `analyse syntaxique (1/2)`.
 
 ### Inconvénients : 
 
-Actuellement Samenhir est très peu optimisé, il faut compter 5 minutes d'exécution pour réussir à générer le parser de Petitjulia™
+Actuellement Samenhir est très peu optimisé, il faut compter 5 minutes d'exécution pour réussir à générer le parser de Petitjulia™. Puis il faut attendre une minute de plus pour compiler ce fichier. Cependant le parser ainsi généré fonctionne comme il devrait en passant tous les tests de typages ainsi que les tests de syntaxe
 
 
 # IV] Interpreter/REPL

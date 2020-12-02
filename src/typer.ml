@@ -68,31 +68,35 @@ let parcoursStruct sE (aE:argsEnv) fE (b,p,str,l) =
       in (Tmap.add str ajout sE, aE2, fE2)
 
 let parcoursFonction vE fE sE (posStr, nameFunc, pL, posT, pjT, _) =
-  if Tmap.mem nameFunc vE then error ("the name \""^nameFunc^"\" is already given to a variable, it can't be a function") posStr
+  if nameFunc = "print" || nameFunc = "println" || nameFunc = "div"
+  then error ("reserved name "^nameFunc) posStr
   else
-    let (tL,tS) = List.fold_right
-      (fun (Param (p1, str, p2, t)) (l,tSet) ->
-        if exists t sE
-          then if Tset.mem str tSet
-            then error ("already defined argument name : "^str^" in function "^nameFunc) p1
-            else (t::l,Tset.add str tSet)
-          else error ("undefined type : "^typeName t^" in function "^nameFunc) p2)
-      pL
-      ([],Tset.empty)
-    in
-    if Tset.cardinal tS <> List.length pL
-    then failwith "bad implementation of typer 2"
+    if Tmap.mem nameFunc vE
+    then error ("the name \""^nameFunc^"\" is already given to a variable, it can't be a function") posStr
     else
-      if exists pjT sE then
-        if Tmap.mem nameFunc fE then
-          let l1 = Tmap.find nameFunc fE in
-          let rec estDedans a = function
-            |[] -> false
-            |hd::tl -> (hd=a)||estDedans a tl
-          in if estDedans (tL,pjT) l1 then error ("already exiting function "^nameFunc) posStr
-          else Tmap.add nameFunc ((tL,pjT)::l1) fE
-        else Tmap.add nameFunc [tL, pjT] fE
-      else error ("undefined type : "^typeName pjT^" in function "^nameFunc) posT
+      let (tL,tS) = List.fold_right
+        (fun (Param (p1, str, p2, t)) (l,tSet) ->
+          if exists t sE
+            then if Tset.mem str tSet
+              then error ("already defined argument name : "^str^" in function "^nameFunc) p1
+              else (t::l,Tset.add str tSet)
+            else error ("undefined type : "^typeName t^" in function "^nameFunc) p2)
+        pL
+        ([],Tset.empty)
+      in
+      if Tset.cardinal tS <> List.length pL
+      then assert false
+      else
+        if exists pjT sE then
+          if Tmap.mem nameFunc fE then
+            let l1 = Tmap.find nameFunc fE in
+            let rec estDedans a = function
+              |[] -> false
+              |(hd,_)::tl -> (hd=a)||estDedans a tl
+            in if estDedans tL l1 then error ("already exiting function "^nameFunc) posStr
+            else Tmap.add nameFunc ((tL,pjT)::l1) fE
+          else Tmap.add nameFunc [tL, pjT] fE
+        else error ("undefined type : "^typeName pjT^" in function "^nameFunc) posT
 
 
 let rec chercheDefE isFunc (vS:Tset.t) = function
