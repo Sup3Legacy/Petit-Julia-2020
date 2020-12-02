@@ -392,4 +392,5 @@ bloc1:
     let (p, eL) = pb in
     Hyper2.fusionPos (fst e) p, (e::eL)}
   | e = expr {(fst e), [e]}
+  | e = expr SEMICOLON {(fst e), [e]}
 ;
