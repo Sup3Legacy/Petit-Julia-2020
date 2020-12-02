@@ -388,9 +388,23 @@ bloc_END:
 ;
 
 bloc1:
-  | e = expr SEMICOLON pb = bloc {
+  | e = expr pb = bloc1bis {
     let (p, eL) = pb in
     Hyper2.fusionPos (fst e) p, (e::eL)}
   | e = expr {(fst e), [e]}
-  | e = expr SEMICOLON {(fst e), [e]}
+;
+
+bloc1bis:
+  | p = SEMICOLON {
+    (p, [])
+  }
+  | p = SEMICOLON e = expr {
+    (Hyper2.fusionPos p (fst e), [e])
+  }
+  | p = SEMICOLON pb = bloc1bis {
+    let (p2,eL) = pb in (Hyper2.fusionPos p p2, eL)
+  }
+  | p = SEMICOLON e = expr pb = bloc1bis {
+    let (p2,eL) = pb in (Hyper2.fusionPos p p2, e::eL)
+  }
 ;
