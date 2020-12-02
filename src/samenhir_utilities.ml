@@ -99,8 +99,10 @@ let follow g (n:nulls) (fst:first) :follow =
 			update_prod acc3 nt tl
 	in 
 	let step follows = 
+		if !print_all then print_string "step follow\n";
 		List.fold_left (fun acc (nt, p, _) -> update_prod acc nt p) (follows,false) g.rules
-	in fixpoint step (empty_map g)
+	in 
+	fixpoint step (Ntmap.mapi (fun nt s -> if nt = g.start then Tset.add endString s else s) (empty_map g))
 
 let add_entry (trans:transitionTable) (state1:stateND) (term:string) (state2:stateND) :transitionTable =
 	if StateMap.mem state1 trans then begin 
@@ -171,10 +173,6 @@ let buildAutom g =
 			Tset.union (Ntmap.find t fst) (following suiv tl)
 			else Ntmap.find t fst 
 		|Dot::tl -> failwith "Not possible to have a Dot in following" in
-	if !print_all then begin 
-		print_newline ();
-		Smap.iter (fun str stateSet -> print_string str;PDset.iter (fun (pd, prio) -> print_string " | "; affichePD pd) stateSet;print_newline ()) mapDotRules;
-		end;
 	let rajouteEntry (m:transitionTable) (s1:stateND) (t:terminal) (nm:non_terminal) (pd:productionD) (prio:string option) (set:Tset.t):transitionTable = 
 		Tset.fold (fun str m2 -> add_entry m2 s1 t (nm, pd, prio, str)) set m
 	in let rec rajouteTrans (m:transitionTable) (nm:non_terminal) (deb:productionD) (fin:productionD) (prio:string option) (suivant:terminal):transitionTable =  match fin with
@@ -203,14 +201,14 @@ let buildAutom g =
 	{startND = prem2; transND = transition}
 
 let successor g :successor = 
-	let init r trans m = 
+	let init ((n,_,_,suiv) as r) trans m = 
 		if Smap.mem "" trans then 
 			StateMap.add r (StateSet.add r (Smap.find "" trans)) m
 		else StateMap.add r (StateSet.singleton r) m
 	in let debut = StateMap.fold init g.transND StateMap.empty in
 	if !print_all then print_string "first calculated\n";
 	let union set m =
-		StateSet.fold (fun ((n, _, _, suiv) as r) s -> StateSet.union s (try StateMap.find r m with Not_found -> failwith (n^suiv^" not found in successor"))) set StateSet.empty
+		StateSet.fold (fun ((n, _, _, suiv) as r) s -> StateSet.union s (try StateMap.find r m with Not_found -> failwith (n^" ["^suiv^"] not found in successor"))) set StateSet.empty
 	in let step m =
 		if !print_all then print_string "set\n";
 		let newmap = StateMap.mapi (fun _ s -> union s m) m in
@@ -245,9 +243,7 @@ let rajouteTransition (s:state) (str:string) (next:state) (m:transitionTableD) =
 let nbTrans s = if Smap.mem "" s then StateSet.cardinal (Smap.find "" s) else 0
 
 let determinisation g = 
-	if !print_all then StateMap.iter (fun (n, pd, prio, s) su ->print_string (n^s^" ");print_int (nbTrans su);print_string " <> ";affichePD pd) g.transND;
 	let succ = successor g in
-	if !print_all then StateMap.iter (fun (n, pd, prio, s) su ->print_string (n^s^" ");print_int (StateSet.cardinal su);print_string " -> ";affichePD pd) succ;
 	if !print_all then print_int (StateMap.cardinal succ);
 	if !print_all then print_string " nb succ calculated\n";
 	if !print_all then print_int (StateMap.cardinal g.transND);
@@ -382,7 +378,7 @@ let calcPrio pMap (p:production) = function
 	|None -> calcPrioP pMap p
 	|Some t -> Tmap.find t pMap
 
-let findHighestPrio (ruleSet:Rset.t) pMap aMap:action =
+let findHighestPrio (ruleSet:Rset.t) pMap:action =
 	if Rset.cardinal ruleSet > 1 then 
 		let v =  Rset.fold (fun (n, p, prio) m -> let v = calcPrio pMap p prio in
 			match m with
@@ -394,13 +390,39 @@ let findHighestPrio (ruleSet:Rset.t) pMap aMap:action =
 			|Some (_, n, p, prio) -> REDUCE (n, p, prio)
 	else REDUCE (Rset.choose ruleSet)
 
+let findPrioToken p pMap = 
+	let rec aux i l = function
+		|[] -> l
+		| NonTerminal _::tl -> aux i l tl
+		| Terminal t::tl -> if Tmap.mem t pMap then let v = Tmap.find t pMap in if v < i then aux v (Some t) tl else aux i l tl else aux i l tl
+	in match aux max_int None p with
+		|None -> failwith "can't solve conflict because so prio token"
+		|Some t -> t
+
+
 let fusionSR (shift_line:action Tmap.t) (rules:StateSet.t) pMap aMap (tset: Tset.t) =
 	let ruleMap = StateSet.fold (fun (n, pd, prio, suiv) m -> rajouteR_Rset suiv (n, unconvertPD_P pd, prio) m) rules Tmap.empty in 
 	let aux t m = match Tmap.mem t shift_line, Tmap.mem t ruleMap with
 		|false, false -> m
 		|true, false -> Tmap.add t (Tmap.find t shift_line) m
-		|false, true -> Tmap.add t (findHighestPrio (Tmap.find t ruleMap) pMap aMap) m
-		|true, true -> failwith "Choice not Implemented : shift/reduce conflict"
+		|false, true -> Tmap.add t (findHighestPrio (Tmap.find t ruleMap) pMap) m
+		|true, true -> 
+			Tmap.add t (
+				let (n, p, prio) = match findHighestPrio (Tmap.find t ruleMap) pMap with
+					|REDUCE a -> a
+					| _ -> assert false
+				in let priorityToken = match prio with
+					|None -> findPrioToken p pMap
+					|Some t -> t
+				in let pS = Tmap.find t pMap in
+				let pR = Tmap.find priorityToken pMap in
+				if pS < pR then Tmap.find t shift_line
+				else if pS > pR then REDUCE (n, p, prio)
+				else match Tmap.find t aMap with
+					|Left -> REDUCE (n, p, prio)
+					|Right -> Tmap.find t shift_line
+					|NonAssoc -> failwith "can't solve conflict"
+			) m
 	in Tset.fold aux tset Tmap.empty
 
 let rajouteAction (i:int) (t:terminal) (act:action) (m:actionTable) = 

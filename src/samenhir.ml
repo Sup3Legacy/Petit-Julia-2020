@@ -6,6 +6,7 @@ open Samenhir_utilities
 
 let file = ref "";;
 
+print_all := true;;
 
 let main () =
 	let spectlist = [("-f", Arg.Set_string file, "file to process")]
