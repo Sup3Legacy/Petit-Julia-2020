@@ -19,7 +19,7 @@ let main () =
 			let outfile = (Filename.chop_suffix !file ".txt" ^ ".ml") in
 			let f = open_in !file in
 			let buf = Lexing.from_channel f in
-			let parsed = SamenhirParser.fichier SamenhirLexer.token buf in
+			let parsed = SamenhirParser.program SamenhirLexer.token buf in
 			let () = close_in f in
 			let table = buildTable (unrawGrammar parsed.g) parsed.prio in
 			let p = {gR = parsed.g; startLTable = table.startLine; gotoTab = table.goto; actionTab = table.action; tokenList = parsed.tokenList; head = parsed.header} in

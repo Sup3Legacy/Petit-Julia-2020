@@ -4,16 +4,20 @@
 	(run ocamlbuild -no-hygiene samenhirParserBuilder.byte)))
 (rule
   (target samenhirParser.ml)
+  (deps samenhirParserBuilder.byte)
   (action
 	(run ./samenhirParserBuilder.byte)))
 (rule
   (target samenhir.byte)
+  (deps samenhirParser.ml)
   (action
 	(run ocamlbuild -no-hygiene samenhir.byte)))
 (rule
   (target parser.ml)
-  (action
-	(run ./samenhir.byte parser.txt)))
+  (deps samenhir.byte (file parser.txt))
+  (action 
+	(run ./samenhir.byte parser.txt)
+))
 (ocamllex
   (modules lexer samenhirLexer))
 (executables
