@@ -18,6 +18,8 @@ Pour cela le fichier est parcouru deux fois. Il s'agit des parcours 1 et 2 (vive
 
 ### Parcours 1 :
 
+**Il a été choisi que les structures seraient géré comme des fonction cela signifie que pour nous un constructeur de structure est un appel de fonction dont l'image est la structure construite**
+
 Le fichier est découpé en une liste de déclaration de fonctions, déclarations de structures et expressions.
 
 On fait le parcours en utilisant 4 environnements Map :
@@ -39,6 +41,12 @@ Si l'on rencontre une déclaration de fonction on vérifie dans l'ordre :
 - que ses arguments possèdent bien un type existant et sont deux à deux disjoints
 - que sont type d'image est bien existant
 - rajoute la fonction à l'ensemble des fonctions du même noms en vérifiant qu'il n'existe pas déjà une autre fonction du même nom ayant exactement les mêmes types d'entrée
+
+Si l'on rencontre une expression on la parcours récursivement et propageant l'environnement des variables existantes avec les régles suivantes :
+- si l'on rencontre une expression utilisant une variable on teste si elle existe. Si ce n'est pas le cas on plante
+- si l'on rencontre une affectation de variable on crée la variable associé dans l'environnement
+- si l'on rencontre une affectation d'attribus on vérifie de l'attribu existe et qu'il est mutable
+- si l'on rencontre un appel de fonction on vérifie qu'il existe une fonction ou une struture du même nom
 
 La première différence notable avec ce qui est demandé dans le sujet est que le typeur teste si les variables sont bien définie AVANT leur utilisation et pas uniquement si elle sont bien définies dans le même champs.
 

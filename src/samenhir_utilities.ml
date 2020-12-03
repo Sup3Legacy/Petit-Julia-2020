@@ -507,13 +507,14 @@ let pp_tokenDecl fmt liste =
 	in List.iter (fun t -> afficheToken t) liste
 
 let pp_header fmt str =
-	Format.fprintf fmt "%s\n\n" str
+	Format.fprintf fmt "%s\n\n" str;
+	Format.fprintf fmt "let samFail i = raise (SamenhirAst.Samenhir_Parsing_Error i)\n"
 
 let pp_end fin fmt startS =
 	Format.fprintf fmt "let %s lexer lexbuf =
 	let newTok = (fun () -> lexer lexbuf) in
 	try 
-		_sam%i [%i] [] None newTok
+		_sam%i [%i] [] newTok (newTok ())
 	with Output a -> a
 		|a -> raise a
 " fin startS startS;;
@@ -550,7 +551,7 @@ let pp_reduce b i fmt (raw_prod,cons) =
 	in let n = List.length raw_prod in
 	if b then 
 		if n = 0
-		then Format.fprintf fmt "\t\t\tlet pEtats = %i::pEtats in\n" i
+		then Format.fprintf fmt "\t\t\tlet pEtats=%i::pEtats in\n" i
 		else if n > 1 then begin 
 			Format.fprintf fmt "\t\t\tlet pEtats = match pEtats with |";
 			for i = 1 to n -1 do 
@@ -572,38 +573,37 @@ let pp_reduce b i fmt (raw_prod,cons) =
 let pp_action fmt starter pos t a rMap tokenTypeMap = 
 	let t2 = if t = endString then "EOF" else t in
 	if Tmap.mem t tokenTypeMap then begin
-		Format.fprintf fmt "\t| Some (%s data) -> \n" t2;
+		Format.fprintf fmt "\t|(%s data)->\n" t2;
 		 match a with
 			| SUCCESS -> Format.fprintf fmt "\t\traise (FailureParse pMem)"
-			| SHIFT i -> Format.fprintf fmt "\t\t_sam%i (%i::pEtats) (Tok (%s data)::pMem) None newToken" i pos t2
+			| SHIFT i -> Format.fprintf fmt "\t\t_sam%i (%i::pEtats) (Tok(%s data)::pMem) newToken (newToken())" i pos t2
 			| REDUCE ((n, p, _) as r) -> begin
 				pp_reduce true pos fmt (Rmap.find r rMap);
-				Format.fprintf fmt "\t\tgoto (List.hd pEtats) \"%s\" pEtats ((%s valeur)::pMem) (Some (%s data)) newToken" n (String.uppercase_ascii n) t2
+				Format.fprintf fmt "\t\tgoto (List.hd pEtats) \"%s\" pEtats ((%s valeur)::pMem) newToken (%s data)" n (String.uppercase_ascii n) t2
 
 			end
 		end
 	else begin
-		Format.fprintf fmt "\t|Some %s -> \n" t2;
+		Format.fprintf fmt "\t|%s->\n" t2;
 		match a with 
 			| SUCCESS -> Format.fprintf fmt "\t\traise (FailureParse pMem)"
-			| SHIFT i -> Format.fprintf fmt "\t\t_sam%i (%i::pEtats) (Tok %s::pMem) None newToken" i pos t2
+			| SHIFT i -> Format.fprintf fmt "\t\t_sam%i (%i::pEtats) (Tok %s::pMem) newToken (newToken())" i pos t2
 			| REDUCE ((n, p, _) as r) -> begin
 				pp_reduce (t<>endString || n <> starter) pos fmt (Rmap.find r rMap);
 				if t = endString  && n = starter then Format.fprintf fmt "\t\traise (Output valeur)"
-				else Format.fprintf fmt "\t\tgoto (List.hd pEtats) \"%s\" pEtats ((%s valeur)::pMem)  (Some %s) newToken" n (String.uppercase_ascii n) t2
+				else Format.fprintf fmt "\t\tgoto (List.hd pEtats) \"%s\" pEtats ((%s valeur)::pMem) newToken %s" n (String.uppercase_ascii n) t2
 				end 
 		end;
 	Format.fprintf fmt "\n"
 
 let pp_actionStates fmt startR i actionT ruleMap tokenTypeMap = 
 	Format.fprintf fmt (if i = 1 then "let rec " else "and ");
-	Format.fprintf fmt "_sam%i (pEtats: int list) (pMem:rulesType list) (nextToken:token option) (newToken:unit -> token) =\n\tmatch nextToken with\n" i;
-	Format.fprintf fmt "\t|None -> _sam%i pEtats pMem (Some (newToken ())) newToken\n" i;
+	Format.fprintf fmt "_sam%i (pEtats: int list) (pMem:rulesType list) (newToken:unit -> token) = function\n" i;
 	Tmap.iter (fun t a -> pp_action fmt startR i t a ruleMap tokenTypeMap) actionT;
-	Format.fprintf fmt "\t| _ -> raise (SamenhirAst.Samenhir_Parsing_Error %i)\n" i
+	Format.fprintf fmt "\t|_->samFail %i\n" i
 
 let pp_goto fmt i t target =
-	Format.fprintf fmt "\t|%i,\"%s\" -> _sam%i\n" i t target
+	Format.fprintf fmt "|%i,\"%s\"->_sam%i\n" i t target
 
 let pp_gotoStates fmt i gotoT ruleMap = 
 	Ntmap.iter (pp_goto fmt i) gotoT
@@ -615,9 +615,9 @@ let pp_buildProg fmt program =
 	let tokenTypeMap = List.fold_left (fun m (t,dT) -> if dT = None then m else Tmap.add t dT m) Tmap.empty program.tokenList in
 	let rMap = List.fold_left (fun m (nm,tipe, rawProd, opt, cons) -> Rmap.add (nm,unRawProd rawProd, opt) (rawProd,cons) m) Rmap.empty program.gR.raw_rules in
 	Imap.iter (fun i act -> if Tmap.cardinal act > 0 then pp_actionStates fmt program.gR.startR i act rMap tokenTypeMap) program.actionTab;
-	Format.fprintf fmt "and goto i readRule = match i, readRule with\n";
+	Format.fprintf fmt "and goto i readRule = match i,readRule with\n";
 	Imap.iter (fun i got ->if Ntmap.cardinal got > 0 then pp_gotoStates fmt i got rMap) program.gotoTab;
-	Format.fprintf fmt "\t|_,_ -> raise (SamenhirAst.Samenhir_Parsing_Error (-1))\n";
+	Format.fprintf fmt "|_,_->samFail (-1)\n";
 	Format.fprintf fmt "\n\n%a\n" (pp_end program.gR.startR) program.startLTable;
 	Format.pp_print_flush fmt ()
 ;;
