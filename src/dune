@@ -1,5 +1,8 @@
 (ocamllex
   (modules lexer samenhirLexer))
+(rule
+  (target parser.ml)
+  (action (run ./samenhir.byte parser.txt)))
 (executables
   (names pjuliac pjuliarepl)
   (preprocess (pps ppx_deriving.show ppx_deriving.ord))
