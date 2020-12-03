@@ -1,5 +1,6 @@
 (rule
   (target samenhirParserBuilder.byte)
+  (deps (file samenhirParserBuilder.ml))
   (action
 	(run ocamlbuild -no-hygiene samenhirParserBuilder.byte)))
 (rule

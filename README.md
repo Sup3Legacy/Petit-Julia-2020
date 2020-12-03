@@ -6,8 +6,8 @@
 
 # I] Lexer/Parser
 
-LA première étape a été de définir les types qui seront utilisées par les différentes étpes d'analyse. Dans un premeir temps, nous avons suivi la grammaire donnée dans le sujet, que ce soit pour la définition de l'`ast`  ou bien pour le lexer et le parser. Cela nous a donné un analyseur à peu près fonctionnel mais souffrant de dizaines de conflits (par exemple au niveau de la construction `while expr bloc`). Cela a été résolu par un remodelage du parser progressif, éléminant tous les conflits un par un!
-
+LA première étape a été de définir les types qui seront utilisées par les différentes étpes d'analyse. Dans un premeir temps, nous avons suivi la grammaire donnée dans le sujet, que ce soit pour la définition de l'`ast` (les types correspondaient exactement aux règles de grammaire) ou bien pour le lexer et le parser. Cela nous a donné un analyseur à peu près fonctionnel mais souffrant de dizaines de conflits (par exemple au niveau de la construction `while expr bloc`). Cela a été résolu par un remodelage du parser progressif, éléminant tous les conflits un par un!
+Le parser a subit un nouveau remodelage général au début du typeur car on avait oublié de transmettre les positions des token dans l'`ast`ce qui nous empêchait de pouvoir positionner précisement les erreurs de types.
 
 # II] Typer
 
@@ -47,11 +47,15 @@ Si l'on rencontre une expression on la parcours récursivement et propageant l'e
 - si l'on rencontre une affectation de variable on crée la variable associé dans l'environnement
 - si l'on rencontre une affectation d'attribus on vérifie de l'attribu existe et qu'il est mutable
 - si l'on rencontre un appel de fonction on vérifie qu'il existe une fonction ou une struture du même nom
+- si l'on rencontre une expression qui défini un nouvel environnement (boucles `for` et `while`), alors on regarde fait un premier parcours pour récupérer l'ensemble des variables défini dans le bloc à l'intérieur (on ne descend pas dans les `for`/`while` suivants par contre). Puis on reparcours le bloc en testant bien tous les types en commençant avec l'enveronnement globale privé des valeurs qui seront définies par la suite.
 
-La première différence notable avec ce qui est demandé dans le sujet est que le typeur teste si les variables sont bien définie AVANT leur utilisation et pas uniquement si elle sont bien définies dans le même champs.
+**La première différence notable avec ce qui est demandé dans le sujet est que le typeur teste si les variables sont bien définie AVANT leur utilisation et pas uniquement si elle sont bien définies dans le même champs. Ce qui permet de faire planter les tests de typage `undef1.jl`, `undef3.jl`, `undef4.jl` et `undef5.jl`**
 
+### Parcours 2 :
 
-
+On teste si tous est correctement typé, notamment, pour toutes les affectations on teste si on met bien dans une variable un type compatible avec le type que possède déjà la variable.
+On vérifie aussi que toutes les expressions sont bien typés.
+De plus pour chaque appel de fonction on regarde l'ensemble des fonctions compatibles. Si deux fonctions sont compatibles entre elle (ie il existe une séquence de type qui est compatible avec les types des arguments des deux) alors on plante car on ne peut pas décider. Sinon on regarde l'ensemble des types possible des sorties. Pour décider du type de l'expression
 
 # III] Samenhir
 
@@ -85,6 +89,8 @@ Pour pouvoir construire l'analyseur syntaxique Samenhir utilise l'algorithme pr�
 ### Inconvénients : 
 
 Actuellement Samenhir est très peu optimisé, il faut compter 5 minutes d'exécution pour réussir à générer le parser de Petitjulia™. Puis il faut attendre une minute de plus pour compiler ce fichier. Cependant le parser ainsi généré fonctionne comme il devrait en passant tous les tests de typages ainsi que les tests de syntaxe
+
+Nous avons aussi la certitude que Samenhir n'est pas pleinement correct, il manque de nombreuses sécurité par rapport aux différentes utilisations frauduleuses par un utilisateur, de plus il n'y as pas de typeur (on a considéré que 1 seul typeur dans le projet était suffisant). Cependant le compilateur `pjuliac` utilise le fichier parser.ml généré par Samenhir et arrive à passer tous les tests de typages et de syntaxe. On part donc du principe : ça ne plance pas donc ça marche.
 
 
 # IV] Interpreter/REPL
