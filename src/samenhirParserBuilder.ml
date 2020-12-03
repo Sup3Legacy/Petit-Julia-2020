@@ -87,4 +87,4 @@ let _ = pp_buildProg (Format.formatter_of_out_channel out) p in
 let () = close_out out in
 let out = open_out "samenhirParser.mli" in
 let _ = pp_mli (Format.formatter_of_out_channel out) p in
-close_out out;
+	close_out out

@@ -1,23 +1,28 @@
 (rule
-  (target samenhirParserBuilder.byte)
-  (deps (file samenhirParserBuilder.ml))
+  (target samenhirParserBuilder)
+  (deps
+	(file samenhirAst.ml)
+	(file samenhirParserBuilder.ml)
+	(file samenhir_utilities.ml))
   (action
-	(run ocamlbuild -no-hygiene samenhirParserBuilder.byte)))
+	(run ocamlopt samenhirAst.ml samenhir_utilities.ml samenhirParserBuilder.ml -o samenhirParserBuilder)))
 (rule
   (target samenhirParser.ml)
-  (deps samenhirParserBuilder.byte)
+  (deps samenhirParserBuilder)
   (action
-	(run ./samenhirParserBuilder.byte)))
+	(run ./samenhirParserBuilder)))
 (rule
-  (target samenhir.byte)
-  (deps samenhirParser.ml)
+  (target samenhir)
+  (deps samenhirParser.ml
+	samenhirLexer.ml
+	(file samenhirAst.ml))
   (action
-	(run ocamlbuild -no-hygiene samenhir.byte)))
+	(run ocamlopt samenhirAst.ml samenhir_utilities.ml samenhirParser.mli samenhirParser.ml samenhirLexer.ml samenhir.ml -o samenhir -O3)))
 (rule
   (target parser.ml)
-  (deps samenhir.byte (file parser.txt))
+  (deps samenhir (file parser.txt))
   (action 
-	(run ./samenhir.byte parser.txt)
+	(run ./samenhir parser.txt)
 ))
 (ocamllex
   (modules lexer samenhirLexer))
