@@ -93,6 +93,8 @@ Actuellement Samenhir est très peu optimisé, il faut compter 5 minutes d'exéc
 Nous avons aussi la certitude que Samenhir n'est pas pleinement correct, il manque de nombreuses sécurité par rapport aux différentes utilisations frauduleuses par un utilisateur, de plus il n'y as pas de typeur (on a considéré que 1 seul typeur dans le projet était suffisant). Cependant le compilateur `pjuliac` utilise le fichier parser.ml généré par Samenhir et arrive à passer tous les tests de typages et de syntaxe. On part donc du principe : ça ne plance pas donc ça marche.
 
 
+Cependants ces inconviénients sont faibles par rapport à la satisfaction personnelle d'utiliser un outils que l'on as dévellopé soit même plutot que se reposer sur le travail de quelqu'un d'autre
+
 # IV] Interpreter/REPL
 
 ## 1) Interpreter
@@ -139,4 +141,8 @@ Nous retrouvons :
 
 Cette première partie du projet nous aura beaucoup occupés, d'autant plus que nous nous sommes posé des défis supplémentaires plus ou moins conséquents!
 
-Nous avons pu mettre en place tous les outils nécessaires à la suite du projet, ainsi que d'autres outils nous permettant de l'approfondir. Samenhir n'est pas encore totalement fonctionnel (problèmes de conflits non réglés, etc.) mais devrait l'être bientôt et pourra remplacer l'outil Menhir comme parser!
+Nous avons pu mettre en place tous les outils nécessaires à la suite du projet, ainsi que d'autres outils nous permettant de l'approfondir. 
+Cependant on considère nécessaire de continuer à travailler sur Samenhir ne serais-ce que pour optimiser la production de code afin de diminuer le temps de compilation du compilateur (on estime qu'il faut 1 à 2 minutes pour calculer l'automate puis \~4minutes pour générer le fichier `.ml`)
+
+
+
