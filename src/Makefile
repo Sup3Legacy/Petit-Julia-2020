@@ -8,10 +8,6 @@ repl: pjuliarepl.exe
 	clear
 	rlwrap -f pjulia-words -c -pCyan dune exec ./pjuliarepl.exe
 
-samenhir.exe:
-		cd Samenhir
-		ocamlbuild samenhir.byte
-		./samenhir.byte
 
 pjuliac.exe:
 	dune build pjuliac.exe

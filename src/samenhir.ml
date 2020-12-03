@@ -8,9 +8,9 @@ let file = ref "";;
 
 
 let main () =
-	let spectlist = [("-f", Arg.Set_string file, "file to process")]
+	let spectlist = []
 	in
-	Arg.parse spectlist (fun x -> ()) "";
+	Arg.parse spectlist (fun f -> file := f) "";
 	if !file = "" then 
 		failwith "no file to compile"
 	else if not (Filename.check_suffix !file ".txt")

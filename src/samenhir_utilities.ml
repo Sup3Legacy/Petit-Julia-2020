@@ -414,8 +414,8 @@ let fusionSR (shift_line:action Tmap.t) (rules:StateSet.t) pMap aMap (tset: Tset
 				in let priorityToken = match prio with
 					|None -> findPrioToken p pMap
 					|Some t -> t
-				in let pS = Tmap.find t pMap in
-				let pR = Tmap.find priorityToken pMap in
+				in let pS = (try Tmap.find t pMap with Not_found -> failwith ("can't solve a shift/reduce conflict because \""^t^"\" has no associated priority"))
+				in let pR = Tmap.find priorityToken pMap in
 				if pS > pR then Tmap.find t shift_line
 				else if pS < pR then REDUCE (n, p, prio)
 				else match Tmap.find t aMap with
@@ -485,78 +485,6 @@ let rec unRawProd = function
 
 let unrawGrammar g = {start = g.startR; rules = List.fold_left (fun l (n,_,pr,prio,_) -> (n, unRawProd pr, prio)::l) [] g.raw_rules}
 
-let pp_non_terminal fmt s = Format.fprintf fmt "%s" s
-
-let pp_iter iter pp_elt fmt =
-  let first = ref true in
-  iter (fun elt ->
-      if not !first then Format.fprintf fmt ",@ " else first := false;
-      pp_elt fmt elt)
-
-let pp_nulls fmt = Format.fprintf fmt "@[%a@]" (pp_iter Ntset.iter pp_non_terminal)
-
-let pp_iter_bindings iter pp_binding fmt =
-  let first = ref true in
-  iter (fun key elt ->
-      if not !first then Format.fprintf fmt "@\n" else first := false;
-      pp_binding fmt key elt)
-
-let pp_terminal fmt s = Format.fprintf fmt "%s" s
-
-let pp_firsts fmt =
-  Format.fprintf fmt "@[%a@]"
-  @@ pp_iter_bindings Ntmap.iter (fun fmt nt ts ->
-         Format.fprintf fmt "@[%a -> {%a}@]" pp_non_terminal nt
-           (pp_iter Tset.iter pp_terminal)
-           ts)
-
-let pp_follows = pp_firsts
-
-let pp_symbol fmt = function
-  | Terminal s -> Format.fprintf fmt "\"%s\"" s
-  | NonTerminal s -> Format.fprintf fmt "%s" s
-
-let rec pp_production fmt = function
-  | [] -> ()
-  | [x] -> pp_symbol fmt x
-  | x :: l -> Format.fprintf fmt "%a %a" pp_symbol x pp_production l
-
-let pp_table fmt t =
-  let print_entry c n p =
-    Format.fprintf fmt "  -%s:%d @[%a@]@\n" c n pp_production p in
-  let print_row nt m =
-       Format.fprintf fmt "@[Expansions for %s:@\n" nt;
-       Tmap.iter (fun c rs -> Pset.iter (print_entry c (Pset.cardinal rs)) rs) m;
-       Format.fprintf fmt "@]" in
-  Ntmap.iter print_row t
-
-let pp_goto fmt nt i = Format.fprintf fmt "\t\t%s -> %i\n" nt i
-
-let pp_action fmt t = function
-	| SHIFT i -> Format.fprintf fmt "\t\t%s -> s%i@\n" t i
-	| REDUCE (n, p ,_) -> Format.fprintf fmt "\t\t%s -> r(%s -> %a)@\n" t n pp_production p
-	| SUCCESS -> Format.fprintf fmt "\t\t%s -> SUCCESS\n" t
-
-let pp_parseTables fmt (pt:parseTables) = 
-	let m1 = Imap.fold (fun i k j -> max i j) pt.action 0 in 
-	let maxi = Imap.fold (fun i k j -> max i j) pt.goto m1 in
-	Format.fprintf fmt "Starting line : %i\n" pt.startLine;
-	for i = 0 to maxi do 
-		Format.fprintf fmt "Map for %i :@\n" i;
-		if Imap.mem i pt.action then
-			let action = Imap.find i pt.action in 
-			if Tmap.cardinal action > 0 then begin
-				Format.fprintf fmt "\tActions :@\n";
-				Tmap.iter (fun t a -> pp_action fmt t a) (Imap.find i pt.action);
-				end;
-		if Imap.mem i pt.goto then 
-			let goto = Imap.find i pt.goto in 
-			if Ntmap.cardinal goto > 0 then begin 
-				Format.fprintf fmt "\tGoto :@\n";
-				Ntmap.iter (fun nt i -> pp_goto fmt nt i) goto;
-				end
-	done;;
-
 let rec findType start = function
 	|[] -> failwith "non existing start rule"
 	|(nom, t, _, _, _)::tl -> if nom = start then t else findType start tl
@@ -564,8 +492,8 @@ let rec findType start = function
 let pp_declarationTypes (fmt:Format.formatter) p = 
 	Format.fprintf fmt "type rulesType =\n";
 	let nameMap = List.fold_left (fun set (nm,t,_,_,_) -> Smap.add nm t set) Smap.empty p.gR.raw_rules in 
-	Smap.iter (fun nm t -> Format.fprintf fmt "\t| %s  of %s\n" (String.uppercase_ascii nm) ("("^t^")")) nameMap;
-	Format.fprintf fmt "\t|TOKEN of token\n";
+	Smap.iter (fun nm t -> Format.fprintf fmt "\t| %s  of (%s)\n" (String.uppercase_ascii nm) t) nameMap;
+	Format.fprintf fmt "\t|Tok of token\n";
 	let t = findType p.gR.startR p.gR.raw_rules in 
 	Format.fprintf fmt "exception Output of (%s)\n" t;
 	Format.fprintf fmt "exception FailureParse of rulesType list\n"
@@ -575,43 +503,70 @@ let pp_tokenDecl fmt liste =
 	Format.fprintf fmt "\t|Not_a_token\n";
 	let afficheToken (t,dataT) = match dataT with 
 		|None -> Format.fprintf fmt "\t|%s\n" t
-		|Some data -> Format.fprintf fmt "\t|%s of %s\n" t ("("^data^")")
+		|Some data -> Format.fprintf fmt "\t|%s of (%s)\n" t data
 	in List.iter (fun t -> afficheToken t) liste
 
 let pp_header fmt str =
-	Format.fprintf fmt "%s\n\n" str;
-	Format.fprintf fmt "exception End_of_File\n"
+	Format.fprintf fmt "%s\n\n" str
 
-let pp_end fmt startS =
-	Format.fprintf fmt "let fichier lexer lexbuf =
-		let newTok = (fun () -> lexer lexbuf) in
-		try 
-			action%i [%i] [] None newTok
-		with Output a -> a
-			|a -> raise a
-" startS startS;;
+let pp_end fin fmt startS =
+	Format.fprintf fmt "let %s lexer lexbuf =
+	let newTok = (fun () -> lexer lexbuf) in
+	try 
+		_sam%i [%i] [] None newTok
+	with Output a -> a
+		|a -> raise a
+" fin startS startS;;
 
 let pp_reduce b i fmt (raw_prod,cons) =
-	let rec aux = function 
+	let rec nomVariables = function
 		|[] -> ()
 		|symb::tl -> begin
-			aux tl;
-			match symb with 
-				|NonTerminalR _ | TerminalR _ -> begin 
-					Format.fprintf fmt "\t\t\tlet pileMem = List.tl pileMem in\n";
-					if b then Format.fprintf fmt "\t\t\tlet pileEtats = List.tl pileEtats in\n"
-					end
-				|AssocTerminal (nm,t) -> begin
-					Format.fprintf fmt "\t\t\tlet %s,pileMem = match pileMem with |(TOKEN (%s t))::tl -> t,tl | _ -> assert false in\n" nm (String.uppercase_ascii t);
-					if b then Format.fprintf fmt "\t\t\tlet pileEtats = List.tl pileEtats in\n"
-					end
-				|AssocNonTerminal (nm,t) -> begin
-					Format.fprintf fmt "\t\t\tlet %s,pileMem = match pileMem with |(%s t)::tl -> t,tl |_ -> assert false in\n" nm (String.uppercase_ascii t);
-					if b then Format.fprintf fmt "\t\t\tlet pileEtats = List.tl pileEtats in\n"
-					end
-			end
-	in if b then Format.fprintf fmt "\t\t\tlet pileEtats = %i::pileEtats in\n" i;
-	aux raw_prod;
+			nomVariables tl;
+			match symb with
+				|NonTerminalR _ | TerminalR _ -> ()
+				| AssocTerminal (nm, _) -> Format.fprintf fmt "%s," nm
+				| AssocNonTerminal (nm, _) -> Format.fprintf fmt "%s," nm
+		end
+	in
+	let rec depile n = function
+		|[] -> ()
+		|symb::tl -> begin
+			depile (n+1) tl;
+			match symb with
+				|NonTerminalR _ | TerminalR _ -> Format.fprintf fmt "_::"
+				|AssocTerminal (_, t) -> Format.fprintf fmt "(Tok (%s t%i))::" (String.uppercase_ascii t) n
+				|AssocNonTerminal (_, t) -> Format.fprintf fmt "(%s t%i)::" (String.uppercase_ascii t) n
+		end
+	in
+	let rec depile2 n = function
+		|[] -> ()
+		|symb::tl -> begin
+			depile2 (n+1) tl;
+			match symb with
+				|NonTerminalR _ | TerminalR _ -> ()
+				|AssocTerminal _ |AssocNonTerminal _ -> Format.fprintf fmt "t%i," n
+		end
+	in let n = List.length raw_prod in
+	if b then 
+		if n = 0
+		then Format.fprintf fmt "\t\t\tlet pEtats = %i::pEtats in\n" i
+		else if n > 1 then begin 
+			Format.fprintf fmt "\t\t\tlet pEtats = match pEtats with |";
+			for i = 1 to n -1 do 
+				Format.fprintf fmt "_::";
+			done;
+			Format.fprintf fmt "t -> t |_ -> assert false in\n";
+			end;
+	if raw_prod != [] then begin
+		Format.fprintf fmt "\t\t\tlet ";
+		nomVariables raw_prod;
+		Format.fprintf fmt "pMem = match pMem with |";
+		depile 0 raw_prod;
+		Format.fprintf fmt "tl -> ";
+		depile2 0 raw_prod;
+		Format.fprintf fmt "tl |_ -> assert false in\n"
+		end;
 	Format.fprintf fmt "\t\t\tlet valeur = (%s) in\n" cons
 
 let pp_action fmt starter pos t a rMap tokenTypeMap = 
@@ -619,40 +574,36 @@ let pp_action fmt starter pos t a rMap tokenTypeMap =
 	if Tmap.mem t tokenTypeMap then begin
 		Format.fprintf fmt "\t| Some (%s data) -> \n" t2;
 		 match a with
-			| SUCCESS -> Format.fprintf fmt "\t\traise (FailureParse pileMem)"
-			| SHIFT i -> Format.fprintf fmt "\t\taction%i (%i::pileEtats) (TOKEN (%s data)::pileMem) None newToken" i pos t2
+			| SUCCESS -> Format.fprintf fmt "\t\traise (FailureParse pMem)"
+			| SHIFT i -> Format.fprintf fmt "\t\t_sam%i (%i::pEtats) (Tok (%s data)::pMem) None newToken" i pos t2
 			| REDUCE ((n, p, _) as r) -> begin
 				pp_reduce true pos fmt (Rmap.find r rMap);
-				Format.fprintf fmt "\t\tgoto (List.hd pileEtats) pileEtats ((%s valeur)::pileMem) \"%s\" (Some (%s data)) newToken" (String.uppercase_ascii n) n t2
+				Format.fprintf fmt "\t\tgoto (List.hd pEtats) \"%s\" pEtats ((%s valeur)::pMem) (Some (%s data)) newToken" n (String.uppercase_ascii n) t2
 
 			end
 		end
 	else begin
 		Format.fprintf fmt "\t|Some %s -> \n" t2;
 		match a with 
-			| SUCCESS -> Format.fprintf fmt "\t\traise (FailureParse pileMem)"
-			| SHIFT i -> Format.fprintf fmt "\t\taction%i (%i::pileEtats) (TOKEN %s::pileMem) None newToken" i pos t2
+			| SUCCESS -> Format.fprintf fmt "\t\traise (FailureParse pMem)"
+			| SHIFT i -> Format.fprintf fmt "\t\t_sam%i (%i::pEtats) (Tok %s::pMem) None newToken" i pos t2
 			| REDUCE ((n, p, _) as r) -> begin
 				pp_reduce (t<>endString || n <> starter) pos fmt (Rmap.find r rMap);
 				if t = endString  && n = starter then Format.fprintf fmt "\t\traise (Output valeur)"
-				else Format.fprintf fmt "\t\tgoto (List.hd pileEtats) pileEtats ((%s valeur)::pileMem) \"%s\" (Some %s) newToken" (String.uppercase_ascii n) n t2
+				else Format.fprintf fmt "\t\tgoto (List.hd pEtats) \"%s\" pEtats ((%s valeur)::pMem)  (Some %s) newToken" n (String.uppercase_ascii n) t2
 				end 
 		end;
 	Format.fprintf fmt "\n"
 
 let pp_actionStates fmt startR i actionT ruleMap tokenTypeMap = 
 	Format.fprintf fmt (if i = 1 then "let rec " else "and ");
-	Format.fprintf fmt "action%i (pileEtats: int list) (pileMem:rulesType list) (nextToken:token option) (newToken:unit -> token) =\n\tmatch nextToken with\n" i;
-	Format.fprintf fmt "\t|None -> let t = try newToken ()\n";
-	Format.fprintf fmt "\t\twith End_of_File -> ";
-	Format.fprintf fmt (if Tmap.mem endString actionT then "raise (FailureParse pileMem)" else "Not_a_token");
-	Format.fprintf fmt "\n";
-	Format.fprintf fmt "\t\tin action%i pileEtats pileMem (Some t) newToken\n" i;
+	Format.fprintf fmt "_sam%i (pEtats: int list) (pMem:rulesType list) (nextToken:token option) (newToken:unit -> token) =\n\tmatch nextToken with\n" i;
+	Format.fprintf fmt "\t|None -> _sam%i pEtats pMem (Some (newToken ())) newToken\n" i;
 	Tmap.iter (fun t a -> pp_action fmt startR i t a ruleMap tokenTypeMap) actionT;
 	Format.fprintf fmt "\t| _ -> raise (SamenhirAst.Samenhir_Parsing_Error %i)\n" i
 
 let pp_goto fmt i t target =
-	Format.fprintf fmt "\t|%i,\"%s\" -> action%i pileEtats pileMem nextToken newToken\n" i t target
+	Format.fprintf fmt "\t|%i,\"%s\" -> _sam%i\n" i t target
 
 let pp_gotoStates fmt i gotoT ruleMap = 
 	Ntmap.iter (pp_goto fmt i) gotoT
@@ -664,15 +615,15 @@ let pp_buildProg fmt program =
 	let tokenTypeMap = List.fold_left (fun m (t,dT) -> if dT = None then m else Tmap.add t dT m) Tmap.empty program.tokenList in
 	let rMap = List.fold_left (fun m (nm,tipe, rawProd, opt, cons) -> Rmap.add (nm,unRawProd rawProd, opt) (rawProd,cons) m) Rmap.empty program.gR.raw_rules in
 	Imap.iter (fun i act -> if Tmap.cardinal act > 0 then pp_actionStates fmt program.gR.startR i act rMap tokenTypeMap) program.actionTab;
-	Format.fprintf fmt "and goto i pileEtats pileMem readRule nextToken newToken = match i, readRule with\n";
+	Format.fprintf fmt "and goto i readRule = match i, readRule with\n";
 	Imap.iter (fun i got ->if Ntmap.cardinal got > 0 then pp_gotoStates fmt i got rMap) program.gotoTab;
 	Format.fprintf fmt "\t|_,_ -> raise (SamenhirAst.Samenhir_Parsing_Error (-1))\n";
-	Format.fprintf fmt "\n\n%a\n" pp_end program.startLTable;
+	Format.fprintf fmt "\n\n%a\n" (pp_end program.gR.startR) program.startLTable;
 	Format.pp_print_flush fmt ()
 ;;
 
 let pp_mli fmt program =
 	pp_tokenDecl fmt program.tokenList;
-	Format.fprintf fmt "\nval fichier: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (%s)\n" (findType program.gR.startR program.gR.raw_rules)
+	Format.fprintf fmt "\nval %s: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (%s)\n" program.gR.startR (findType program.gR.startR program.gR.raw_rules)
 ;;
 
