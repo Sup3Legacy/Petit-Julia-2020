@@ -2,7 +2,7 @@
   (modules lexer samenhirLexer))
 (rule
   (target parser.ml)
-  (action (run ./samenhir.byte parser.txt)))
+  (action (run ./samenhir.byte parser.txt run ocamlbuild samenhir.byte)))
 (executables
   (names pjuliac pjuliarepl)
   (preprocess (pps ppx_deriving.show ppx_deriving.ord))
