@@ -1,8 +1,21 @@
-(ocamllex
-  (modules lexer samenhirLexer))
+(rule
+  (target samenhirParserBuilder.byte
+  (action
+	(run ocamlbuild -no-hygiene samenhirParserBuilder.byte)))
+(rule
+  (target samenhirParser.ml
+  (action
+	(run ./samenhirParserBuilder.byte)))
+(rule
+  (target samenhir.byte
+  (action
+	(run ocamlbuild -no-hygiene samenhir.byte)))
 (rule
   (target parser.ml)
-  (action (run ./samenhir.byte parser.txt run ocamlbuild samenhir.byte)))
+  (action
+	(run ./samenhir.byte parser.txt)))
+(ocamllex
+  (modules lexer samenhirLexer))
 (executables
   (names pjuliac pjuliarepl)
   (preprocess (pps ppx_deriving.show ppx_deriving.ord))
