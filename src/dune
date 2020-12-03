@@ -1,13 +1,13 @@
 (rule
-  (target samenhirParserBuilder.byte
+  (target samenhirParserBuilder.byte)
   (action
 	(run ocamlbuild -no-hygiene samenhirParserBuilder.byte)))
 (rule
-  (target samenhirParser.ml
+  (target samenhirParser.ml)
   (action
 	(run ./samenhirParserBuilder.byte)))
 (rule
-  (target samenhir.byte
+  (target samenhir.byte)
   (action
 	(run ocamlbuild -no-hygiene samenhir.byte)))
 (rule
