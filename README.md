@@ -88,9 +88,9 @@ Pour pouvoir construire l'analyseur syntaxique Samenhir utilise l'algorithme pr�
 
 ### Inconvénients :
 
-Actuellement Samenhir est très peu optimisé, il faut compter 5 minutes d'exécution pour réussir à générer le parser de Petitjulia™. Puis il faut attendre une minute de plus pour compiler ce fichier. Cependant le parser ainsi généré fonctionne comme il devrait en passant tous les tests de typages ainsi que les tests de syntaxe
+Actuellement Samenhir est très peu optimisé, son existence ralonge fortement la durée de création du compilateur de Petitjulia™. Cependant le parser ainsi généré fonctionne comme il devrait en passant tous les tests de typages ainsi que les tests de syntaxe
 
-Nous avons aussi la certitude que Samenhir n'est pas pleinement correct, il manque de nombreuses sécurité par rapport aux différentes utilisations frauduleuses par un utilisateur, de plus il n'y as pas de typeur (on a considéré que 1 seul typeur dans le projet était suffisant). Cependant le compilateur `pjuliac` utilise le fichier parser.ml généré par Samenhir et arrive à passer tous les tests de typages et de syntaxe. On part donc du principe : ça ne plance pas donc ça marche.
+Nous avons aussi la certitude que Samenhir n'est pas entièrement correct, il manque de nombreuses sécurités par rapport aux différentes possibilités d'utilisations frauduleuses par un utilisateur, de plus il n'y as pas de typeur (on a considéré que 1 seul typeur dans le projet était suffisant). Cependant le compilateur `pjuliac` utilise le fichier parser.ml généré par Samenhir et arrive à passer tous les tests de typages et de syntaxe. On part donc du principe suivant : ça ne plante pas donc ça marche !
 
 
 Cependants ces inconviénients sont faibles par rapport à la satisfaction personnelle d'utiliser un outils que l'on as dévellopé soit même plutot que se reposer sur le travail de quelqu'un d'autre
@@ -127,19 +127,21 @@ Enfin `rlwrap` nous permet d'afficher le `ρjυλια>` en couleur, ce qui nous 
 
 # V] Automatisation du build et des tests
 
-En l'état actuel des choses, la compilation du compilateur (`pjuliac.exe`) et du REPL (`pjuliarepl.exe`) est gérée par `dune` via un `dune-project` commun. Elle est réalisable via noptre `Makefile`. Nous avons paramétré celui-ci pour automatiser au maximum les tests et essais des différentes parties de notre projet.
+En l'état actuel des choses, la compilation du compilateur (`pjuliac.exe`) et du REPL (`pjuliarepl.exe`) est gérée par `dune` via un `dune-project` commun. Elle est réalisable via notre `Makefile`. Nous avons paramétré celui-ci pour automatiser au maximum les tests et essais des différentes parties de notre projet.
 
 Nous retrouvons :
-- `make` : construit les deux fichiers.
+- `make` : construit les deux fichiers, de plus pour le confort de l'utilisateur un exécutable `pjuliac` est mis dans le répertoire courant. Cependant cet exécutable est supprimé par la commande `make clean`. Pensez donc à le déplacer avant si vous voulez le garder après avoir nétoyé le reste du projet.
 - ` make clean` : efface les fichiers engendrés par la compilation du projet.
 - `make repl`/`make compil` : construit et exécute le fichier (le `pjuliarepl.exe` ou `pjuliac.exe`)
 - `make testExec`/`make failsExec` : exécute les tests d'exécution positifs/négatifs. (dans `/test/exec/` et `/test/exec-fail`)
 - `make testSyntax`/`make failsSyntax` : de même pour la syntaxe. (NB : nous utilisons aussi les tests d'exécution et de typage, ici, pour ajouter une batterie de tests positifs!)
 - `make testTyping`/`make failsTyping` : de même pour le typage. (NB : nous utilisons aussi les tests d'exécution. Notre but étant de faire un typer un peu plus puissant que demandé, nous cherchons à faire en sorte que certains fichiers qui devraient planter à l'exécution plantent au typage!).
 
+Le différents tests utilisent le fichier pjuliac.exe qui est présent dans les fichier construit par le `dune`. Il sont donc indépendant de l'existence ou non du fichier `pjuliac` que vous pouvez supprimer si vous en avez envie.
+
 # VI] Conclusion partielle
 
 Cette première partie du projet nous aura beaucoup occupés, d'autant plus que nous nous sommes posé des défis supplémentaires plus ou moins conséquents!
 
 Nous avons pu mettre en place tous les outils nécessaires à la suite du projet, ainsi que d'autres outils nous permettant de l'approfondir.
-Cependant on considère nécessaire de continuer à travailler sur Samenhir ne serais-ce que pour optimiser la production de code afin de diminuer le temps de compilation du compilateur (on estime qu'il faut 1 à 2 minutes pour calculer l'automate puis \~4minutes pour générer le fichier `.ml`)
+Cependant on considère nécessaire de continuer à travailler sur Samenhir ne serais-ce que pour optimiser la production de code afin de diminuer le temps de compilation du compilateur.
