@@ -7,9 +7,10 @@ open Utilities
 open Typer
 open X86_64
 
-let notAffiche = ref false;;
+let affiche = ref false;;
 let parse_only = ref false;;
 let type_only = ref false;;
+let show_fName = ref false;;
 
 let gVenv = ref (Tmap.singleton "nothing" (false,Nothing))
 let gFenv = ref (Tmap.singleton "div" [[Int64; Int64], Int64])
@@ -23,12 +24,13 @@ let handle () =
     let e = Parser.fichier Lexer.token lb
     in
     if !parse_only then begin
-      if !notAffiche then print_endline !(Hyper.file)
-      else print_endline (show_fichier e); (* On peut switch entre afficher le nom (ie. compil réussie) et afficher l'arbre généré *)
+      if !affiche then print_endline (show_fichier e)
+      else if !show_fName then print_endline !(Hyper.file); (* On peut switch entre afficher le nom (ie. compil réussie) et afficher l'arbre généré *)
       exit 0;
       end;
     let () = Typer.typerCompilateur e gVenv gFenv gSenv gAenv in
-    print_endline !(Hyper.file);
+    if !affiche then print_endline (show_fichier e)
+    else if !show_fName then print_endline !(Hyper.file);
     exit 0;
   with a -> begin
       let b = Lexing.lexeme_start_p lb in
@@ -85,9 +87,10 @@ let set_filename n =
 let main () =
   begin
     let speclist = [
-    ("-disable_print", Arg.Set notAffiche, "remove the print of the abstract.");
+    ("-print_abstrac", Arg.Set affiche, "print of the abstract");
     ("--parse_only", Arg.Set parse_only, "Stop after parsing");
     ("--type_only", Arg.Set type_only, "Stop after typing");
+    ("-show_file_name", Arg.Set show_fName, "Print the name of the file to compile")
     ] in
     Arg.parse speclist set_filename "file to process.";
     let file = open_out "out.s" in

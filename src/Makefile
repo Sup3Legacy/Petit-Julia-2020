@@ -1,4 +1,4 @@
-all:pjuliac.exe pjuliarepl.exe #samenhir.exe
+all:pjuliac.exe pjuliarepl.exe
 	echo "Built everything! \n"
 
 compil: pjuliac.exe
@@ -26,27 +26,27 @@ explain:
 	cat /tmp/parser.conflicts
 
 testExec:
-	for g in ../test/exec/*.jl; do ./_build/default/pjuliac.exe -disable_print $$g; done
+	for g in ../test/exec/*.jl; do ./_build/default/pjuliac.exe -show_file_name $$g; done
 
 testSyntax:
-	for g in ../test/exec/*.jl; do ./_build/default/pjuliac.exe --parse_only -disable_print $$g; done
-	for g in ../test/exec-fail/*.jl; do ./_build/default/pjuliac.exe -disable_print --parse_only $$g; done
-	for g in ../test/syntax/good/*.jl; do ./_build/default/pjuliac.exe -disable_print --parse_only $$g; done
-	for g in ../test/typing/good/*.jl; do ./_build/default/pjuliac.exe -disable_print --parse_only $$g; done
+	for g in ../test/exec/*.jl; do ./_build/default/pjuliac.exe -show_file_name --parse_only $$g; done
+	for g in ../test/exec-fail/*.jl; do ./_build/default/pjuliac.exe -show_file_name --parse_only $$g; done
+	for g in ../test/syntax/good/*.jl; do ./_build/default/pjuliac.exe -show_file_name --parse_only $$g; done
+	for g in ../test/typing/good/*.jl; do ./_build/default/pjuliac.exe -show_file_name --parse_only $$g; done
 
 
 failsSyntax:
-	for g in ../test/syntax/bad/*.jl; do ./_build/default/pjuliac.exe -disable_print --parse_only $$g; done
+	for g in ../test/syntax/bad/*.jl; do ./_build/default/pjuliac.exe -show_file_name --parse_only $$g; done
 
 
 testTyping:
-	for g in ../test/exec/*.jl; do ./_build/default/pjuliac.exe --type_only -disable_print $$g; done
-	for g in ../test/exec-fail/*.jl; do ./_build/default/pjuliac.exe --type_only -disable_print $$g; done
-	for g in ../test/typing/good/*.jl; do ./_build/default/pjuliac.exe -disable_print --type_only $$g; done
+	for g in ../test/exec/*.jl; do ./_build/default/pjuliac.exe -show_file_name --type_only $$g; done
+	for g in ../test/exec-fail/*.jl; do ./_build/default/pjuliac.exe -show_file_name --type_only $$g; done
+	for g in ../test/typing/good/*.jl; do ./_build/default/pjuliac.exe -show_file_name --type_only $$g; done
 
 
 failsTyping:
-	for g in ../test/typing/bad/*.jl; do ./_build/default/pjuliac.exe -disable_print --type_only $$g; done
+	for g in ../test/typing/bad/*.jl; do ./_build/default/pjuliac.exe -show_file_name --type_only $$g; done
 
 failsExec:
-	for g in ../test/exec-fail/*.jl; do ./_build/default/pjuliac.exe -disable_print $$g; done
+	for g in ../test/exec-fail/*.jl; do ./_build/default/pjuliac.exe -show_file_name $$g; done
