@@ -9,6 +9,9 @@ type position = {ldeb : int; cdeb : int; lfin : int; cfin : int}
 [@@deriving show]
 ;;
 
+exception Lexing_Error
+exception Lexing_Error_Msg of string
+exception Lexing_Error_Msg_Pos of string * position
 exception Parsing_Error
 exception Typing_Error
 exception Typing_Error_Msg of string

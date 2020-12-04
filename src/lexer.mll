@@ -29,26 +29,24 @@ rule token = parse
   | docstring as s {Hyper.enableEnd (); DOCSTRING (String.sub s 3 (String.length s - 6))}
   | nombre as i { Hyper.enableEnd (); INT (Hyper.position lexbuf,
       try Hyper.int_from_string i
-      with _ -> raise (Lexing_error ("Overflowing integer : "^i))) }
+      with _ -> raise (Ast.Lexing_Error_Msg_Pos ("Overflowing integer : "^i, Hyper.position lexbuf))) }
   | nombre"(" as i {Hyper.enterPar ();Hyper.disableEnd ();
       let b =
       try Hyper.int_from_string (String.sub i 0 ((String.length i) - 1))
-      with _ -> raise (Lexing_error ("Overflowing integer : "^i))
+      with _ -> raise (Ast.Lexing_Error_Msg_Pos ("Overflowing integer : "^i, Hyper.position lexbuf))
       in
       ENTIER_PARG (Hyper.position lexbuf, b)}
   | nombre ident as b {Hyper.enableEnd ();
       let (i, s) =
       try (Hyper.separate_int_ident b)
-      with _ -> raise (Lexing_error ("Overflowing integer : "^b))
+      with _ -> raise (Ast.Lexing_Error_Msg_Pos ("Overflowing integer", Hyper.position lexbuf))
       in
       ENTIER_IDENT (Hyper.position lexbuf, i, s)
     }
   | ident"(" as s {Hyper.enterPar (); Hyper.disableEnd (); IDENT_PARG (Hyper.position lexbuf,(String.sub s 0 ((String.length s) - 1)))}
   | ")"ident as s {
     if Hyper.leavePar () then begin
-      let p = Lexing.lexeme_start_p lexbuf in
-      Printf.printf "File \"%s\", line %d, character %d :\n" !(Hyper.file) p.pos_lnum p.pos_bol;
-      Printf.printf "Syntax error : unoppened parenthesis\n";
+      raise (Ast.Lexing_Error_Msg_Pos ("unoppened parenthesis", Hyper.position lexbuf))
     end;
     Hyper.enableEnd ();
     PARD_IDENT (Hyper.position lexbuf,(String.sub s 1 ((String.length s) - 1)))
@@ -64,10 +62,7 @@ rule token = parse
               Hyper.dernierEstElse := true;
               end
             | IF _ -> if !Hyper.dernierEstElse then begin
-              let p = Lexing.lexeme_start_p lexbuf in
-              Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(Hyper.file) p.pos_lnum (p.pos_cnum - p.pos_bol) (p.pos_cnum - p.pos_bol+1);
-              Printf.printf "Syntax error : else followed by if\n";
-              exit 1
+              raise (Ast.Lexing_Error_Msg_Pos ("else followed by if", Hyper.position lexbuf))
               end;
               Hyper.disableEnd ()
             | _ -> Hyper.disableEnd ()
@@ -97,16 +92,11 @@ rule token = parse
   | "." {Hyper.disableEnd (); DOT (Hyper.position lexbuf)}
   | "(" {Hyper.enterPar (); Hyper.disableEnd (); PARG (Hyper.position lexbuf)}
   | unclosedPar {
-    let p = Lexing.lexeme_start_p lexbuf in
-    Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(Hyper.file) p.pos_lnum (p.pos_cnum - p.pos_bol) (p.pos_cnum - p.pos_bol+1);
-    Printf.printf "Syntax error : unclosed parenthesis\n";
-    exit 1
+    raise (Ast.Lexing_Error_Msg_Pos ("unclosed parenthesis", Hyper.position lexbuf))
   }
   | ")" {
     if Hyper.leavePar () then begin
-    let p = Lexing.lexeme_start_p lexbuf in
-    Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(Hyper.file) p.pos_lnum (p.pos_cnum - p.pos_bol) (p.pos_cnum - p.pos_bol+1);
-    Printf.printf "Syntax error : unoppened parenthesis\n";
+    raise (Ast.Lexing_Error_Msg_Pos ("unoppened parenthesis", Hyper.position lexbuf))
     end;
     Hyper.enableEnd ();
     PARD (Hyper.position lexbuf)
@@ -125,11 +115,8 @@ rule token = parse
   | space {token lexbuf}
   | chaine as s {Hyper.enableEnd (); CHAINE  (Hyper.position lexbuf,(String.sub s 1 (String.length s - 2)))}
   | _ as c{
-    let p = Lexing.lexeme_start_p lexbuf in
-    Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(Hyper.file) p.pos_lnum (p.pos_cnum - p.pos_bol) (p.pos_cnum - p.pos_bol+1);
-    if c = '"' then Printf.printf "Unclosed string\n"
-    else Printf.printf "Syntax error : unkown char : \'%c\'\n" c;
-    exit 1
+    if c = '"' then raise (Ast.Lexing_Error_Msg_Pos ("unclosed string", Hyper.position lexbuf))
+    else raise (Ast.Lexing_Error_Msg_Pos ("unknown char : " ^ (String.make 1 c), Hyper.position lexbuf))
   }
   | eof {EOF}
 
