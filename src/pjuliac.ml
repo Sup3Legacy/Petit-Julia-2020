@@ -84,12 +84,12 @@ let set_filename n =
 
 let main () =
   begin
-    let speclist = [("-f", Arg.String(set_filename), "file to process.");
+    let speclist = [
     ("-disable_print", Arg.Set notAffiche, "remove the print of the abstract.");
     ("--parse_only", Arg.Set parse_only, "Stop after parsing");
     ("--type_only", Arg.Set type_only, "Stop after typing");
     ] in
-    Arg.parse speclist (fun x -> ()) "";
+    Arg.parse speclist set_filename "file to process.";
     let file = open_out "out.s" in
     Printf.fprintf file "%s\n" "hahaha";
     close_out file;
