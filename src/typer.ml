@@ -19,12 +19,13 @@ let compatible t1 t2 = t1 = Any || t2 = Any || t1 = t2
 
 let rec compatibleF f1 f2 = match f1, f2 with
   |[],[] -> true
-  |h1::t1, h2::t2 -> compatible h1 h2 && compatibleF t1 t2
+  |h1::t1, h2::t2 -> h1 = h2 && compatibleF t1 t2
   |_,_ -> failwith "bad implementation of typer"
 
-let rec compatibleFInL f = function
+let rec compatibleFInL ((n1,l1) as f) = function
   |[] -> false
-  |hd::tl -> compatibleF f hd || compatibleFInL f tl
+  |(n2,l2)::tl when n1 = n2 -> compatibleF l1 l2 || compatibleFInL f tl
+  |(n2,l2)::tl -> compatibleFInL f tl
 
 let error msg p = raise (Ast.Typing_Error_Msg_Pos (msg,p) )
 let errorOld msg = raise (Ast.Typing_Error_Msg msg)
@@ -46,7 +47,7 @@ let typeName t = match t with
 
 let parcoursStruct sE (aE:argsEnv) fE (b,p,str,l) =
   if str = "print" || str = "println" || str = "div" then 
-    error (str^" is not an allowed function name") p
+    error (str^" is not an allowed structuture name") p
   else
     if Tmap.mem str sE then error ("already defined structuture of name :"^str) p
     else
@@ -244,29 +245,28 @@ let rec testTypageE isFunc vE fE sE aE rT b = function
     else
       if Tmap.mem ident fE then
         let l = Tmap.find ident fE in
+        let rec calcTyp = function
+          |[] -> []
+          |(_, e)::tl -> testTypageE isFunc vE fE sE aE rT b e::calcTyp tl
+        in let argL = calcTyp eL in
         let rec aux l1 l2 = match l1,l2 with
-          |[],[] -> (0,true)
-          |t::tl1, (_, e)::tl2 -> begin
-            let t2 = testTypageE isFunc vE fE sE aE rT b e in
-            let (nb, b) = aux tl1 tl2 in
+          |[],[] -> ([],0,true)
+          |t::tl1, t2::tl2 -> begin
+            let (l,nb, b) = aux tl1 tl2 in
             if b && compatible t t2
-            then if t=t2 then (nb+1, true) else (nb, true)
-            else (0, false)
+            then if t2=Any then (t::l, nb+(if t=Any then 1 else 0), true) else (l, nb+(if t=Any then 1 else 0), true)
+            else ([], 0, false)
             end
-          | _, _ -> (0, false)
+          | _, _ -> ([], 0, false)
         in
-        let (tSet, score, nb, fL) =
-          List.fold_left (fun (s,best,nb, fL)  (pL,pjT) ->
-                    let (n,b) = aux pL eL in
+        let (tSet, nb, fL) =
+          List.fold_left (fun (s,nb, fL)  (pL,pjT) ->
+                    let (tRestant, n, b) = aux pL argL in
                     if b then
-                      if n = best then ( (TypeSet.add pjT s), n, nb+1, pL::fL)
-                      else
-                        if n < best
-                        then (s, best, nb, fL)
-                        else ( (TypeSet.singleton pjT), n, 1,[pL])
-                    else (s, best, nb, fL)
+                      (TypeSet.add pjT s, nb+1,(n,tRestant)::fL)
+                    else (s, nb, fL)
                   )
-                  (TypeSet.empty, 0, 0, [])
+                  (TypeSet.empty, 0, [])
                   l in
         if nb = 1
         then if TypeSet.cardinal tSet = 1 then TypeSet.choose tSet
