@@ -13,7 +13,7 @@ let continue = ref true;;
 let instr = ref "";;
 let logo_file = "logo";;
 
-let gVenv = ref (Tmap.singleton "nothing" Nothing)
+let gVenv = ref (Tmap.singleton "nothing" (true, Nothing))
 let gFenv = ref (Tmap.singleton "div" [[Int64; Int64], Int64])
 let gSenv = ref (Tmap.empty : structEnv)
 let gAenv = ref (Tmap.empty : argsEnv)
@@ -37,7 +37,7 @@ let startswith str motif =
 let flushed = ref false;;
 
 let flush () =
-  gVenv := Tmap.singleton "nothing" Nothing;
+  gVenv := Tmap.singleton "nothing" (true, Nothing);
   gFenv := Tmap.singleton "div" [[Int64; Int64], Int64];
   gSenv := Tmap.empty;
   gAenv := Tmap.empty;
