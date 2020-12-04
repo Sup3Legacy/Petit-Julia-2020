@@ -10,3 +10,5 @@ src/.merlin
 src/test.jl
 
 src/Samenhir/_build
+
+src/pjuliac
