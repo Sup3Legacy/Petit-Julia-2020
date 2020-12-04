@@ -38,7 +38,7 @@ let rec print_value pile = function
   | Vnothing -> "Nothing"
   | Vbool true -> "true"
   | Vbool false -> "false"
-  | Vint n -> string_of_int n
+  | Vint n -> Int64.to_string n
   | Vstring s -> s
   | Vfloat f -> string_of_float f
   | Vstruct s ->
@@ -89,9 +89,12 @@ let rec filter_option l =
   | _ :: q -> filter_option q
 ;;
 
+let int2 = Int64.of_int 2;;
 let rec puissance n m =
-  if m = 0 then 1
-  else n * (puissance n (m - 1))
+  if Int64.equal m Int64.zero then n
+  else let rem = Int64.rem m int2 in
+    if Int64.equal rem Int64.zero then (puissance (Int64.mul n n) (Int64.div m int2))
+    else Int64.mul n (puissance (Int64.mul n n ) (Int64.div m int2))
 ;;
 
 let rec compatible pList expr =
@@ -230,7 +233,7 @@ let rec interp_expression e vI fI sI =
               then
                 begin
                   match expr with
-                  | [Vint n1; Vint n2] -> Vint (n1 / n2)
+                  | [Vint n1; Vint n2] -> Vint (Int64.div n1 n2)
                   | _ -> interp_error "Wrong arguments for div" (* À améliorer *)
                 end
             else
@@ -274,7 +277,7 @@ let rec interp_expression e vI fI sI =
     let res = interp_expression e vI fI sI in
     let vali =
       match res with
-      | Vint i -> Vint (- i)
+      | Vint i -> Vint (Int64.neg i)
       | _ -> interp_error "Erreur de type" (* À améliorer *)
     in vali
   | Ebinop (p, op, e1, e2) ->
@@ -282,10 +285,10 @@ let rec interp_expression e vI fI sI =
     let e2p = interp_expression e2 vI fI sI in
     let vali =
       match op, e1p, e2p with
-      | Plus, Vint i1, Vint i2 -> Vint (i1 + i2)
-      | Minus, Vint i1, Vint i2 -> Vint (i1 - i2)
-      | Times, Vint i1, Vint i2 -> Vint (i1 * i2)
-      | Modulo, Vint i1, Vint i2 -> Vint (i1 mod i2)
+      | Plus, Vint i1, Vint i2 -> Vint (Int64.add i1 i2)
+      | Minus, Vint i1, Vint i2 -> Vint (Int64.sub i1 i2)
+      | Times, Vint i1, Vint i2 -> Vint (Int64.mul i1 i2)
+      | Modulo, Vint i1, Vint i2 -> Vint (Int64.rem i1 i2)
       | Exp, Vint i1, Vint i2 -> Vint (puissance i1 i2)
       | Eq, _, _ ->
         let res =
@@ -353,9 +356,11 @@ let rec interp_expression e vI fI sI =
     in
     (* let vIp = ref !vI in *)
     let liste = List.map (fun x -> Dexpr x) b in
-    for i = n1 to n2 do
-      vI := Imap.add id (Vint i) !vI;
-      let _ = interp_declaration_list liste vI fI sI false in ();
+    let i = ref n1 in
+    while Int64.compare !i n2 < 0 do
+      vI := Imap.add id (Vint !i) !vI;
+      let _ = interp_declaration_list liste vI fI sI false in
+      i := Int64.succ !i
     done;
     Vnothing
   | Ewhile (e, (p, b)) ->

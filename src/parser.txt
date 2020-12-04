@@ -5,7 +5,7 @@
 
 %}
 
-%token <Ast.position*int> INT
+%token <Ast.position*Int64.t> INT
 %token <Ast.position*string> CHAINE
 %token <Ast.position*string> IDENT
 %token EOF
@@ -41,9 +41,9 @@
 %token <Ast.position> TRUE
 %token <Ast.position> WHILE
 
-%token <Ast.position*int * string> ENTIER_IDENT
+%token <Ast.position*Int64.t * string> ENTIER_IDENT
 %token <Ast.position*string> IDENT_PARG
-%token <Ast.position*int> ENTIER_PARG
+%token <Ast.position*Int64.t> ENTIER_PARG
 %token <Ast.position*string> PARD_IDENT
 
 %token TYPE

@@ -35,12 +35,12 @@ and param =
 [@@deriving show]
 and expression = position * expr
 and expr =
-  | Eentier of  int
+  | Eentier of Int64.t
   | Echaine of ident
   | Etrue
   | Efalse
-  | EentierIdent of position * int * ident
-  | EentierParG of position * int * bloc
+  | EentierIdent of position * Int64.t * ident
+  | EentierParG of position * Int64.t * bloc
   | Ebloc1 of bloc
   | EparDIdent of expression * position * ident
   | Eapplication of position * ident * (expression list)
