@@ -156,7 +156,8 @@ let rec parcoursExpr isFunc vE fE (aE:argsEnv) (sE:structEnv) = function
         if Tmap.mem str aE then env1 else error ("undefined attribute name "^str) p
     end
   | ElvalueAffect (_, Lident (_, str), (_, e)) ->
-      parcoursExpr isFunc (Tmap.add str Any vE) fE aE sE e
+    if Tmap.mem str vE && isFunc then vE
+    else parcoursExpr isFunc (Tmap.add str Any vE) fE aE sE e
   | ElvalueAffect (_, Lindex ((_, e1), p, str), (_, e2)) ->
     if argExists str aE then
         let env1 = parcoursExpr isFunc vE fE aE sE e1 in
