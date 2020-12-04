@@ -23,12 +23,16 @@ let rec appartient elt liste =
   | t :: q -> t = elt || appartient elt q
 ;;
 
-let positionDansPile element pile =
+let positionDansPile2 element pile =
   let rec aux n = function
     |[] -> None
     |hd::tl when hd==element -> Some n
     | _::tl -> aux (n+1) tl
   in aux 1 pile
+
+let positionDansPile element pile = match  element with
+| Vstruct s -> positionDansPile2 s pile
+| _ -> None
 
 let rec print_value pile = function
   | Vnothing -> "Nothing"
@@ -46,18 +50,20 @@ let rec print_value pile = function
       if b then begin res := !res ^ "mutable " end;
       res := !res ^ n;
       res := !res ^ "{";
+      let pile = s::pile in
       let rec add_to_str point liste=
         match liste with
           | [] -> ()
-          | [t] -> begin let valeur = (Hashtbl.find htbl t) in
+          | [t] -> begin 
+            let valeur = (Hashtbl.find htbl t) in
             match positionDansPile valeur pile with
-            |None -> res := !res ^ (t ^ " : " ^ (print_value (valeur::pile) valeur))
-            |Some i -> res := !res ^ ("#= circular reference @-"^string_of_int i^" =#")
+            |None -> res := !res ^ (t ^ " : " ^ (print_value pile valeur))
+            |Some i -> res := !res ^ (t ^ " : #= circular reference @-"^string_of_int i^" =#")
             end
           | t :: q -> begin let valeur = (Hashtbl.find htbl t) in
             match positionDansPile valeur pile with
-              |None -> res := !res ^ (t ^ " : " ^ (print_value (valeur::pile) valeur) ^ "; "); add_to_str point q
-              |Some i -> res := !res ^ ("#= circular reference @-"^string_of_int i^" =#; ");
+              |None -> res := !res ^ (t ^ " : " ^ (print_value pile valeur) ^ "; "); add_to_str point q
+              |Some i -> res := !res ^ (t ^ " : #= circular reference @-"^string_of_int i^" =#; ");
             add_to_str point q
             end
       in
