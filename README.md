@@ -6,7 +6,7 @@
 
 # I] Lexer/Parser
 
-LA première étape a été de définir les types qui seront utilisées par les différentes étpes d'analyse. Dans un premeir temps, nous avons suivi la grammaire donnée dans le sujet, que ce soit pour la définition de l'`ast` (les types correspondaient exactement aux règles de grammaire) ou bien pour le lexer et le parser. Cela nous a donné un analyseur à peu près fonctionnel mais souffrant de dizaines de conflits (par exemple au niveau de la construction `while expr bloc`). Cela a été résolu par un remodelage du parser progressif, éléminant tous les conflits un par un!
+La première étape a été de définir les types qui seront utilisés par les différentes étpes d'analyse. Dans un premier temps, nous avons suivi la grammaire donnée dans le sujet, que ce soit pour la définition de l'`ast` (les types correspondaient exactement aux règles de grammaire) ou bien pour le lexer et le parser. Cela nous a donné un analyseur à peu près fonctionnel mais souffrant de dizaines de conflits (par exemple au niveau de la construction `while expr bloc`). Cela a été résolu par un remodelage du parser progressif, éliminant tous les conflits un par un!
 Le parser a subit un nouveau remodelage général au début du typeur car on avait oublié de transmettre les positions des token dans l'`ast`ce qui nous empêchait de pouvoir positionner précisement les erreurs de types.
 
 # II] Typer
@@ -35,7 +35,7 @@ Si l'on rencontre une déclaration de structure on vérifie dans l'ordre :
 - on parcours les attribus de la struture en vérifiant que les types sont bien définies et les noms pas attribué, puis on rajoute ses attribus à l'ensemble des attribus existants. Il a été décidé de ne pas autorisé un attribu d'une structure S d'être du type Struct `S` car sinon on n'arriverais pas à construire la première variable de type `S`
 - on ajoute la structure à l'ensemble des fonction du même noms, ainsi que à l'ensemble des structures
 
-Si l'on rencontre une déclaration de fonction on vérifie dans l'ordre : 
+Si l'on rencontre une déclaration de fonction on vérifie dans l'ordre :
 - que son nom n'est pas déjà associé à une variable
 - que son nom n'est pas "print", "println" ou "div"
 - que ses arguments possèdent bien un type existant et sont deux à deux disjoints
@@ -86,7 +86,7 @@ Il y a peut être d'autres spécificité lié à l'ignorance de notre part de ce
 
 Pour pouvoir construire l'analyseur syntaxique Samenhir utilise l'algorithme présenté slides 81-82 du cours `analyse syntaxique (1/2)`.
 
-### Inconvénients : 
+### Inconvénients :
 
 Actuellement Samenhir est très peu optimisé, il faut compter 5 minutes d'exécution pour réussir à générer le parser de Petitjulia™. Puis il faut attendre une minute de plus pour compiler ce fichier. Cependant le parser ainsi généré fonctionne comme il devrait en passant tous les tests de typages ainsi que les tests de syntaxe
 
@@ -141,8 +141,5 @@ Nous retrouvons :
 
 Cette première partie du projet nous aura beaucoup occupés, d'autant plus que nous nous sommes posé des défis supplémentaires plus ou moins conséquents!
 
-Nous avons pu mettre en place tous les outils nécessaires à la suite du projet, ainsi que d'autres outils nous permettant de l'approfondir. 
+Nous avons pu mettre en place tous les outils nécessaires à la suite du projet, ainsi que d'autres outils nous permettant de l'approfondir.
 Cependant on considère nécessaire de continuer à travailler sur Samenhir ne serais-ce que pour optimiser la production de code afin de diminuer le temps de compilation du compilateur (on estime qu'il faut 1 à 2 minutes pour calculer l'automate puis \~4minutes pour générer le fichier `.ml`)
-
-
-
