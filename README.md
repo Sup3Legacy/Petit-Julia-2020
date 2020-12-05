@@ -44,7 +44,7 @@ Si l'on rencontre une déclaration de structure, on effectue ces actions :
 Si l'on rencontre une déclaration de fonction, on vérifie dans l'ordre :
 - que son nom n'est pas déjà associé à une variable
 - que son nom n'est pas `print`, `println` ou `div`
-- que ses arguments possèdent bien un type existant et sont deux-à-deux disjoints
+- que ses arguments possèdent bien un type existant et que les noms sont deux-à-deux distincts
 - que son type retourné est bien existant
 - puis on rajoute la fonction à l'ensemble des fonctions du même noms en vérifiant qu'il n'existe pas déjà une autre fonction du même nom ayant exactement les mêmes types d'entrée
 
