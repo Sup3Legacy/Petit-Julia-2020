@@ -8,7 +8,7 @@ let file = ref "";;
 
 
 let main () =
-	let spectlist = []
+	let spectlist = ["-explain", Arg.Set explain, "build file of states"]
 	in
 	Arg.parse spectlist (fun f -> file := f) "";
 	if !file = "" then 

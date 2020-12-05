@@ -17,6 +17,35 @@ let gFenv = ref (Tmap.singleton "div" [[Int64; Int64], Int64])
 let gSenv = ref (Tmap.empty : structEnv)
 let gAenv = ref (Tmap.empty : argsEnv)
 
+module Sset = Set.Make(String)
+let afficheL l = 
+  let conversionTokenType s = match s with
+    |"INT"|"CHAINE"|"IDENT"|"NOT"|"FALSE"|"TRUE"|"FOR"|"IF"|"WHILE"|"RETURN"
+|"ENTIER_IDENT"|"IDENT_PARG"|"ENTIER_PARG"|"PARG_IDENT"|"separated_list_COMMA_expr"
+|"expr_wMin_"|"expr_w_Ret"|"expr"|"whileExp"|"lvalue"|"lvalue_wMin_"|"bloc"
+|"expr_bloc"|"bloc1" -> "value"
+    |"PARG" -> "("
+    |"PARD" -> ")"
+    |"AFFECT" -> "="
+    |"OR"|"AND"|"EQ"|"NEQ"|"L"|"G"|"LEQ"|"GEQ"|"PLUS"|"MINUS"|"TIMES"|"MODULO"|"EXP" -> "operator"
+    |"DOT" -> "."
+    |"ELSE"|"ELSEIF"|"else_exp" -> "else(if)"
+    |"END" -> "end"
+    |"FUNCTION"|"fonction"|"STRUCT"|"MUTABLE"|"DOCSTRING"|"fichier"|"declarations_list"|"structure"|"EOF" -> "declaration" 
+    |"param_list"|"separated_list_COMMA_param"|"param" -> "parameter"
+    |"typage" -> "type"
+    |"TYPE" -> "::"
+    |"COLON" -> ":"
+    |"SEMICOLON"|"expr_bloc2"|"bloc_END"|"bloc1bis" -> ";"
+    |"COMMA"|"separated_list_C_P"|"separated_list_C_E"-> ","
+    |_ -> assert false
+  in
+  let rec aux (l:string list) = match l with
+  |[] -> Sset.empty
+  |hd::tl -> Sset.add (conversionTokenType hd) (aux tl)
+  in Sset.iter (Printf.printf "%s ") (aux l);
+  Printf.printf "\n"
+
 let handle () =
   let c = open_in !(Hyper.file) in
   let lb = Lexing.from_channel c in
@@ -40,9 +69,9 @@ let handle () =
             Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(Hyper.file) b.pos_lnum (b.pos_cnum - b.pos_bol) (e.pos_cnum - e.pos_bol);
             Printf.printf "Lexical error at lexeme : \"%s\"\n" s
           end
-        | Parser.Samenhir_Parsing_Error _ -> begin
+        | Parser.Samenhir_Parsing_Error sl -> begin
             Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(Hyper.file) b.pos_lnum (b.pos_cnum - b.pos_bol) (e.pos_cnum - e.pos_bol);
-            Printf.printf "Syntax error\n"
+            Printf.printf "Syntax error, expected: ";afficheL sl
           end
         | Ast.Parsing_Error -> begin
             Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(Hyper.file) b.pos_lnum (b.pos_cnum - b.pos_bol) (e.pos_cnum - e.pos_bol);

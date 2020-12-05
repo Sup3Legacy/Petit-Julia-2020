@@ -1,5 +1,6 @@
 
 let print_all = ref false
+let explain = ref false
 let endString = "Not_a_token"
 
 open Lexing
@@ -442,15 +443,31 @@ let firstNT g =
 		|_::tl -> aux tl
 	in aux g.rules
 
+let rec affichePD_Fmt fmt = function
+	|[] -> ()
+	|TerminalD t::tl -> Format.fprintf fmt "\"%s\" %a" t affichePD_Fmt tl
+	|NonTerminalD t::tl -> Format.fprintf fmt "%s %a" t affichePD_Fmt tl
+	|Dot::tl -> Format.fprintf fmt "* %a" affichePD_Fmt tl
+
+let afficheFichierEtats nM = 
+	let out = open_out "parser.explain" in
+	let fmt = Format.formatter_of_out_channel out in
+	StateSetMap.iter (fun k i ->
+		Format.fprintf fmt "Etat : %i\n" i;
+		StateSet.iter (fun (nT, prodD, _, term) -> 
+			Format.fprintf fmt " - %s[%s] -> %a\n" nT term affichePD_Fmt prodD) k) nM;
+	close_out out
+
+
 let buildTable (g:grammar) (priority:priority) =
 	let a = buildAutomateD g in
 	if !print_all then print_string "Automate Deterministe fini\n";
 	let ntS = buildNtset g.rules in 
 	let tS = Tset.add endString (buildTset g.rules) in
 	let numMap = giveNumbers a.transitions in
+	if !explain then afficheFichierEtats numMap;
 	let priorityMap = buildPriorityMap 0 priority in
 	let assocMap = buildAssocMap priority in
-	(*let nbPrio = List.length priority in*)
 	let buildReduceTab set _ m =
 		let laws = reduces set in
 		Imap.add (StateSetMap.find set numMap) laws m in
@@ -507,7 +524,7 @@ let pp_tokenDecl fmt liste =
 
 let pp_header fmt str =
 	Format.fprintf fmt "%s\n\n" str;
-	Format.fprintf fmt "exception Samenhir_Parsing_Error of int\nlet samFail i = raise (Samenhir_Parsing_Error i)\n"
+	Format.fprintf fmt "exception Samenhir_Parsing_Error of string list\nlet samFail i = raise (Samenhir_Parsing_Error i)\n"
 
 let pp_end fin fmt startS =
 	Format.fprintf fmt "let %s lexer lexbuf =
@@ -574,7 +591,7 @@ let pp_action fmt starter pos t a rMap tokenTypeMap =
 	if Tmap.mem t tokenTypeMap then begin
 		Format.fprintf fmt "\t|(%s data)->\n" t2;
 		 match a with
-			| SUCCESS -> Format.fprintf fmt "\t\traise(FailureParse _m)"
+			| SUCCESS -> assert false
 			| SHIFT i -> Format.fprintf fmt "\t\t_sam%i(%i::_e)(Tok(%s data)::_m)newToken(newToken())" i pos t2
 			| REDUCE ((n, p, _) as r) -> begin
 				pp_reduce true pos fmt (Rmap.find r rMap);
@@ -585,7 +602,7 @@ let pp_action fmt starter pos t a rMap tokenTypeMap =
 	else begin
 		Format.fprintf fmt "\t|%s->\n" t2;
 		match a with 
-			| SUCCESS -> Format.fprintf fmt "\t\traise(FailureParse _m)"
+			| SUCCESS -> assert false
 			| SHIFT i -> Format.fprintf fmt "\t\t_sam%i(%i::_e)(Tok %s::_m)newToken(newToken())" i pos t2
 			| REDUCE ((n, p, _) as r) -> begin
 				pp_reduce (t<>endString || n <> starter) pos fmt (Rmap.find r rMap);
@@ -595,11 +612,17 @@ let pp_action fmt starter pos t a rMap tokenTypeMap =
 		end;
 	Format.fprintf fmt "\n"
 
-let pp_actionStates fmt startR i actionT ruleMap tokenTypeMap = 
+let rec afficheListStr fmt = function
+	|[] -> ()
+	|[s] -> Format.fprintf fmt "\"%s\"" s
+	|hd::tl -> Format.fprintf fmt "\"%s\";%a" hd afficheListStr tl
+
+let pp_actionStates fmt startR i actionT ruleMap tokenTypeMap goto = 
 	Format.fprintf fmt (if i = 1 then "let rec " else "and ");
 	Format.fprintf fmt "_sam%i _e _m newToken=function\n" i;
 	Tmap.iter (fun t a -> pp_action fmt startR i t a ruleMap tokenTypeMap) actionT;
-	Format.fprintf fmt "\t|_->samFail %i\n" i
+	let l = Tmap.fold (fun str _ l-> str::l) actionT (Ntmap.fold (fun str _ l -> str::l) goto []) in
+	Format.fprintf fmt "\t|_->samFail [%a]\n" afficheListStr l
 
 let pp_goto fmt i t target =
 	Format.fprintf fmt "|%i,\"%s\"->_sam%i\n" i t target
@@ -612,16 +635,16 @@ let pp_buildProg fmt program =
 	Format.fprintf fmt "\n\n%a\n%a\n" pp_tokenDecl program.tokenList pp_declarationTypes program;
 	let tokenTypeMap = List.fold_left (fun m (t,dT) -> if dT = None then m else Tmap.add t dT m) Tmap.empty program.tokenList in
 	let rMap = List.fold_left (fun m (nm,tipe, rawProd, opt, cons) -> Rmap.add (nm,unRawProd rawProd, opt) (rawProd,cons) m) Rmap.empty program.gR.raw_rules in
-	Imap.iter (fun i act -> if Tmap.cardinal act > 0 then pp_actionStates fmt program.gR.startR i act rMap tokenTypeMap) program.actionTab;
+	Imap.iter (fun i act -> if Tmap.cardinal act > 0 then pp_actionStates fmt program.gR.startR i act rMap tokenTypeMap (if Imap.mem i program.gotoTab then Imap.find i program.gotoTab else Ntmap.empty)) program.actionTab;
 	Format.fprintf fmt "and goto i readRule = match i,readRule with\n";
 	Imap.iter (fun i got ->if Ntmap.cardinal got > 0 then pp_gotoStates fmt i got rMap) program.gotoTab;
-	Format.fprintf fmt "|_,_->samFail (-1)\n\n%a\n" (pp_end program.gR.startR) program.startLTable;
+	Format.fprintf fmt "|_,_-> assert false\n\n%a\n" (pp_end program.gR.startR) program.startLTable;
 	Format.pp_print_flush fmt ()
 ;;
 
 let pp_mli fmt program =
 	pp_tokenDecl fmt program.tokenList;
-	Format.fprintf fmt "\nexception Samenhir_Parsing_Error of int";
+	Format.fprintf fmt "\nexception Samenhir_Parsing_Error of string list";
 	Format.fprintf fmt "\nval %s: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (%s)\n" program.gR.startR (findType program.gR.startR program.gR.raw_rules)
 ;;
 

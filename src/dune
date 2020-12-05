@@ -30,4 +30,5 @@
   (names pjuliac pjuliarepl)
   (preprocess (pps ppx_deriving.show ppx_deriving.ord))
   (libraries unix)
-  (flags ()))
+  (flags ())
+)

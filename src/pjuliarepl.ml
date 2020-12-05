@@ -34,6 +34,37 @@ let startswith str motif =
     end
 ;;
 
+module Sset = Set.Make(String)
+
+let afficheL l = 
+  let conversionTokenType s = match s with
+    |"INT"|"CHAINE"|"IDENT"|"NOT"|"FALSE"|"TRUE"|"FOR"|"IF"|"WHILE"|"RETURN"
+|"ENTIER_IDENT"|"IDENT_PARG"|"ENTIER_PARG"|"PARG_IDENT"|"separated_list_COMMA_expr"
+|"expr_wMin_"|"expr_w_Ret"|"expr"|"whileExp"|"lvalue"|"lvalue_wMin_"|"bloc"
+|"expr_bloc"|"bloc1" -> "value"
+    |"PARG" -> "("
+    |"PARD" -> ")"
+    |"AFFECT" -> "="
+    |"OR"|"AND"|"EQ"|"NEQ"|"L"|"G"|"LEQ"|"GEQ"|"PLUS"|"MINUS"|"TIMES"|"MODULO"
+    |"EXP" -> "operator"
+    |"DOT" -> "."
+    |"ELSE"|"ELSEIF"|"else_exp" -> "else(if)"
+    |"END" -> "end"
+    |"FUNCTION"|"fonction"|"STRUCT"|"MUTABLE"|"DOCSTRING"|"fichier"|"declarations_list"|"structure"|"EOF" -> "declaration" 
+    |"param_list"|"separated_list_COMMA_param"|"param" -> "parameter"
+    |"typage" -> "type"
+    |"TYPE" -> "::"
+    |"COLON" -> ":"
+    |"SEMICOLON"|"expr_bloc2"|"bloc_END"|"bloc1bis" -> ";"
+    |"COMMA"|"separated_list_C_P"|"separated_list_C_E"-> ","
+    |_ -> assert false
+  in
+  let rec aux (l:string list) = match l with
+  |[] -> Sset.empty
+  |hd::tl -> Sset.add (conversionTokenType hd) (aux tl)
+  in Sset.iter (Printf.printf "%s ") (aux l);
+  Printf.printf "\n"
+
 let flushed = ref false;;
 
 let flush () =
@@ -86,9 +117,10 @@ while !continue do
             Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(file_name) b.pos_lnum (b.pos_cnum - b.pos_bol) (e.pos_cnum - e.pos_bol);
               Printf.printf "Lexical error at lexeme : \"%s\"\n" s
             end
-          | Parser.Samenhir_Parsing_Error i -> begin
-              Printf.printf "File \"%s\", line %d, character %d-%d %i:\n" !(file_name) b.pos_lnum (b.pos_cnum - b.pos_bol) (e.pos_cnum - e.pos_bol) i;
-              Printf.printf "Syntax error\n"
+          | Parser.Samenhir_Parsing_Error sl -> begin
+              Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(file_name) b.pos_lnum (b.pos_cnum - b.pos_bol) (e.pos_cnum - e.pos_bol);
+              if List.length sl < 0 then (Printf.printf "Syntax error, expected: ";afficheL sl)
+              else Printf.printf "Syntax error\n"
             end
           | Ast.Parsing_Error -> begin
               Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(file_name) b.pos_lnum (b.pos_cnum - b.pos_bol) (e.pos_cnum - e.pos_bol);
