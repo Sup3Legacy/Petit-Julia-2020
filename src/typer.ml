@@ -24,7 +24,6 @@ let rec compatibleF f1 f2 = match f1, f2 with
 
 let rec compatibleFInL ((n1,l1) as f) = function
   |[] -> true
-  |[(n2,l2)] -> n2==n1 && l1==l2
   |(n2,l2)::tl -> n1==n2 && l1==l2 && compatibleFInL f tl
 
 let error msg p = raise (Ast.Typing_Error_Msg_Pos (msg,p) )
