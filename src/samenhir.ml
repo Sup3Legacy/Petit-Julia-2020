@@ -13,10 +13,10 @@ let main () =
 	Arg.parse spectlist (fun f -> file := f) "";
 	if !file = "" then 
 		failwith "no file to compile"
-	else if not (Filename.check_suffix !file ".txt")
+	else if not (Filename.check_suffix !file ".sam")
 		then failwith "not the good extension"
 		else begin 
-			let outfile = (Filename.chop_suffix !file ".txt" ^ ".ml") in
+			let outfile = (Filename.chop_suffix !file ".sam" ^ ".ml") in
 			let f = open_in !file in
 			let buf = Lexing.from_channel f in
 			let parsed = SamenhirParser.program SamenhirLexer.token buf in

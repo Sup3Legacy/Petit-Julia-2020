@@ -23,9 +23,9 @@ let rec compatibleF f1 f2 = match f1, f2 with
   |_,_ -> failwith "bad implementation of typer"
 
 let rec compatibleFInL ((n1,l1) as f) = function
-  |[] -> false
-  |(n2,l2)::tl when n1 = n2 -> compatibleF l1 l2 || compatibleFInL f tl
-  |(n2,l2)::tl -> compatibleFInL f tl
+  |[] -> true
+  |[(n2,l2)] -> n2==n1 && l1==l2
+  |(n2,l2)::tl -> n1==n2 && l1==l2 && compatibleFInL f tl
 
 let error msg p = raise (Ast.Typing_Error_Msg_Pos (msg,p) )
 let errorOld msg = raise (Ast.Typing_Error_Msg msg)
@@ -275,14 +275,11 @@ let rec testTypageE isLoc vE fE sE aE rT b = function
         then if TypeSet.cardinal tSet = 1 then TypeSet.choose tSet
           else Any
         else if nb > 1 then
-          if not b && fst (List.fold_left (fun (b,l1) hd ->
-              if b then (true,[])
-              else
-                  if compatibleFInL hd l1
-                  then (true,[])
-                  else (false,hd::l1)
-              ) (false,[]) fL)
-          then error ("too many compatible functions for "^ident) pName
+          let (ambiguous,l) = List.fold_left (fun (b,l1) hd ->
+              ( b && compatibleFInL hd l1, hd::l1)
+              ) (true,[]) fL in
+          if ambiguous
+          then error ("ambiguity in which "^ident^" to call") pName
           else
             if TypeSet.cardinal tSet = 1 then TypeSet.choose tSet
             else Any

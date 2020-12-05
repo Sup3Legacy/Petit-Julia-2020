@@ -20,9 +20,9 @@
 	(run ocamlopt samenhirAst.ml samenhir_utilities.ml samenhirParser.mli samenhirParser.ml samenhirLexer.ml samenhir.ml -o samenhir -O3)))
 (rule
   (target parser.ml)
-  (deps samenhir (file parser.txt))
+  (deps samenhir (file parser.sam))
   (action 
-	(run ./samenhir parser.txt)
+	(run ./samenhir parser.sam)
 ))
 (ocamllex
   (modules lexer samenhirLexer))

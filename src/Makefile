@@ -15,9 +15,12 @@ pjuliac.exe:
 
 pjuliarepl.exe :
 	dune build pjuliarepl.exe
+	cp _build/default/pjuliarepl.exe pjuliarepl
+
 
 clean:
 	rm -f pjuliac
+	rm -f pjuliarepl
 	dune clean
 
 

@@ -38,7 +38,7 @@ On fait le parcours en utilisant 4 environnements Map :
 Si l'on rencontre une déclaration de structure, on effectue ces actions :
 - on vérifie que son nom n'est pas "print", "println" ou "div"
 - on vérifie que l'on a pas d'autre structure du même nom
-- on parcourt les champs de la struture en vérifiant que les types sont bien définis et les noms non déjà attribués (par exemple deux structures différentes ne peuvent pas avoir le même champ `a`), puis on rajoute ses champs à l'ensemble des champs existants. Il a été décidé de ne pas autoriser un champ d'une structure `S` à être du type Struct `S` car sinon on n'arriverait pas à construire la première variable de type `S`
+- on parcourt les champs de la struture en vérifiant que les types sont bien définis et les noms distincts et pas déjà attribués (par exemple deux structures différentes ne peuvent pas avoir le même champ `a`), puis on rajoute ses champs à l'ensemble des champs existants. Il a été décidé de ne pas autoriser un champ d'une structure `S` à être du type Struct `S` car sinon on n'arriverait pas à construire la première variable de type `S`
 - on ajoute la structure (enfin plus exactement son constructeur) à l'ensemble des fonctions du même nom, ainsi que à l'ensemble des structures
 
 Si l'on rencontre une déclaration de fonction, on vérifie dans l'ordre :
@@ -53,15 +53,19 @@ Si l'on rencontre une expression, on la parcourt récursivement et propageant l'
 - si l'on rencontre une affectation de variable on crée la variable associée dans l'environnement
 - si l'on rencontre une affectation d'attribut, on vérifie si l'attribut existe et s'il est mutable
 - si l'on rencontre un appel de fonction, on vérifie qu'il existe une fonction ou une struture du même nom
-- si l'on rencontre une expression qui définie un nouvel environnement (boucles `for` et `while`), alors on fait un premier parcours pour récupérer l'ensemble des variables définies dans le bloc à l'intérieur (on ne descend pas dans les `for`/`while` suivants par contre). Puis on reparcourt le bloc en testant bien tous les types en commençant avec l'environnement global privé des valeurs qui seront définies par la suite.
+- si l'on rencontre une expression qui définie un nouvel environnement (boucles `for` et `while`), alors on fait un premier parcours pour récupérer l'ensemble des variables définies dans le bloc à l'intérieur (on ne descend pas dans les `for`/`while` suivants par contre). Puis on reparcourt le bloc en testant bien tous les types en commençant avec l'environnement global privé des valeurs qui seront définies par la suite (en réalité c'est beaucoup plus compliquer car il faut gérer les différences d'environnement global/local).
 
-**La première différence notable avec ce qui est demandé dans le sujet est que le typeur teste si les variables sont bien définie AVANT leur utilisation et pas uniquement si elle sont bien définies dans le même champs. Ce qui permet de faire planter les tests de typage `undef1.jl`, `undef3.jl`, `undef4.jl` et `undef5.jl`**
+**La première différence notable avec ce qui est demandé dans le sujet est que le typeur teste si les variables sont bien définie AVANT leur utilisation et pas uniquement si elle sont bien définies dans le même champs. Ce qui permet de faire planter les tests dans exec-fail suivant : `undef1.jl`, `undef3.jl`, `undef4.jl` et `undef5.jl`**
 
 ### Parcours 2 :
 
 On teste si tout est correctement typé, notamment pour toutes les affectations, on teste si on met bien dans une variable un type compatible avec le type que possède déjà la variable.
 On vérifie aussi que toutes les expressions sont bien typés.
-De plus, pour chaque appel de fonction, on regarde l'ensemble des fonctions compatibles. Si deux fonctions sont compatibles entre elles (ie il existe une séquence de type qui est compatible avec les types des arguments des deux) alors on plante car on ne peut pas décider. Sinon on regarde l'ensemble des types possible des sorties. Pour décider du type de l'expression
+De plus, pour chaque appel de fonction, on regarde l'ensemble des fonctions compatibles. Pour cela calcul d'abord la liste des types des expressions donné en arguments. Puis pour chaque fonction compatible on compte le nombre de `Any` dans ses types d'arguments et on récupère la liste des types des arguments dont l'expression à la position correspondante est de type `Any`. Il a été décidé que si toutes les fonctions avaient les mêmes listes et nombre alors le typage plantait car il y avait une impossibilité de savoir qu'elle fonction appeler. Cela permet notamment de faire planter le test `typing/bad/testfile-ambiguity-1.jl` (les deux fonctions on pour couple `(1,[])` à l'appel).
+
+### Difficultés :
+
+La principale difficulté rencontré dans le typage de Petitjulia™ se cachait dans la portée des variables.
 
 # III] Samenhir
 
@@ -72,10 +76,10 @@ Actuellement Samenhir est totalement indépendant de menhir, c'est à dire capab
 ### Grammaire à fournir à Samenhir :
 
 Samenhir a besoin d'une grammaire ressemblant fortement à celle demandée par menhir. Cependant, par soucis de simplification de l'implémentation, certaines décisions ont été prises :
-- Le parser doit être écrit dans un fichier `.txt` car, en utilisant un fichier `.mly`, menhir voulait le parser (Il serait cependant probablement possible de désactiver Menhir définitivement dans les optiosn du projet)
+- Le parser doit être écrit dans un fichier `.sam` afin de différentier d'un fichier `.mly` car les syntaxe ne sont pas entièrement compatible avec Menhir et Ocamlyacc
 - la première lettre du nom d'une règle doit être minuscule et la première lettre du nom d'un token majuscule
 - il est possible de mettre un bout de code au dessus (`%{ code ocaml %}`}) du parser mais pas en dessous
-- une déclaration de règle nécessite de renseigner le type de renvoi de la règle. Cela permet d'éviter de faire nous-mêmes de l'inférence de type ou d'utiliser la librairies `obj_magic`
+- une déclaration de règle nécessite de renseigner le type de renvoi de la règle. Cela permet d'éviter de faire nous-mêmes de l'inférence de type ou d'utiliser le module `Obj`
 - en raison de la décision ci-dessus, il n'est plus nécessaire de renseigner le type de la règle de départ
 ```ocaml
 rule<int * int>:
@@ -90,7 +94,7 @@ Il y a peut être d'autres points de divergence entre Samenhir et Menhir liés �
 
 ### Algorithme utilisé pour construire l'analyseur :
 
-Pour pouvoir construire l'analyseur syntaxique, Samenhir utilise l'algorithme présenté slides 81-82 du cours `analyse syntaxique (1/2)`.
+Pour pouvoir construire l'analyseur syntaxique, Samenhir utilise l'algorithme de Knuth présenté slides 81-82 du cours `analyse syntaxique (1/2)`.
 
 ### Inconvénients :
 
@@ -99,13 +103,13 @@ Actuellement, Samenhir est très peu optimisé. Son utilisation dans le projet r
 Nous avons aussi la certitude que Samenhir n'est pas entièrement correct. Il manque de nombreuses sécurités par rapport aux différentes possibilités d'utilisations frauduleuses par un utilisateur De plus, il n'y as pas de typeur (on a considéré qu'un seul typeur dans le projet était suffisant). Cependant, le compilateur `pjuliac` utilise le fichier `parser.ml` généré par Samenhir et arrive à passer tous les tests de typages et de syntaxe. On part donc du principe suivant : `ça ne plante pas donc ça marche !`™.
 
 
-Cependants ces inconviénients sont faibles par rapport à la satisfaction personnelle d'utiliser un outils que l'on as dévellopé soit même plutot que se reposer sur le travail de quelqu'un d'autre
+Cependant ces inconviénients sont faibles par rapport à la satisfaction personnelle d'utiliser un outils que l'on as dévellopé soit même plutot que se reposer sur le travail de quelqu'un d'autre.
 
 # IV] Interpreter/REPL
 
 ## 1) Interpreter
 
-Tandis que l'on avançait sur la construction du compilateur, il nous a semblé utile d'implémenter un interpréteur pour pouvoir facilement tester et débeuguer les étapes d'analyse syntaxique et de typage. L'implémentation de cet interpréteur n'a pas été très difficile et est calquée sur l'implémentation de l'interpréteur `Micro-Python` que nous avons vu en début d'année. Les quelques difficultés rencontrées avaient souvent rapport aux différences de comportement de Julia (que nous prenions comme référence pour certaines subtilités) entre le mode interpréteur et le mode compilateur; et ce la d'autant plus que nous avons assez longuement hésité sur le mode à adopter : d'un côté cet interpréteur nous sert à tester le comportement de notre compilateur, donc il devrait avoir exactement le même comportement. De l'autre côté, un REPL (cf. ci-dessous) qui a un comportement de compilateur n'est pas très logique!
+Tandis que l'on avançait sur la construction du compilateur, il nous a semblé utile d'implémenter un interpréteur pour pouvoir facilement tester et débeuguer les étapes d'analyse syntaxique et de typage. L'implémentation de cet interpréteur n'a pas été très difficile et est calquée sur l'implémentation de l'interpréteur `Mini-Python` que nous avons vu en début d'année. Les quelques difficultés rencontrées avaient souvent rapport aux différences de comportement de Julia (que nous prenions comme référence pour certaines subtilités) entre le mode interpréteur et le mode compilateur; et ce la d'autant plus que nous avons assez longuement hésité sur le mode à adopter : d'un côté cet interpréteur nous sert à tester le comportement de notre compilateur, donc il devrait avoir exactement le même comportement. De l'autre côté, un REPL (cf. ci-dessous) qui a un comportement de compilateur n'est pas très logique!
 
 Ainsi, pour l'instant, nous avons un interpréteur qui fonctionne uniquement en mode REPL mais nous prévoyons d'éventuellement lui ajouter un mode "compilateur", pour répliquer le comportement attendu de ce dernier, afin de nous aider à le concevoir et à le débeuguer!
 
