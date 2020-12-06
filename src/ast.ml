@@ -40,6 +40,7 @@ and param =
 and expression = position * expr
 and expr =
   | Eentier of Int64.t
+  | Eflottant of float
   | Echaine of ident
   | Etrue
   | Efalse

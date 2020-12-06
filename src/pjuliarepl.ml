@@ -21,7 +21,7 @@ let prompt = ref "ρjυλια> ";;
 (* Environnements globaux de typage *)
 let (gVenv:Astype.varEnv ref) = ref (Tmap.singleton "nothing" (true, Nothing))
 let (gFenv:Astype.funcEnv ref) = ref (Tmap.singleton "div" [[Int64; Int64], Int64])
-let (gSenv:Astype.structEnv ref) = ref Tmap.empty 
+let (gSenv:Astype.structEnv ref) = ref Tmap.empty
 let (gAenv:Astype.argsEnv ref) = ref Tmap.empty
 
 let file_name = ref "";;

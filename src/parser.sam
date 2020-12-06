@@ -6,11 +6,14 @@
 %}
 
 %token <Ast.position*Int64.t> INT
+%token <Ast.position*float> FLOAT
 %token <Ast.position*string> CHAINE
 %token <Ast.position*string> IDENT
 %token EOF
 %token <Ast.position> PARG
 %token <Ast.position> PARD
+%token <Ast.position> CROCHETG
+%token <Ast.position> CROCHETD
 %token <Ast.position> AFFECT
 %token <Ast.position> OR
 %token <Ast.position> AND
@@ -174,6 +177,7 @@ param<Ast.param>:
     {
       let (p1,i) = pi in
       let typ,p2 = match pb with
+        | (p, "Float64") -> Float64, p
         | (p, "Int64") -> Int64, p
         | (p, "Bool") -> Bool, p
         | (p, "String") -> String, p
@@ -215,6 +219,7 @@ expr_wMin_<Ast.expression>:
   | pe1 = expr_wMin_ p = AND pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, And, pe1, pe2)) }
   | pe1 = expr_wMin_ p = OR pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, Or, pe1, pe2)) }
   | pi = INT {let (p,i) = pi in (p,Eentier i)}
+  | pf = FLOAT {let (p, f) = pf in (p, Eflottant f)}
   | ps = CHAINE {let (p,s) = ps in (p, Echaine s)}
   | p = TRUE {(p, Etrue)}
   | p = FALSE {(p, Efalse)}
@@ -268,6 +273,7 @@ expr_w_Ret<Ast.expression>:
   | pe1 = expr p = AND pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, And, pe1, pe2) }
   | pe1 = expr p = OR pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Or, pe1, pe2) }
   | pi = INT {let (p,i) = pi in p, Eentier i}
+  | pf = FLOAT {let (p, f) = pf in (p, Eflottant f)}
   | ps = CHAINE {let (p,s) = ps in p, Echaine s}
   | p = TRUE {p, Etrue}
   | p = FALSE {p, Efalse}
@@ -322,6 +328,7 @@ expr<Ast.expression>:
   | pe1 = expr p = AND pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, And, pe1, pe2) }
   | pe1 = expr p = OR pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Or, pe1, pe2) }
   | pi = INT {let (p,i) = pi in p, Eentier i}
+  | pf = FLOAT {let (p, f) = pf in (p, Eflottant f)}
   | ps = CHAINE {let (p,s) = ps in p, Echaine s}
   | p = TRUE {p, Etrue}
   | p = FALSE {p, Efalse}

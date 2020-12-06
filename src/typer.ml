@@ -44,6 +44,7 @@ let argExists (t:string) (env:argsEnv) = Tmap.mem t env
 (* convertie le type en une string pour les messages d'erreur *)
 let typeName (t:Astype.pjtype):string = match t with
   | Int64 -> "Int64"
+  | Float64 -> "Float64"
   | Nothing -> "Nothing"
   | Bool -> "Bool"
   | String -> "String"
@@ -52,7 +53,7 @@ let typeName (t:Astype.pjtype):string = match t with
 
 (* teste la correction d'une déclaration de structure et la rajoute aux différents environnements *)
 let parcoursStruct (sE:structEnv) (aE:argsEnv) (fE:funcEnv) (b,p,str,l):(structEnv * argsEnv * funcEnv) =
-  if str = "print" || str = "println" || str = "div" then 
+  if str = "print" || str = "println" || str = "div" then
     error (str^" is not an allowed structuture name") p
   else
     if Tmap.mem str sE then error ("already defined structuture of name :"^str) p
@@ -148,9 +149,9 @@ and chercheDefElse (isLoc:bool) (vS:Tset.t) = function
 
 (* parcours récursivement l'expression pour tester la définition des différentes variable et les définir (isLoc = is local) *)
 let rec parcoursExpr (isLoc:bool) (vE:varEnv) (fE:funcEnv) (aE:argsEnv) (sE:structEnv):Ast.expr -> varEnv = function
-  | Eentier _ | Echaine _ | Etrue | Efalse | EentierIdent _ -> vE
+  | Eentier _ | Eflottant _ | Echaine _ | Etrue | Efalse | EentierIdent _ -> vE
   | EentierParG (_, _, (_, eL)) | Ebloc1 (_, eL) -> parcoursBloc isLoc vE fE aE sE eL
-  | EparDIdent ((_, e), p, str) -> 
+  | EparDIdent ((_, e), p, str) ->
     if Tmap.mem str vE then parcoursExpr isLoc vE fE aE sE e
   else error ("undefined variable name "^str) p
   | Eapplication (pStr, str, eL) ->
@@ -192,7 +193,7 @@ let rec parcoursExpr (isLoc:bool) (vE:varEnv) (fE:funcEnv) (aE:argsEnv) (sE:stru
       let env2 = if isLoc then env1
         else (let newdef = chercheDefB isLoc Tset.empty eL in
           Tmap.filter (fun k t -> not (Tset.mem k newdef)) env1)
-      in let _ = parcoursBloc true env2 fE aE sE eL 
+      in let _ = parcoursBloc true env2 fE aE sE eL
       in env2
   | Eif ((_, e), (_, eL), els) ->
       let env1 = parcoursExpr isLoc vE fE aE sE e in
@@ -228,6 +229,7 @@ let rec parcours1 (vEnv:varEnv) (fEnv:funcEnv) (sEnv:structEnv) (aEnv:argsEnv) =
 (* teste le typage d'une expression *)
 let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:argsEnv) (rT:Astype.pjtype) (b:bool):Ast.expr -> Astype.pjtype = function
   | Eentier _ -> Int64
+  | Eflottant _ -> Float64
   | Echaine _ -> String
   | Etrue | Efalse -> Bool
   | EentierIdent (p, _, str) ->

@@ -10,6 +10,7 @@ type pjtype = (* types de petitjulia *)
   | Any
   | Nothing
   | Int64
+  | Float64
   | Bool
   | String
   | S of string

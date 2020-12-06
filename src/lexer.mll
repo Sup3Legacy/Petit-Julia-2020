@@ -20,6 +20,8 @@ let alpha = ['a'-'z']|['A'-'Z']|'_'
 
 let ident = (alpha)(alpha | chiffre)*
 let nombre = chiffre+
+
+let flottant = (chiffre+'.' | '.'chiffre+ | chiffre+'.'chiffre+)(('e'|'E')('-'|'+')?chiffre+)?
 let car = [' '-'!''#'-'['']'-'~'] | "\\n" | "\\t" | "\\\"" | "\\\\"
 let chaine = '\"'(car*)'\"'
 let notPar = [^'('-')']
@@ -33,6 +35,9 @@ rule tokens = parse
   | nombre as i { Hyper.enableEnd ();
     try [INT (Hyper.position lexbuf, Int64.of_string i)]
     with _ -> raise (Ast.Lexing_Error_Msg_Pos ("Overflowing integer", Hyper.position lexbuf)) }
+  | flottant as f { Hyper.enableEnd ();
+    try [FLOAT (Hyper.position lexbuf, float_of_string f)]
+    with _ -> print_string "Ho ho ho"; raise (Ast.Lexing_Error_Msg_Pos ("Overflowing float", Hyper.position lexbuf)) }
   | "-"(nombre as i) { Hyper.enableEnd ();
     try [MINUS (Hyper.position lexbuf);INT (Hyper.position lexbuf, Int64.of_string i)]
     with _ -> if i = "9223372036854775808"
@@ -116,6 +121,8 @@ rule tokens = parse
     Hyper.enableEnd ();
     [PARD (Hyper.position lexbuf)]
   }
+  | "[" {Hyper.disableEnd (); [CROCHETG (Hyper.position lexbuf)]}
+  | "]" {Hyper.enableEnd (); [CROCHETD (Hyper.position lexbuf)]}
   | "#" {comment lexbuf}
   | ":" {Hyper.disableEnd ();[COLON (Hyper.position lexbuf)]}
   | ";" {Hyper.disableEnd ();[SEMICOLON (Hyper.position lexbuf)]}

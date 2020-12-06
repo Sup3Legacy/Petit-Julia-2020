@@ -192,6 +192,7 @@ let rec interp_expression e vI fI sI =
   in
   match ep with
   | Eentier i -> Vint i
+  | Eflottant f -> Vfloat f
   | Echaine s -> Vstring s
   | Etrue -> Vbool true
   | Efalse -> Vbool false
@@ -417,10 +418,8 @@ let interp_file file =
   | DeclarationList l -> let _ = interp_declaration_list l globVenv globFenv globSenv true in ()
 ;;
 
-let flush () = 
+let flush () =
   globVenv := Imap.singleton "nothing" Vnothing;
   globFenv := Imap.empty;
   globSenv := Imap.empty
 ;;
-
-
