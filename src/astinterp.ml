@@ -6,7 +6,7 @@ and value =
   | Vint of Int64.t
   | Vbool of bool
   | Vstring of string
-  | Vfloat of float (* Future *)
+  | Vfloat of float (* Futur *)
   | Vstruct of structure
   | Vnothing
 ;;

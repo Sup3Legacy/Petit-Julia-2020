@@ -14,3 +14,5 @@ src/Samenhir/_build
 src/pjuliac
 
 src/pjuliarepl
+
+bin/*

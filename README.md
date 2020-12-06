@@ -137,6 +137,27 @@ L'édition de la ligne courante et l'historique des commandes sont des fonctionn
 
 Enfin `rlwrap` nous permet d'afficher le `ρjυλια>` en couleur, ce qui nous semble essentiel à tout REPL qui se respecte!
 
+## 3) Performances du REPL
+
+Bien entendu, ayant un REPL fonctionnel (en tout cas selon nos tests), nous avons voulu le comparer, en termes de performances, au REPL Julia officiel!
+
+Nous avons donc évidemment utilisé la fonction de Ackermann, implémntée comme ceci :
+
+```julia
+function ackerman(m::Int64, n::Int64)
+	if m == 0 (n + 1)
+	elseif 0 == n ackerman(m-1, 1)
+	else ackerman(m-1, ackerman(m, n-1)) end
+end
+```
+
+Ensuite nous avons mesuré le temps mis par le calcul de `ackermann(3,8)` sur les deux interpréteurs. Sans rien configuré, notre interpréteur a subi une défaite cuisante contre l'interpréteur Julia. Le temps de calcul sur le notre avait en effet plus qu'un facteur 50 par rapport à la référence (en utilisant exactement le même fichier de base).
+
+Cependant, nous nous sommes souvenus que le REPL de Julia "triche" un peu, en cela qu'il compile à la volée le code pour ensuite l'exécuter dans le processur courant. Nous avons refait le même test, cette fois-ci en appelant le REPL Julia de cette façon `julia --compile=no`. Le résultat est devenu beaucoup plus intéressant : notre interpréteur ne met plus qu'environ 10% plus longtemps, ce qui nous paraît être un très bon premier résultat!
+
+Nous n'avons malheureusement pas encore eu le temps d'effectuer des tests de performances plus poussés et plus fiables, donc ce résultat est à prendre avec un peu de recul, et cela d'autant plus que le langage Julia est beaucoup plus complexe que notre petit fragment. On peut ainsi raisonnablement s'attendre à ce que l'interpréteur Julia ait des étapes d'interprétation supplémentaires (Par exemple la gestion des opérateurs `+ - *` qui sont surchargés du fait de la présence de flottants dans Julia) par rapport à notre interpréteur basique. Cependant, ce résultat est plutôt encourageant pour les tests futures!
+
+
 # V] Automatisation du build et des tests
 
 En l'état actuel des choses, la compilation du compilateur (`pjuliac.exe`) et du REPL (`pjuliarepl.exe`) est gérée par `dune` via un `dune-project` commun. Elle est réalisable via notre `Makefile`. Nous avons paramétré celui-ci pour automatiser au maximum les tests et essais des différentes parties de notre projet.
@@ -157,3 +178,42 @@ Cette première partie du projet nous aura beaucoup occupés, d'autant plus que 
 
 Nous avons pu mettre en place tous les outils nécessaires à la suite du projet, ainsi que d'autres outils nous permettant de l'approfondir.
 Cependant, nous considérons nécessaire de continuer à travailler sur Samenhir, ne serait-ce que pour optimiser la production de code afin de diminuer le temps de compilation du compilateur.
+
+# VII] Annexes
+
+## A] Liste des fichiers
+Ci-dessous sont listés les fichiers du projet, accompagnés d'une brève description de leur utilité. Plusieurs fichiers ont également leur version pré-refonte (il s'agit ici de la refonte totale du compilateur que nous avons effectuée pour avoir accès à la position des tokens pour avoir des erreurs plsu explicites); essentiellement, il s'agit d'une version plus vieille de ces fichiers, conservée pour l'instant par précaution.
+
+* `ast.ml` : déclaration des types récursifs de l'arbre abstrait du programme
+* `astinterp.ml` : déclaration des types utilisés lors de l'interprétation
+* `astOld.ml` : anciens types auxquels il manquait l'information de position; devenu obsolètes
+* `astype.ml` : déclaration des types utilisés lors du typage
+* `dune` : déclaration des directives de compilation (utilse pour intégrer Samenhir!)
+* `dune-project` : déclarations annexes de `dune`
+* `hyper.ml` : fichier contenant le code `OCaml` utilisé par le parser
+* `hyper2.ml` : quelques fonctions aussi utilisées dans le Parser. Des soucis de référence circulaire nous ont contraints à scinder ces dernières dans deux fichiers.
+* `hyperOld.ml` : ancienne version de `hyper.ml`, conservée pour l'instant
+* `interp.ml` : fichier contenant toutes les fonctions d'interprétation de PetitJulia™
+* `lexer.mll` : déclaration du lexer
+* `lexerOld.mll` : ancienne version du lexer
+* `logo.ml` : fichier contenant le joli logo coloré affiché au lancement du REPL
+* `Makefile` : fichier principal de compilation. Il contient plein d'options
+* `parser.sam`
+* `parserOld.mly`
+* `parserTest.sam`
+* `pjuliac.ml` : fichier principal du compilateur. Il peut prendre plusieurs flags
+* `pjuliarepl.ml` : fichier principal du REPL. Il peut être utilisé tel quel ou bien avec `rlwrap` via le script ci-dessous!
+* `pjuliarepl-rlwrap.sh` : petit script `bash` pour lancer le REPL en utilisant `rlwrap` avec les options que nous avons choisies
+* `pjulia-words` : fichier contenant les mots-clé du langage, pour la complétion automatique dans le REPL
+* `samenhir.ml`
+* `samenhir-utilities.ml`
+* `samenhirAst.ml`
+* `samenhirLexer.ml`
+* `samenhirParserBuilder.ml`
+* `test.jl` : petit fichier servant à tester notre compilateur (pratique car directement dans notre environnement de compilation).
+* `tester.ml` : fichier pour l'instant inutile. Il servait à effectuer des tests automatiques depuis `OCaml`
+* `tests.txt` : fichier rempli manuellement pour garder trace des tests qui marchent ou non
+* `typer.ml` : fichier principal de typage
+* `typerOld.ml` : ancienne version
+* `utilities.ml` : fichier contenant des fonctions utilitaires. Ne contient aujourd'hui rien de très intéressant
+* `x86_65.ml` : fichier contenant les déclarations de base nécessaires à la génération de code `x86_64`
