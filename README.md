@@ -8,7 +8,7 @@
 
 Notre projet requiert l'installation, via `opam` de la bibliothèque `ppx_deriving`.
 
-De plus, l'utilisation optimale du **REPL** nécessite l'installation du **wrapper** `rlwrap`, disponible via un gestionnaire standard de packages Linux.
+De plus, l'utilisation optimale du **REPL** nécessite l'installation du **wrapper** `rlwrap`, disponible via un gestionnaire standard de packages Linux (disponible aussi sur mac).
 
 # I] Lexer/Parser
 
