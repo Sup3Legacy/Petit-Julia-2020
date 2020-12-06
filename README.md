@@ -137,6 +137,27 @@ L'édition de la ligne courante et l'historique des commandes sont des fonctionn
 
 Enfin `rlwrap` nous permet d'afficher le `ρjυλια>` en couleur, ce qui nous semble essentiel à tout REPL qui se respecte!
 
+## 3) Performances du REPL
+
+Bien entendu, ayant un REPL fonctionnel (en tout cas selon nos tests), nous avons voulu le comparer, en termes de performances, au REPL Julia officiel!
+
+Nous avons donc évidemment utilisé la fonction de Ackermann, implémntée comme ceci :
+
+```julia
+function ackerman(m::Int64, n::Int64)
+	if m == 0 (n + 1)
+	elseif 0 == n ackerman(m-1, 1)
+	else ackerman(m-1, ackerman(m, n-1)) end
+end
+```
+
+Ensuite nous avons mesuré le temps mis par le calcul de `ackermann(3,8)` sur les deux interpréteurs. Sans rien configuré, notre interpréteur a subi une défaite cuisante contre l'interpréteur Julia. Le temps de calcul sur le notre avait en effet plus qu'un facteur 50 par rapport à la référence (en utilisant exactement le même fichier de base).
+
+Cependant, nous nous sommes souvenus que le REPL de Julia "triche" un peu, en cela qu'il compile à la volée le code pour ensuite l'exécuter dans le processur courant. Nous avons refait le même test, cette fois-ci en appelant le REPL Julia de cette façon `julia --compile=no`. Le résultat est devenu beaucoup plus intéressant : notre interpréteur ne met plus qu'environ 10% plus longtemps, ce qui nous paraît être un très bon premier résultat!
+
+Nous n'avons malheureusement pas encore eu le temps d'effectuer des tests de performances plus poussés et plus fiables, donc ce résultat est à prendre avec un peu de recul, et cela d'autant plus que le langage Julia est beaucoup plus complexe que notre petit fragment. On peut ainsi raisonnablement s'attendre à ce que l'interpréteur Julia ait des étapes d'interprétation supplémentaires (Par exemple la gestion des opérateurs `+ - *` qui sont surchargés du fait de la présence de flottants dans Julia) par rapport à notre interpréteur basique. Cependant, ce résultat est plutôt encourageant pour les tests futures!
+
+
 # V] Automatisation du build et des tests
 
 En l'état actuel des choses, la compilation du compilateur (`pjuliac.exe`) et du REPL (`pjuliarepl.exe`) est gérée par `dune` via un `dune-project` commun. Elle est réalisable via notre `Makefile`. Nous avons paramétré celui-ci pour automatiser au maximum les tests et essais des différentes parties de notre projet.
@@ -161,7 +182,7 @@ Cependant, nous considérons nécessaire de continuer à travailler sur Samenhir
 # VII] Annexes
 
 ## A] Liste des fichiers
-Ci-dessous sont listés les fichiers du projet, accompagnés d'une brève description de leur utilité. Plusieurs fichiers ont leur version pré-refonte (il s'agit ici de la refonte totale du compilateur que nous avons effectuée pour avoir accès à la position des tokens pour avoir des erreurs plsu explicites); essentiellement, il s'agit d'une version plus vieille de ces fichiers, conservée pour l'instant par précaution.
+Ci-dessous sont listés les fichiers du projet, accompagnés d'une brève description de leur utilité. Plusieurs fichiers ont également leur version pré-refonte (il s'agit ici de la refonte totale du compilateur que nous avons effectuée pour avoir accès à la position des tokens pour avoir des erreurs plsu explicites); essentiellement, il s'agit d'une version plus vieille de ces fichiers, conservée pour l'instant par précaution.
 
 * `ast.ml` : déclaration des types récursifs de l'arbre abstrait du programme
 * `astinterp.ml` : déclaration des types utilisés lors de l'interprétation
