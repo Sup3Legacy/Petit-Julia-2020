@@ -191,7 +191,7 @@ Cependant, nous considérons nécessaire de continuer à travailler sur **Samenh
 ## A] Liste des fichiers
 Ci-dessous sont listés les fichiers du projet, accompagnés d'une brève description de leur utilité.
 
-* `acker.jl` : définition de la fonction ackermann en PetitJulia.
+* `acker.jl` : définition de la fonction ackermann en PetitJulia™.
 * `ast.ml` : déclaration des types récursifs de l'arbre abstrait du programme.
 * `astinterp.ml` : déclaration des types utilisés lors de l'interprétation.
 * `astype.ml` : déclaration des types utilisés lors du typage.
@@ -202,6 +202,7 @@ Ci-dessous sont listés les fichiers du projet, accompagnés d'une brève descri
 * `interp.ml` : fichier contenant toutes les fonctions d'interprétation de PetitJulia™.
 * `lexer.mll` : déclaration du lexer (l'analyseur est construit par ocamllex).
 * `logo.ml` : fichier contenant le joli logo coloré affiché au lancement du REPL.
+* `logo.png` : logo de PetitJulia™
 * `Makefile` : fichier principal de compilation. Il contient plein d'options.
 * `parser.sam` : parser pour Samenhir.
 * `parserExemple.sam` : exemple de petit parser si vous avez envie de voir la syntaxe demandé par Samenhir.
