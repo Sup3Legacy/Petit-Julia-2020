@@ -1,3 +1,14 @@
+(*
+###########################################################
+#                                                         #
+#             Fichier d'interface de Samenhir             #
+#                                                         #
+# Sert à appeler le parser, le lexer, le constructeur de  #
+# table ainsi que la fonction de construction des fichier #
+#             .ml et .mli du même nom que l'input         #
+#                                                         #
+###########################################################
+*)
 
 open SamenhirAst
 open SamenhirLexer
@@ -8,7 +19,8 @@ let file = ref "";;
 
 
 let main () =
-	let spectlist = ["-explain", Arg.Set explain, "build file of states"]
+	let spectlist = ["-explain", Arg.Set explain, "build file of states";
+	"-print", Arg.Set print_all, "show info to debug Samenhir"]
 	in
 	Arg.parse spectlist (fun f -> file := f) "";
 	if !file = "" then 

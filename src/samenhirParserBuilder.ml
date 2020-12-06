@@ -1,8 +1,15 @@
+(*
+############################################
+#                                          #
+#  Fichier servant à construire le parser  #
+# de samenhir. Il contient donc la syntaxe #
+# 	   asbtraite du parser de Samenhir     #
+#                                          #
+############################################
+*)
 
 open SamenhirAst
 open Samenhir_utilities;;
-
-print_all := false;
 
 let tokenList = [("CODE", Some "string");
 	("HEADER", Some "string");

@@ -1,5 +1,14 @@
 {
-
+(*
+###########################################
+#                                         #
+#             Lexer de Samenhir           #
+#                                         #
+#     Il compte mal les lignes car il     #
+# comprend le code Ocaml comme une string #
+#                                         #
+###########################################
+*)
 	open Lexing
 	open SamenhirParser
 	open SamenhirAst	
