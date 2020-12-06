@@ -19,6 +19,7 @@ pjuliarepl.exe :
 clean:
 	rm -f pjuliac
 	rm -f pjuliarepl
+	rm -f out.s
 	dune clean
 
 explain:
