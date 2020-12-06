@@ -197,10 +197,10 @@ Pour la deuxième partie du projet, nous projetons d'ajouter aussi à PetitJulia
 
 ## A] Drapeaux de pjuliac
 
-* -print_abstract : affiche la syntaxe abstraite du fichier
-* --parse_only : arrête l'exécution après avoir parsé le fichier
-* --type_only : arrête l'exécution après avoir typé le fichier
-* --show_file_name : affiche le nom du fichier si il ne plante pas à l'exécution
+* `-print_abstract` : affiche la syntaxe abstraite du fichier
+* `--parse_only` : arrête l'exécution après avoir parsé le fichier
+* `--type_only` : arrête l'exécution après avoir typé le fichier
+* `--show_file_name` : affiche le nom du fichier si il ne plante pas à l'exécution
 
 ## B] Liste des fichiers
 Ci-dessous sont listés les fichiers du projet, accompagnés d'une brève description de leur utilité.
