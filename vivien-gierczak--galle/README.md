@@ -191,31 +191,30 @@ Cependant, nous considérons nécessaire de continuer à travailler sur **Samenh
 ## A] Liste des fichiers
 Ci-dessous sont listés les fichiers du projet, accompagnés d'une brève description de leur utilité.
 
-* `ast.ml` : déclaration des types récursifs de l'arbre abstrait du programme
-* `astinterp.ml` : déclaration des types utilisés lors de l'interprétation
-* `astype.ml` : déclaration des types utilisés lors du typage
-* `dune` : déclaration des directives de compilation (utilse pour intégrer Samenhir!)
-* `dune-project` : déclarations annexes de `dune`
-* `hyper.ml` : fichier contenant le code `OCaml` utilisé par le parser
-* `hyper2.ml` : quelques fonctions aussi utilisées dans le Parser. Des soucis de référence circulaire nous ont contraints à scinder ces dernières dans deux fichiers.
-* `interp.ml` : fichier contenant toutes les fonctions d'interprétation de PetitJulia™
-* `lexer.mll` : déclaration du lexer
-* `logo.ml` : fichier contenant le joli logo coloré affiché au lancement du REPL
-* `Makefile` : fichier principal de compilation. Il contient plein d'options
-* `parser.sam`
-* `parserOld.mly`
-* `parserTest.sam`
-* `pjuliac.ml` : fichier principal du compilateur. Il peut prendre plusieurs flags
+* `acker.jl` : définition de la fonction ackermann en PetitJulia.
+* `ast.ml` : déclaration des types récursifs de l'arbre abstrait du programme.
+* `astinterp.ml` : déclaration des types utilisés lors de l'interprétation.
+* `astype.ml` : déclaration des types utilisés lors du typage.
+* `dune` : déclaration des directives de compilation (utilse pour intégrer Samenhir!).
+* `dune-project` : déclarations annexes de `dune`.
+* `hyper.ml` : fichier contenant le code `OCaml` utilisé par le Lexer.
+* `hyper2.ml` : quelques fonctions utilisées dans le Parser.
+* `interp.ml` : fichier contenant toutes les fonctions d'interprétation de PetitJulia™.
+* `lexer.mll` : déclaration du lexer (l'analyseur est construit par ocamllex).
+* `logo.ml` : fichier contenant le joli logo coloré affiché au lancement du REPL.
+* `Makefile` : fichier principal de compilation. Il contient plein d'options.
+* `parser.sam` : parser pour Samenhir.
+* `parserExemple.sam` : exemple de petit parser si vous avez envie de voir la syntaxe demandé par Samenhir.
+* `parserMenhir.mly` : ancien parser qu'utilisait l'outils Menhir.
+* `pjuliac.ml` : fichier principal du compilateur. Il peut prendre plusieurs flags.
 * `pjuliarepl.ml` : fichier principal du REPL. Il peut être utilisé tel quel ou bien avec `rlwrap` via le script ci-dessous!
 * `pjuliarepl-rlwrap.sh` : petit script `bash` pour lancer le REPL en utilisant `rlwrap` avec les options que nous avons choisies
 * `pjulia-words` : fichier contenant les mots-clé du langage, pour la complétion automatique dans le REPL
-* `samenhir.ml`
-* `samenhir-utilities.ml`
-* `samenhirAst.ml`
-* `samenhirLexer.ml`
-* `samenhirParserBuilder.ml`
+* `samenhir.ml` : fichier servant d'interface de Samenhir.
+* `samenhir-utilities.ml` : le corps et l'âme de Samenhir.
+* `samenhirAst.ml` : définission des types et structures utiles à Samenhir.
+* `samenhirLexer.ml` : lexer de Samenhir (donné à ocamllex).
+* `samenhirParserBuilder.ml` : constructeur du parseur de Samenhir.
 * `test.jl` : petit fichier servant à tester notre compilateur (pratique car directement dans notre environnement de compilation).
-* `tester.ml` : fichier pour l'instant inutile. Il servait à effectuer des tests automatiques depuis `OCaml`
-* `tests.txt` : fichier rempli manuellement pour garder trace des tests qui marchent ou non
 * `typer.ml` : fichier principal de typage
-* `x86_65.ml` : fichier contenant les déclarations de base nécessaires à la génération de code `x86_64`
+* `x86_65.ml` : fichier contenant les déclarations de base nécessaires à la génération de code `x86_64`, détecte automatiquement si l'ordinateur est un mac ou non.
