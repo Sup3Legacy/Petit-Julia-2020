@@ -126,6 +126,7 @@ En plus de cela, nous avons ajouté quelques commandes spéciales :
 - `#run file` permet de charger et exécuter un fichier. Cette commande diffère de la commande présente dans le REPL Julia (`include(file)`) car il nous semblait plus simple d'utiliser une syntaxe spéciale pour que le REPL puisse décider simplement s'il doit charger un fichier et le faire suivre à l'interpréteur ou bien s'il doit directement lui faire suivre l'entrée.
 - `#flush` vide entièrement les environnement de typage et interprétation; un peu comme si on relançait le REPL. Cette commande est la solution à un problème que nous avons rencontré. Il peut arriver que l'utilisateur ait besoin de redéfinir une fonction précédemment définie. Les environnement de typage et d'interprétion restant les mêmes lors d'une session REPL, le typeur soulèverait une erreur de double définition d'une fonction, ce qui n'est pas autorisé par le langage.
 - `#exit` permet de fermer proprement le REPL, au lieu de le faire sauvagement planter à grand renfort de `Ctrl+C`!
+- Il y a d'autres commandes easter-eggs cachées dans le code; leur recherche est laissée comme exercice au lecteur :)
 
 Le REPL est pourvu d'un système de récupération d'exception qui `catch` toutes les erreurs levées par l'analyse lexicale, syntaxique, le typage, l'interprétation ou bien même les erreurs levées par le système (par exemple en cas de fichier introuvable) et affiche les messages correspondant sur la sortie stantard. Cela nous permet d'avoir un REPL qui ne plante pas à la moindre faute de frappe mais affiche l'erreur et permet de corriger la commande entrée, notamment grâce à l'historique de commandes (voir ci-dessous).
 
@@ -141,10 +142,10 @@ Enfin `rlwrap` nous permet d'afficher le `ρjυλια>` en couleur, ce qui nous 
 
 Bien entendu, ayant un REPL fonctionnel (en tout cas selon nos tests), nous avons voulu le comparer, en termes de performances, au REPL Julia officiel!
 
-Nous avons donc évidemment utilisé la fonction de Ackermann, implémntée comme ceci :
+Nous avons donc évidemment utilisé la fonction de Ackermann, implémentée comme ceci :
 
 ```julia
-function ackerman(m::Int64, n::Int64)
+function ackerman(m::Int64, n::Int64)::Int64
 	if m == 0 (n + 1)
 	elseif 0 == n ackerman(m-1, 1)
 	else ackerman(m-1, ackerman(m, n-1)) end
@@ -153,9 +154,9 @@ end
 
 Ensuite nous avons mesuré le temps mis par le calcul de `ackermann(3,8)` sur les deux interpréteurs. Sans rien configuré, notre interpréteur a subi une défaite cuisante contre l'interpréteur Julia. Le temps de calcul sur le notre avait en effet plus qu'un facteur 50 par rapport à la référence (en utilisant exactement le même fichier de base).
 
-Cependant, nous nous sommes souvenus que le REPL de Julia "triche" un peu, en cela qu'il compile à la volée le code pour ensuite l'exécuter dans le processur courant. Nous avons refait le même test, cette fois-ci en appelant le REPL Julia de cette façon `julia --compile=no`. Le résultat est devenu beaucoup plus intéressant : notre interpréteur ne met plus qu'environ 10% plus longtemps, ce qui nous paraît être un très bon premier résultat!
+Cependant, nous nous sommes souvenus que le REPL de Julia "triche" un peu, en cela qu'il compile à la volée le code pour ensuite l'exécuter dans le processur courant. Nous avons refait le même test, cette fois-ci en appelant le REPL Julia de cette façon `julia --compile=no`. Le résultat est devenu beaucoup plus intéressant : notre interpréteur ne met plus qu'environ 10% plus longtemps pour calculer `ackermann(3,8)`, ce qui nous paraît être un très bon premier résultat!
 
-Nous n'avons malheureusement pas encore eu le temps d'effectuer des tests de performances plus poussés et plus fiables, donc ce résultat est à prendre avec un peu de recul, et cela d'autant plus que le langage Julia est beaucoup plus complexe que notre petit fragment. On peut ainsi raisonnablement s'attendre à ce que l'interpréteur Julia ait des étapes d'interprétation supplémentaires (Par exemple la gestion des opérateurs `+ - *` qui sont surchargés du fait de la présence de flottants dans Julia) par rapport à notre interpréteur basique. Cependant, ce résultat est plutôt encourageant pour les tests futures!
+Nous n'avons malheureusement pas encore eu le temps d'effectuer des tests de performances plus poussés et plus fiables, donc ce résultat est à prendre avec un peu de recul, et cela d'autant plus que le langage Julia est beaucoup plus complexe que notre petit fragment. On peut ainsi raisonnablement s'attendre à ce que l'interpréteur Julia ait des étapes d'interprétation supplémentaires (Par exemple la gestion des opérateurs `+ - *` qui sont surchargés du fait de la présence de flottants dans Julia) par rapport à notre interpréteur basique.
 
 
 # V] Automatisation du build et des tests

@@ -87,6 +87,8 @@ while !continue do
   if startswith !instr "#exit" then exit 0;
   if startswith !instr "#flush" then flush ();
   if startswith !instr "#cof" then begin print_string "Choisissez la survivaliste"; instr := "" end;
+    (* NDLR : un de nous se présente aux élections du COF sur la liste "suvivaliste" *)
+  if startswith !instr "#tux" then begin print_string Logo.tux; instr := "" end;
   try
     begin
       let lb =
