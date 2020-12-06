@@ -110,7 +110,7 @@ let set_filename n =
 let main () =
   begin
     let speclist = [
-    ("-print_abstrac", Arg.Set affiche, "print of the abstract");
+    ("-print_abstract", Arg.Set affiche, "print of the abstract");
     ("--parse_only", Arg.Set parse_only, "Stop after parsing");
     ("--type_only", Arg.Set type_only, "Stop after typing");
     ("-show_file_name", Arg.Set show_fName, "Print the name of the file to compile")
