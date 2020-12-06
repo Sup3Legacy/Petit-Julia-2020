@@ -161,38 +161,38 @@ Cependant, nous considérons nécessaire de continuer à travailler sur Samenhir
 # VII] Annexes
 
 ## A] Liste des fichiers
-Ci-dessous sont listés les fichiers du projet, accompagnés d'une brève description de leur utilité
+Ci-dessous sont listés les fichiers du projet, accompagnés d'une brève description de leur utilité. Plusieurs fichiers ont leur version pré-refonte (il s'agit ici de la refonte totale du compilateur que nous avons effectuée pour avoir accès à la position des tokens pour avoir des erreurs plsu explicites); essentiellement, il s'agit d'une version plus vieille de ces fichiers, conservée pour l'instant par précaution.
 
 * `ast.ml` : déclaration des types récursifs de l'arbre abstrait du programme
 * `astinterp.ml` : déclaration des types utilisés lors de l'interprétation
 * `astOld.ml` : anciens types auxquels il manquait l'information de position; devenu obsolètes
 * `astype.ml` : déclaration des types utilisés lors du typage
 * `dune` : déclaration des directives de compilation (utilse pour intégrer Samenhir!)
-* `dune-project` : 
-* `hyper.ml`
-* `hyper2.ml`
-* `hyperOld.ml`
-* `interp.ml`
-* `lexer.mll`
-* `lexerOld.mll`
-* `logo.ml`
-* `Makefile`
+* `dune-project` : déclarations annexes de `dune`
+* `hyper.ml` : fichier contenant le code `OCaml` utilisé par le parser
+* `hyper2.ml` : quelques fonctions aussi utilisées dans le Parser. Des soucis de référence circulaire nous ont contraints à scinder ces dernières dans deux fichiers.
+* `hyperOld.ml` : ancienne version de `hyper.ml`, conservée pour l'instant
+* `interp.ml` : fichier contenant toutes les fonctions d'interprétation de PetitJulia™
+* `lexer.mll` : déclaration du lexer
+* `lexerOld.mll` : ancienne version du lexer
+* `logo.ml` : fichier contenant le joli logo coloré affiché au lancement du REPL
+* `Makefile` : fichier principal de compilation. Il contient plein d'options
 * `parser.sam`
 * `parserOld.mly`
 * `parserTest.sam`
-* `pjuliac.ml`
-* `pjuliarepl.ml`
-* `pjuliarepl-rlwrap.sh`
-* `pjulia-words`
+* `pjuliac.ml` : fichier principal du compilateur. Il peut prendre plusieurs flags
+* `pjuliarepl.ml` : fichier principal du REPL. Il peut être utilisé tel quel ou bien avec `rlwrap` via le script ci-dessous!
+* `pjuliarepl-rlwrap.sh` : petit script `bash` pour lancer le REPL en utilisant `rlwrap` avec les options que nous avons choisies
+* `pjulia-words` : fichier contenant les mots-clé du langage, pour la complétion automatique dans le REPL
 * `samenhir.ml`
 * `samenhir-utilities.ml`
 * `samenhirAst.ml`
 * `samenhirLexer.ml`
 * `samenhirParserBuilder.ml`
-* `test.jl`
-* `tester.ml`
-* `tests.txt`
-* `typer.ml`
-* `typerOld.ml`
-* `utilities.ml`
-* `x86_65.ml`
+* `test.jl` : petit fichier servant à tester notre compilateur (pratique car directement dans notre environnement de compilation).
+* `tester.ml` : fichier pour l'instant inutile. Il servait à effectuer des tests automatiques depuis `OCaml`
+* `tests.txt` : fichier rempli manuellement pour garder trace des tests qui marchent ou non
+* `typer.ml` : fichier principal de typage
+* `typerOld.ml` : ancienne version
+* `utilities.ml` : fichier contenant des fonctions utilitaires. Ne contient aujourd'hui rien de très intéressant
+* `x86_65.ml` : fichier contenant les déclarations de base nécessaires à la génération de code `x86_64`
