@@ -163,12 +163,12 @@ Cependant, nous considérons nécessaire de continuer à travailler sur Samenhir
 ## A] Liste des fichiers
 Ci-dessous sont listés les fichiers du projet, accompagnés d'une brève description de leur utilité
 
-* `ast.ml`
-* `astinterp.ml`
-* `astOld.ml`
-* `astype.ml`
-* `dune`
-* `dune-project`
+* `ast.ml` : déclaration des types récursifs de l'arbre abstrait du programme
+* `astinterp.ml` : déclaration des types utilisés lors de l'interprétation
+* `astOld.ml` : anciens types auxquels il manquait l'information de position; devenu obsolètes
+* `astype.ml` : déclaration des types utilisés lors du typage
+* `dune` : déclaration des directives de compilation (utilse pour intégrer Samenhir!)
+* `dune-project` : 
 * `hyper.ml`
 * `hyper2.ml`
 * `hyperOld.ml`
