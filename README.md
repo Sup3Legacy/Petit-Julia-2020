@@ -12,7 +12,10 @@ De plus, l'utilisation optimale du **REPL** nécessite l'installation du **wrapp
 
 # I] Lexer/Parser
 
-La première étape a été de définir les **types** qui seront utilisés par les différentes étapes d'analyse. Dans un premier temps, nous avons suivi la **grammaire** donnée dans le sujet, que ce soit pour la définition de l'`ast` (les types correspondaient exactement aux **règles de grammaire**) ou bien pour le **lexer** et le **parser**. Cela nous a donné un analyseur à peu près fonctionnel mais souffrant de dizaines de **conflits** (par exemple au niveau de la construction `while expr bloc`). Cela a été résolu par un **remodelage progressif** du parser, éliminant tous les conflits un par un!
+La première étape a été de définir les **types** qui seront utilisés par les différentes étapes d'analyse. Dans un premier temps, nous avons suivi la **grammaire** donnée dans le sujet, que ce soit pour la définition de l'`ast` (les types correspondaient exactement aux **règles de grammaire**) ou bien pour le **lexer** et le **parser**.
+
+Cela nous a donné un analyseur à peu près fonctionnel mais souffrant de dizaines de **conflits** (par exemple au niveau de la construction `while expr bloc`). Cela a été résolu par un **remodelage progressif** du parser, éliminant tous les conflits un par un!
+
 Le parser a subi un nouveau remodelage général au début de notre travail sur le typeur car nous avions oublié de transmettre les positions des token dans l'`ast`, ce qui nous empêchait de pouvoir positionner précisement les erreurs de types.
 
 # II] Typer
@@ -20,52 +23,54 @@ Le parser a subi un nouveau remodelage général au début de notre travail sur 
 
 Le **typeur** est une étape importante du projet et certaines décisions ont été prises par rapport à ce que l'on autorisait ou non. Ces décisions ont été prises en prenant en compte le fait que nous pouvions toujours revenir modifier certains points plus tard dans le projet si besoin.
 
-Pour cela le fichier est parcouru deux fois. Il s'agit des parcours 1 et 2 (vive l'originalité !):
+Pour cela le fichier est parcouru **deux fois**. Il s'agit des parcours 1 et 2 (vive l'originalité !):
 
 ### Parcours 1 :
 
-**Il a été choisi que les structures seraient gérées comme des fonctions. Cela signifie que pour nous, un constructeur de structure est un appel de fonction dont l'image est la structure construite**
+**Il a été choisi que les (en fait les constructeurs de) structures seraient gérées comme des fonctions. Cela signifie que pour nous, un constructeur de structure est un appel de fonction dont l'image est la structure construite**
 
-Le fichier est découpé en une liste de déclarations de fonctions, de déclarations de structures et de expressions.
+Le fichier est découpé en une liste de déclarations de **fonctions**, de déclarations de **structures** et de **expressions**.
 
-On fait le parcours en utilisant 4 environnements Map :
-- un pour les variables définies
-- un pour toutes les fonctions, qui à tous les noms de fonctions associe l'ensemble des types (types de paramètres et type de l'image)
-- un pour tous les noms de structures
-- un pour tous les noms d'attributs associés à leur types, si la structure les contenant est mutable et le nom de la structure associée.
+On fait le parcours en utilisant **4 environnements Map** :
+- un pour les **variables définies**
+- un pour toutes les **fonctions**, qui à tous les noms de fonctions associe l'ensemble des types (types de paramètres et type de l'image)
+- un pour tous les **noms de structures**
+- un pour tous les **noms d'attributs** associés à leur types, si la structure les contenant est mutable et le nom de la structure associée.
 
 
-Si l'on rencontre une déclaration de structure, on effectue ces actions :
-- on vérifie que son nom n'est pas "print", "println" ou "div"
-- on vérifie que l'on a pas d'autre structure du même nom
+Si l'on rencontre une **déclaration de structure**, on effectue ces actions :
+- on vérifie que son nom n'est pas `print`, `println` ou `div`
+- on vérifie que l'on a pas d'autre structure du **même nom**
 - on parcourt les champs de la struture en vérifiant que les types sont bien définis et les noms distincts et pas déjà attribués (par exemple deux structures différentes ne peuvent pas avoir le même champ `a`), puis on rajoute ses champs à l'ensemble des champs existants. Il a été décidé de ne pas autoriser un champ d'une structure `S` à être du type Struct `S` car sinon on n'arriverait pas à construire la première variable de type `S`
 - on ajoute la structure (enfin plus exactement son constructeur) à l'ensemble des fonctions du même nom, ainsi que à l'ensemble des structures
 
-Si l'on rencontre une déclaration de fonction, on vérifie dans l'ordre :
+Si l'on rencontre une **déclaration de fonction**, on vérifie dans l'ordre :
 - que son nom n'est pas déjà associé à une variable
 - que son nom n'est pas `print`, `println` ou `div`
-- que ses arguments possèdent bien un type existant et que les noms sont deux-à-deux distincts
+- que ses arguments possèdent bien un **type existant** et que les noms sont deux-à-deux distincts
 - que son type retourné est bien existant
-- puis on rajoute la fonction à l'ensemble des fonctions du même noms en vérifiant qu'il n'existe pas déjà une autre fonction du même nom ayant exactement les mêmes types d'entrée
+- puis on rajoute la fonction à l'ensemble des fonctions du même nom en vérifiant qu'il n'existe pas déjà une autre fonction du même nom ayant exactement les mêmes types d'entrée
 
-Si l'on rencontre une expression, on la parcourt récursivement et propageant l'environnement des variables existantes avec les règles suivantes :
-- si l'on rencontre une expression utilisant une variable, on teste si elle existe. Si ce n'est pas le cas on lève une exception
-- si l'on rencontre une affectation de variable on crée la variable associée dans l'environnement
-- si l'on rencontre une affectation d'attribut, on vérifie si l'attribut existe et s'il est mutable
-- si l'on rencontre un appel de fonction, on vérifie qu'il existe une fonction ou une struture du même nom
+Si l'on rencontre une **expression**, on la parcourt récursivement et propageant l'environnement des variables existantes avec les règles suivantes :
+- si l'on rencontre une expression utilisant une **variable**, on teste si elle existe. Si ce n'est pas le cas on lève une exception
+- si l'on rencontre une **affectation de variable** on crée la variable associée dans l'environnement
+- si l'on rencontre une **affectation d'attribut**, on vérifie si l'attribut existe et s'il est mutable
+- si l'on rencontre un **appel de fonction**, on vérifie qu'il existe une fonction ou une struture du même nom
 - si l'on rencontre une expression qui définie un nouvel environnement (boucles `for` et `while`), alors on fait un premier parcours pour récupérer l'ensemble des variables définies dans le bloc à l'intérieur (on ne descend pas dans les `for`/`while` suivants par contre). Puis on reparcourt le bloc en testant bien tous les types en commençant avec l'environnement global privé des valeurs qui seront définies par la suite (en réalité c'est beaucoup plus compliquer car il faut gérer les différences d'environnement global/local).
 
 **La première différence notable avec ce qui est demandé dans le sujet est que le typeur teste si les variables sont bien définie AVANT leur utilisation et pas uniquement si elle sont bien définies dans le même champs. Ce qui permet de faire planter les tests dans exec-fail suivant : `undef1.jl`, `undef3.jl`, `undef4.jl` et `undef5.jl`**
 
 ### Parcours 2 :
 
-On teste si tout est correctement typé, notamment pour toutes les affectations, on teste si on met bien dans une variable un type compatible avec le type que possède déjà la variable.
+On teste si tout est **correctement typé**, notamment pour toutes les affectations, on teste si on met bien dans une variable un type compatible avec le type que possède déjà la variable.
+
 On vérifie aussi que toutes les expressions sont bien typés.
+
 De plus, pour chaque appel de fonction, on regarde l'ensemble des fonctions compatibles. Pour cela calcul d'abord la liste des types des expressions donné en arguments. Puis pour chaque fonction compatible on compte le nombre de `Any` dans ses types d'arguments et on récupère la liste des types des arguments dont l'expression à la position correspondante est de type `Any`. Il a été décidé que si toutes les fonctions avaient les mêmes listes et nombre alors le typage plantait car il y avait une impossibilité de savoir qu'elle fonction appeler. Cela permet notamment de faire planter le test `typing/bad/testfile-ambiguity-1.jl` (les deux fonctions on pour couple `(1,[])` à l'appel).
 
 ### Difficultés :
 
-La principale difficulté rencontré dans le typage de Petitjulia™ se cachait dans la portée des variables.
+La principale difficulté rencontré dans le typage de Petitjulia™ se cachait dans la **portée des variables**.
 
 # III] Samenhir
 
