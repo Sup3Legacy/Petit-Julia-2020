@@ -35,7 +35,7 @@ let error (msg:string) (p:Ast.position) = raise (Ast.Typing_Error_Msg_Pos (msg,p
 
 (* teste si le type t existe bien *)
 let exists (t:Astype.pjtype) (env:structEnv):bool = match t with
-  | Any | Nothing | Int64 | Bool | String -> true
+  | Any | Nothing | Int64 | Float64 | Bool | String -> true
   | S s -> Tmap.mem s env
 
 (* teste si le champ existe *)
@@ -308,15 +308,20 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
     let t = testTypageE isLoc vE fE sE aE rT b e in
     if compatible Int64 t
     then Int64
-    else error ("incompatibility of type in Minus "^typeName t) p
+    else
+      begin
+        if compatible Float64 t
+        then Float64
+        else error ("incompatibility of type in Minus "^typeName t) p
+      end
   | Ebinop (p, o, (p1, e1), (p2, e2)) -> begin
     let t1 = testTypageE isLoc vE fE sE aE rT b e1 in
     let t2 = testTypageE isLoc vE fE sE aE rT b e2 in
     match o with
       |Eq | Neq -> Bool
       |Lo | Gr | Leq | Geq ->
-        if (compatible t1 Bool || compatible t1 Int64)
-            && (compatible t2 Bool || compatible t2 Int64)
+        if (compatible t1 Bool || compatible t1 Int64 || compatible t1 Float64)
+            && (compatible t2 Bool || compatible t2 Int64 || compatible t2 Float64)
         then Bool else error ("not compatible in comparison : "^typeName t1^"!="^typeName t2) p
       |And | Or ->
         if compatible t1 Bool
@@ -325,8 +330,8 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
           else error ("expected a Bool but got a "^typeName t2) p2
         else error ("expected a Bool but got a "^typeName t1) p1
       | Plus | Minus | Times | Modulo | Exp ->
-        if compatible t1 Int64
-        then if compatible t2 Int64
+        if (compatible t1 Int64 || compatible t1 Float64)
+        then if (compatible t2 Int64 || compatible t2 Float64)
           then Int64
           else error ("expected an Int64 but got a "^typeName t2) p2
         else error ("expected an Int64 but got a "^typeName t1) p1

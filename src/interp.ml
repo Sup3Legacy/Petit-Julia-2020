@@ -290,6 +290,11 @@ let rec interp_expression e vI fI sI =
   | Ebinop (p, op, e1, e2) ->
     let e1p = interp_expression e1 vI fI sI in
     let e2p = interp_expression e2 vI fI sI in
+    let convert_to_float = function
+      | Vfloat f -> f
+      | Vint i -> Int64.to_float i
+      | _ -> failwith "Expected integer of float" (* À améliorer *)
+    in
     let vali =
       match op, e1p, e2p with
       | Plus, Vint i1, Vint i2 -> Vint (Int64.add i1 i2)
@@ -297,6 +302,17 @@ let rec interp_expression e vI fI sI =
       | Times, Vint i1, Vint i2 -> Vint (Int64.mul i1 i2)
       | Modulo, Vint i1, Vint i2 -> Vint (Int64.rem i1 i2)
       | Exp, Vint i1, Vint i2 -> Vint (puissance i1 i2)
+
+      | Plus, Vfloat f1, n2 -> Vfloat (f1 +. (convert_to_float n2))
+      | Minus, Vfloat f1, n2 -> Vfloat (f1 -. (convert_to_float n2))
+      | Times, Vfloat f1, n2 -> Vfloat (f1 *. (convert_to_float n2))
+      | Exp, Vfloat f1, n2 -> Vfloat (f1 ** (convert_to_float n2))
+
+      | Plus, n1, Vfloat f2 -> Vfloat ((convert_to_float n1) +. f2)
+      | Minus, n1, Vfloat f2 -> Vfloat ((convert_to_float n1) -. f2)
+      | Times, n1, Vfloat f2 -> Vfloat ((convert_to_float n1) *. f2)
+      | Exp, n1, Vfloat f2 -> Vfloat ((convert_to_float n1) ** f2)
+
       | Eq, _, _ ->
         let res =
         match e1p, e2p with
