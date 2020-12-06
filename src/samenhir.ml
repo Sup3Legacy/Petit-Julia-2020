@@ -23,11 +23,11 @@ let main () =
 	"-print", Arg.Set print_all, "show info to debug Samenhir"]
 	in
 	Arg.parse spectlist (fun f -> file := f) "";
-	if !file = "" then 
+	if !file = "" then
 		failwith "no file to compile"
 	else if not (Filename.check_suffix !file ".sam")
 		then failwith "not the good extension"
-		else begin 
+		else begin
 			let outfile = (Filename.chop_suffix !file ".sam" ^ ".ml") in
 			let f = open_in !file in
 			let buf = Lexing.from_channel f in

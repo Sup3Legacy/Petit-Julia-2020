@@ -1,3 +1,11 @@
+(*
+###########################################################
+#                                                         #
+#             Déclaration des règles du lexer             #
+#                                                         #
+###########################################################
+*)
+
 {
   open Lexing
   open Parser
@@ -5,9 +13,6 @@
   open Ast
 
   exception Lexing_error of string
-
-
-
 }
 
 let chiffre = ['0'-'9']
@@ -25,10 +30,10 @@ let docstring = "\"\"\""(car*)"\"\"\""
 
 rule tokens = parse
   | docstring as s {Hyper.enableEnd (); [DOCSTRING (String.sub s 3 (String.length s - 6))]}
-  | nombre as i { Hyper.enableEnd (); 
+  | nombre as i { Hyper.enableEnd ();
     try [INT (Hyper.position lexbuf, Int64.of_string i)]
     with _ -> raise (Ast.Lexing_Error_Msg_Pos ("Overflowing integer", Hyper.position lexbuf)) }
-  | "-"(nombre as i) { Hyper.enableEnd (); 
+  | "-"(nombre as i) { Hyper.enableEnd ();
     try [MINUS (Hyper.position lexbuf);INT (Hyper.position lexbuf, Int64.of_string i)]
     with _ -> if i = "9223372036854775808"
           then [INT (Hyper.position lexbuf, Int64.of_string ("-"^i))]
@@ -142,11 +147,11 @@ and comment = parse
 
 
 {
-    let token = 
-    let tokenQ = Queue.create () in 
+    let token =
+    let tokenQ = Queue.create () in
     (fun lb ->
       (if Queue.is_empty tokenQ then begin
-  let l = tokens lb in 
+  let l = tokens lb in
   List.iter (fun t -> Queue.add t tokenQ) l
   end;
   Queue.pop tokenQ))
