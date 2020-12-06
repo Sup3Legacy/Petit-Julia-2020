@@ -2,6 +2,7 @@
 ###########################################################
 #                                                         #
 #                       Interpréteur                      #
+#                                                         #
 #     Il donne les fonctions permettant de traiter et     #
 #                  interpréter du code.                   #
 #                                                         #
@@ -18,6 +19,7 @@ open Utilities
 open Astinterp
 
 let interp_error s = raise (Ast.Interp_Error_Msg s);;
+exception Return of value;; (* exception qui sert aux returns *)
 
 (* Fonctions usuelles *)
 let rec len liste =
@@ -84,12 +86,10 @@ let rec print_value pile = function
 
 module Imap = Map.Make(String);; (* Map contenant les environnements typage *)
 
+(* Environnements : variables, fonctions et structures *)
 let globVenv = ref (Imap.singleton "nothing" Vnothing : value Imap.t);;
-
 let globFenv = ref (Imap.empty : ((Ast.ident * (Ast.param list) * Astype.pjtype * Ast.bloc) list) Imap.t);;
 let globSenv = ref (Imap.empty : (bool * Ast.ident * (Ast.param list)) Imap.t);;
-
-exception Return of value;;
 
 let rec filter_option l =
   match l with
@@ -106,6 +106,7 @@ let rec puissance n m =
     else Int64.mul n (puissance (Int64.mul n n ) (Int64.div m int2))
 ;;
 
+(* Pour tester la compatibilité des arguments d'un appel avec les types attendus *)
 let rec compatible pList expr =
   match pList, expr with
   | [], [] -> true
@@ -146,7 +147,7 @@ let rec bloc_to_expressionlist_bis l =
   | None :: q -> bloc_to_expressionlist_bis q
 ;;
 
-(* Construction des talbes de fonctions et structures *)
+(* Construction des tables de fonctions et structures *)
 let construct_struct s fI sI =
   match s with
   | Dstruct (b, _, i, params) ->
@@ -155,6 +156,7 @@ let construct_struct s fI sI =
   | _ -> ()
 ;;
 
+(* Construction d'une fonction dans l'environnement *)
 let construct_function f fI sI =
   match f with
   | Dfonction (_, i, params, _, ty, bloc, _) ->
@@ -185,8 +187,7 @@ let construct code fI sI =
 
 
 
-(* Interpretation *)
-
+(* Interprétation *)
 let rec interp_expression e vI fI sI =
   let ep =
     match e with (pP, ep) -> ep
@@ -201,31 +202,29 @@ let rec interp_expression e vI fI sI =
   | Ebloc1 (p, eL) -> interp_expression_list_one eL vI fI sI
   | EparDIdent (e, p, i) -> interp_expression (p, Ebinop (p, Times, e, (p, Elvalue (Lident (p, i))))) vI fI sI
   | Eapplication (p, i, liste) ->
-    (* if not Imap.mem i !fI then failwith ("Unknown function "^i); (* À améliorer *) *)
     let expr = List.map (fun x -> interp_expression x vI fI sI) liste in
-    let rec parcours_fonctions l expr =
+    let rec parcours_fonctions l expr = (* Recherche la fonction compatible avec l'arument *)
       match l with
-      | [] -> interp_error ("Bad arguments for function "^i) (* À améliorer *)
+      | [] -> interp_error ("Bad arguments for function "^i)
       | (_, pList, _, fBloc) as f :: q ->
         if compatible pList expr then f else parcours_fonctions q expr
     in
-    (* let adequate_structure s expr =
-      let (b, i, pList) = s in
-      compatible pList expr
-    in *)
     let rec add_arguments params expr vI =
+      (* Ajoute les arguments à l'environnement local de la fonction *)
       match params, expr with
       | [], _ -> ()
       | (Param (_, i, _, _)) :: q1, a :: q2 -> vI := Imap.add i a !vI; add_arguments q1 q2 vI
       | _ -> interp_error "Error wtf"
     in
     let rec add_elements_to_struct identList values htbl =
+      (* Ajoute à la table de hachage des champs de la structure leur valeur *)
       match identList, values with
       | [], [] -> ()
       | t1 :: q1, t2 :: q2 -> Hashtbl.add htbl t1 t2; add_elements_to_struct q1 q2 htbl
-      | _, _ -> interp_error "Incorrect number of arguments for struct" (* À améliorer *)
+      | _, _ -> interp_error "Incorrect number of arguments for struct"
     in
     let rec print_function l acc =
+      (* fonction générique print *)
       match l with
       | [] -> Printf.printf "%s" acc; Vnothing
       | t :: q -> print_function q (acc ^ (print_value [] t))
@@ -243,7 +242,7 @@ let rec interp_expression e vI fI sI =
                 begin
                   match expr with
                   | [Vint n1; Vint n2] -> Vint (Int64.div n1 n2)
-                  | _ -> interp_error "Wrong arguments for div" (* À améliorer *)
+                  | _ -> interp_error "Wrong arguments for div"
                 end
             else
               begin
@@ -270,7 +269,7 @@ let rec interp_expression e vI fI sI =
                         Vstruct (i, b, identList, htbl)
                       end
                     else
-                      interp_error ("Unknown function or structure " ^ i); (* À améliorer *)
+                      interp_error ("Unknown function or structure " ^ i);
                 end
               end
           end
@@ -280,14 +279,14 @@ let rec interp_expression e vI fI sI =
     let vali =
       match res with
       | Vbool b -> Vbool (not b)
-      | _ -> interp_error "Erreur de type" (* À améliorer *)
+      | _ -> interp_error "Erreur de type pour l'opérateur !"
     in vali
   | Eminus e ->
     let res = interp_expression e vI fI sI in
     let vali =
       match res with
       | Vint i -> Vint (Int64.neg i)
-      | _ -> interp_error "Erreur de type" (* À améliorer *)
+      | _ -> interp_error "Erreur de type pour l'opérateur -"
     in vali
   | Ebinop (p, op, e1, e2) ->
     let e1p = interp_expression e1 vI fI sI in
@@ -335,18 +334,18 @@ let rec interp_expression e vI fI sI =
         let vali = interp_expression e vI fI sI in
         match vali with
         | Vstruct (i0, b0, pList0, htbl0) -> Hashtbl.find htbl0 i
-        | _ -> interp_error "Value not a structure" (* À améliorer *)
+        | _ -> interp_error "Value not a structure, couldn't get field" (* À améliorer *)
    in res
   | ElvalueAffect (p, lval, e) ->
     let ep = interp_expression e vI fI sI in
     let () =
     match lval with
     | Lident (p, i) -> vI := Imap.add i ep !vI
-    | Lindex (e, p, i) ->
+    | Lindex (e, p, i) -> (* Si on affecte le champ d'une structure *)
       begin
       let res = interp_expression e vI fI sI in
       match res with
-      | Vstruct (i0, true, pList0, htbl0) when appartient i pList0 -> Hashtbl.add htbl0 i ep;
+      | Vstruct (i0, muta, pList0, htbl0) when mutab && (appartient i pList0) -> Hashtbl.add htbl0 i ep;
       | _ -> interp_error "Structure non mutable ou alors pas de champ correspondant"; (* *)
       end
     in ep
@@ -361,9 +360,8 @@ let rec interp_expression e vI fI sI =
     let n1, n2 =
       match v1, v2 with
       | Vint t1, Vint t2 -> t1, t2
-      | _ -> interp_error "Expected integer values in for bounds" (* À améliorer *)
+      | _ -> interp_error "Expected integer values in for bounds"
     in
-    (* let vIp = ref !vI in *)
     let liste = List.map (fun x -> Dexpr x) b in
     let i = ref n1 in
     while Int64.compare !i n2 < 0 do
@@ -375,7 +373,7 @@ let rec interp_expression e vI fI sI =
   | Ewhile (e, (p, b)) ->
     let extract_bool = function
       | Vbool b -> b
-      | _ -> interp_error "Expected a boolean as while condition" (* À améliorer *)
+      | _ -> interp_error "Expected a boolean as while condition"
     in
     let liste = List.map (fun x -> Dexpr x) b in
     while (extract_bool (interp_expression e vI fI sI)) do
@@ -386,7 +384,7 @@ let rec interp_expression e vI fI sI =
     match (interp_expression exp vI fI sI) with
     | Vbool true -> interp_expression_list_one expList vI fI sI
     | Vbool false -> interp_else els vI fI sI
-    | _ -> interp_error "Need a bool in condition of if statement" (* À améliorer *)
+    | _ -> interp_error "Need a bool in condition of if statement"
 and interp_else els vI fI sI =
     match els with
     | Iend -> Vnothing
@@ -394,7 +392,7 @@ and interp_else els vI fI sI =
     | Ielseif ((p, exp), b, els) -> interp_expression (p, Eif ((p, exp), b, els)) vI fI sI
 and interp_expression_list_one liste vI fI sI=
   match liste with
-  | [] -> interp_error "Error empty bloc1" (* À améliorer *)
+  | [] -> interp_error "Error empty bloc1"
   | [e] -> interp_expression e vI fI sI
   | e :: q -> let _ = interp_expression e vI fI sI in
     interp_expression_list_one q vI fI sI

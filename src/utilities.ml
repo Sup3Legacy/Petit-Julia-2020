@@ -1,7 +1,10 @@
 (*
-
-  Fonctions utilitaires
-
+###########################################################
+#                                                         #
+#                  Fonctions utilitaires                  #
+#   Il s'agit de fonctions annexes plus ou moins utiles.  #
+#                                                         #
+###########################################################
 *)
 
 open Ast
@@ -14,7 +17,11 @@ let rec clean_option_list liste =
 ;;
 
 (*
+Fonction de nettoyage de l'arbre syntaxique généré par le parsing. Elle éliminait notamment les listes d'options.
+Ce problème ayant disparu avec la refonte du parser, elle ne sert pour l'instant à rien
+*)
 
+(*
 let rec clean_file x =
   match x with
   | DeclarationList d -> DeclarationList (clean_decllist d)

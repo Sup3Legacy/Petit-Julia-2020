@@ -26,6 +26,7 @@ let instr = ref "";;
 let logo_file = "logo";;
 let prompt = ref "ρjυλια> ";;
 
+(* Environnements globaux de typage *)
 let gVenv = ref (Tmap.singleton "nothing" (true, Nothing))
 let gFenv = ref (Tmap.singleton "div" [[Int64; Int64], Int64])
 let gSenv = ref (Tmap.empty : structEnv)
@@ -80,6 +81,7 @@ let afficheL l =
 
 let flushed = ref false;;
 
+(* vidage des environnement de typage *)
 let flush () =
   gVenv := Tmap.singleton "nothing" (true, Nothing);
   gFenv := Tmap.singleton "div" [[Int64; Int64], Int64];
@@ -99,7 +101,7 @@ while !continue do
   if startswith !instr "#exit" then exit 0;
   if startswith !instr "#flush" then flush ();
   if startswith !instr "#cof" then begin print_string "Choisissez la survivaliste"; instr := "" end;
-    (* NDLR : un de nous se présente aux élections du COF sur la liste "suvivaliste" *)
+    (* NDLR : un de nous se présente aux élections du COF sur la liste "suvivaliste" :D *)
   if startswith !instr "#tux" then begin print_string Logo.tux; instr := "" end;
   try
     begin
@@ -129,7 +131,8 @@ while !continue do
         let b = Lexing.lexeme_start_p lb in
         let e = Lexing.lexeme_end_p lb in
         match a with
-        | Lexer.Lexing_error s -> begin
+          (* Récupération et affichage de erreurs *)
+          | Lexer.Lexing_error s -> begin
             Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(file_name) b.pos_lnum (b.pos_cnum - b.pos_bol) (e.pos_cnum - e.pos_bol);
               Printf.printf "Lexical error at lexeme : \"%s\"\n" s
             end
