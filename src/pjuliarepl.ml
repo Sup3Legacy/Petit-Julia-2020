@@ -1,3 +1,15 @@
+(*
+###########################################################
+#                                                         #
+#                           REPL                          #
+#                                                         #
+#   Il implémente la boucle de lecture écriture sur la    #
+# sortie standard. Il gère aussi le chargement de fichier #
+#   ainsi que l'appel aux fonctions de parsing et typage  #
+#                                                         #
+###########################################################
+*)
+
 open Lexer
 open Parser
 open Ast

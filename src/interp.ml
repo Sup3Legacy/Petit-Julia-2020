@@ -1,3 +1,13 @@
+(*
+###########################################################
+#                                                         #
+#                       Interpréteur                      #
+#     Il donne les fonctions permettant de traiter et     #
+#                  interpréter du code.                   #
+#                                                         #
+###########################################################
+*)
+
 open Lexer
 open Parser
 open Ast
@@ -7,10 +17,9 @@ open Hyper
 open Utilities
 open Astinterp
 
-let print_limit = 4;;
-
 let interp_error s = raise (Ast.Interp_Error_Msg s);;
 
+(* Fonctions usuelles *)
 let rec len liste =
   match liste with
   | [] -> 0
@@ -23,6 +32,7 @@ let rec appartient elt liste =
   | t :: q -> t = elt || appartient elt q
 ;;
 
+(* fonctions pour la pile d'affichage *)
 let positionDansPile2 element pile =
   let rec aux n = function
     |[] -> None
@@ -34,6 +44,7 @@ let positionDansPile element pile = match  element with
 | Vstruct s -> positionDansPile2 s pile
 | _ -> None
 
+(* Fonction d'affichage de valeur *)
 let rec print_value pile = function
   | Vnothing -> "Nothing"
   | Vbool true -> "true"
@@ -41,9 +52,7 @@ let rec print_value pile = function
   | Vint n -> Int64.to_string n
   | Vstring s -> s
   | Vfloat f -> string_of_float f
-  | Vstruct s ->
-    (*if nombre > print_limit then "..."
-    else*)
+  | Vstruct s -> (* Le cas d'une structure est délicat. Si on a une référence circulaire, il faut l'identifier *)
     begin
       let (n, b, identlist, htbl) = s in
       let res = ref "" in

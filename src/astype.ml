@@ -1,12 +1,12 @@
 (*
-
-  AST propre au typage
-
+###########################################################
+#                                                         #
+#                  Ast propre au typage                   #
+#                                                         #
+###########################################################
 *)
 
-
-
-type pjtype =
+type pjtype = (* types de petitjulia *)
   | Any
   | Nothing
   | Int64
