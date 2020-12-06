@@ -17,7 +17,6 @@ open Astype
 open Astinterp
 open Typer
 open Hyper
-open Utilities
 open Interp
 open Logo
 

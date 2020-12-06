@@ -7,10 +7,12 @@
 open Format
 open Unix
 
+(* Permet de tester si l'ordinateur est un mac ou non *)
 let estMac = 
     let ic = Unix.open_process_in "uname" in
     let uname = input_line ic in
     let () = close_in ic in uname = "Darwin"
+
 type size = [`B | `W | `L | `Q]
 
 type 'size register =  string

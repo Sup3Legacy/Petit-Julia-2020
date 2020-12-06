@@ -345,7 +345,7 @@ let rec interp_expression e vI fI sI =
       begin
       let res = interp_expression e vI fI sI in
       match res with
-      | Vstruct (i0, muta, pList0, htbl0) when mutab && (appartient i pList0) -> Hashtbl.add htbl0 i ep;
+      | Vstruct (i0, muta, pList0, htbl0) when muta && (appartient i pList0) -> Hashtbl.add htbl0 i ep;
       | _ -> interp_error "Structure non mutable ou alors pas de champ correspondant"; (* *)
       end
     in ep

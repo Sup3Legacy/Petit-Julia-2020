@@ -3,7 +3,6 @@ open Parser
 open Ast
 open Astype
 open Hyper
-open Utilities
 open Typer
 open X86_64
 
