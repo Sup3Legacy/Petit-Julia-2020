@@ -151,7 +151,7 @@ Enfin `rlwrap` nous permet d'afficher le `ρjυλια>` en couleur, ce qui nous 
 
 Bien entendu, ayant un REPL fonctionnel (en tout cas selon nos tests), nous avons voulu le comparer, en termes de **performances**, au **REPL** `Julia` officiel!
 
-Nous avons donc tilisé la fonction de **Ackermann**, implémentée comme ceci :
+Nous avons donc utilisé la fonction de **Ackermann**, implémentée comme ceci :
 
 ```julia
 function ackerman(m::Int64, n::Int64)::Int64
