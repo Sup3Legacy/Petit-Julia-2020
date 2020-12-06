@@ -157,3 +157,42 @@ Cette première partie du projet nous aura beaucoup occupés, d'autant plus que 
 
 Nous avons pu mettre en place tous les outils nécessaires à la suite du projet, ainsi que d'autres outils nous permettant de l'approfondir.
 Cependant, nous considérons nécessaire de continuer à travailler sur Samenhir, ne serait-ce que pour optimiser la production de code afin de diminuer le temps de compilation du compilateur.
+
+# VII] Annexes
+
+## A] Liste des fichiers
+Ci-dessous sont listés les fichiers du projet, accompagnés d'une brève description de leur utilité
+
+* `ast.ml`
+* `astinterp.ml`
+* `astOld.ml`
+* `astype.ml`
+* `dune`
+* `dune-project`
+* `hyper.ml`
+* `hyper2.ml`
+* `hyperOld.ml`
+* `interp.ml`
+* `lexer.mll`
+* `lexerOld.mll`
+* `logo.ml`
+* `Makefile`
+* `parser.sam`
+* `parserOld.mly`
+* `parserTest.sam`
+* `pjuliac.ml`
+* `pjuliarepl.ml`
+* `pjuliarepl-rlwrap.sh`
+* `pjulia-words`
+* `samenhir.ml`
+* `samenhir-utilities.ml`
+* `samenhirAst.ml`
+* `samenhirLexer.ml`
+* `samenhirParserBuilder.ml`
+* `test.jl`
+* `tester.ml`
+* `tests.txt`
+* `typer.ml`
+* `typerOld.ml`
+* `utilities.ml`
+* `x86_65.ml`

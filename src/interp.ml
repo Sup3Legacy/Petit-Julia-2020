@@ -54,7 +54,7 @@ let rec print_value pile = function
       let rec add_to_str point liste=
         match liste with
           | [] -> ()
-          | [t] -> begin 
+          | [t] -> begin
             let valeur = (Hashtbl.find htbl t) in
             match positionDansPile valeur pile with
             |None -> res := !res ^ (t ^ " : " ^ (print_value pile valeur))
@@ -394,7 +394,14 @@ and interp_declaration_list l vI fI sI p =
   | [] -> Vnothing
   | [Dexpr e] ->
     let res = interp_expression e vI fI sI in
-    if res != Vnothing && p then print_string (print_value [] res); res
+    if res != Vnothing && p then
+    begin
+      let v = print_value [] res in
+      print_string v;
+      if v = "69" then print_endline "\nNice.";
+      if v = "42" then print_endline "\nNoice.";
+    end;
+    res
   | Dexpr e :: q -> let _ = interp_expression e vI fI sI in (); interp_declaration_list q vI fI sI p;
   | _ :: q -> interp_declaration_list q vI fI sI p
 ;;

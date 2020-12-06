@@ -10,13 +10,11 @@ repl: pjuliarepl.exe
 
 pjuliac.exe:
 	dune build pjuliac.exe
-	cp _build/default/pjuliac.exe ../bin/pjuliac
+	cp _build/default/pjuliac.exe pjuliac
 
 pjuliarepl.exe :
 	dune build pjuliarepl.exe
-	cp _build/default/pjuliarepl.exe ../bin/pjuliarepl
-	cp pjuliarepl-rlwrap.sh ../bin/pjuliarepl-rlwrap.sh
-	cp pjulia-words ../bin/pjulia-words
+	cp _build/default/pjuliarepl.exe pjuliarepl
 
 clean:
 	rm -r ../bin/*

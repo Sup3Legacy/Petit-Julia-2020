@@ -12,6 +12,7 @@ open Logo
 let continue = ref true;;
 let instr = ref "";;
 let logo_file = "logo";;
+let prompt = ref "ρjυλια> ";;
 
 let gVenv = ref (Tmap.singleton "nothing" (true, Nothing))
 let gFenv = ref (Tmap.singleton "div" [[Int64; Int64], Int64])
@@ -36,7 +37,7 @@ let startswith str motif =
 
 module Sset = Set.Make(String)
 
-let afficheL l = 
+let afficheL l =
   let conversionTokenType s = match s with
     |"INT"|"CHAINE"|"IDENT"|"NOT"|"FALSE"|"TRUE"|"FOR"|"IF"|"WHILE"|"RETURN"
 |"ENTIER_IDENT"|"IDENT_PARG"|"ENTIER_PARG"|"PARG_IDENT"|"separated_list_COMMA_expr"
@@ -50,7 +51,7 @@ let afficheL l =
     |"DOT" -> "."
     |"ELSE"|"ELSEIF"|"else_exp" -> "else(if)"
     |"END" -> "end"
-    |"FUNCTION"|"fonction"|"STRUCT"|"MUTABLE"|"DOCSTRING"|"fichier"|"declarations_list"|"structure"|"EOF" -> "declaration" 
+    |"FUNCTION"|"fonction"|"STRUCT"|"MUTABLE"|"DOCSTRING"|"fichier"|"declarations_list"|"structure"|"EOF" -> "declaration"
     |"param_list"|"separated_list_COMMA_param"|"param" -> "parameter"
     |"typage" -> "type"
     |"TYPE" -> "::"
@@ -81,10 +82,11 @@ while !continue do
   (* boucle principale *)
   print_newline();
   print_newline();
-  print_string "ρjυλια> ";
+  print_string !prompt;
   instr := read_line();
   if startswith !instr "#exit" then exit 0;
   if startswith !instr "#flush" then flush ();
+  if startswith !instr "#cof" then begin print_string "Choisissez la survivaliste"; instr := "" end;
   try
     begin
       let lb =

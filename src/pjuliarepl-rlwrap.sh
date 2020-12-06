@@ -1,2 +1,1 @@
-#!.
-rlwrap -f pjulia-words -c -pCyan pjuliarepl
+rlwrap -f pjulia-words -c -pCyan ./pjuliarepl
