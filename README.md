@@ -18,6 +18,9 @@ Cela nous a donné un analyseur à peu près fonctionnel mais souffrant de dizai
 
 Le parser a subi un nouveau remodelage général au début de notre travail sur le typeur car nous avions oublié de transmettre les positions des token dans l'`ast`, ce qui nous empêchait de pouvoir positionner précisement les erreurs de types.
 
+Une erreur de parser affiche une erreur de syntaxe donnant la position du dernier lexème lu avant de planter et si il y a suffisament peu de possibilités il donne la liste des catégories de lexèmes qui auraient du être lu pour que ça ne plante pas.
+
+
 # II] Typer
 
 
