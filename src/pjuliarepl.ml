@@ -26,10 +26,10 @@ let logo_file = "logo";;
 let prompt = ref "ρjυλια> ";;
 
 (* Environnements globaux de typage *)
-let gVenv = ref (Tmap.singleton "nothing" (true, Nothing))
-let gFenv = ref (Tmap.singleton "div" [[Int64; Int64], Int64])
-let gSenv = ref (Tmap.empty : structEnv)
-let gAenv = ref (Tmap.empty : argsEnv)
+let (gVenv:Astype.varEnv ref) = ref (Tmap.singleton "nothing" (true, Nothing))
+let (gFenv:Astype.funcEnv ref) = ref (Tmap.singleton "div" [[Int64; Int64], Int64])
+let (gSenv:Astype.structEnv ref) = ref Tmap.empty 
+let (gAenv:Astype.argsEnv ref) = ref Tmap.empty
 
 let file_name = ref "";;
 
@@ -86,6 +86,7 @@ let flush () =
   gFenv := Tmap.singleton "div" [[Int64; Int64], Int64];
   gSenv := Tmap.empty;
   gAenv := Tmap.empty;
+  Interp.flush ();
   flushed := true
 ;;
 
@@ -124,7 +125,7 @@ while !continue do
           let e = Parser.fichier Lexer.token lb in
           let () = Typer.typerRepl e gVenv gFenv gSenv gAenv in
           (* print_endline (show_fichier e); *)
-          interp_file e globVenv globFenv globSenv;
+          Interp.interp_file e;
         end
       with a -> begin
         let b = Lexing.lexeme_start_p lb in

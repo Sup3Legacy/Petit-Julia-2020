@@ -13,18 +13,6 @@ open Parser
 
 *)
 
-
-(* définisions des structures et types permettant au typer de fonctionner *)
-module Tmap = Map.Make(String)
-module Tset = Set.Make(String)
-module TypeSet = Set.Make(struct type t = pjtype let compare = compare end)
-module FuncSet = Set.Make(struct type t = funct let compare = compare end)
-
-type varEnv = (bool * Astype.pjtype) Tmap.t
-type funcEnv = funct list Tmap.t
-type structEnv = Astype.pjtype Tmap.t Tmap.t
-type argsEnv = (bool*Astype.pjtype*string) Tmap.t
-
 (* variable pour savoir si on est dans l'interpréteur ou dans le compilateur *)
 let estCompile = ref false
 

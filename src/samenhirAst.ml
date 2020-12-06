@@ -104,7 +104,7 @@ type priority = (assoc * non_terminal list) list
 type actionTable = action Tmap.t Imap.t
 type gotoTable = int Ntmap.t Imap.t
 
-type parseTables = {
+type parseTable = {
 	startLine : int;
 	goto : gotoTable;
 	action : actionTable

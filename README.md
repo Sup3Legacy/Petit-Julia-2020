@@ -8,7 +8,9 @@
 
 Notre projet requiert l'installation, via `opam` de la bibliothèque `ppx_deriving`.
 
-De plus, l'utilisation optimale du **REPL** nécessite l'installation du **wrapper** `rlwrap`, disponible via un gestionnaire standard de packages Linux.
+De plus, l'utilisation optimale du **REPL** nécessite l'installation du **wrapper** `rlwrap`, disponible via un gestionnaire standard de packages Linux (c'est compatible sur les mac).
+
+
 
 # I] Lexer/Parser
 
@@ -188,12 +190,12 @@ Cependant, nous considérons nécessaire de continuer à travailler sur Samenhir
 # VII] Annexes
 
 ## A] Liste des fichiers
-Ci-dessous sont listés les fichiers du projet, accompagnés d'une brève description de leur utilité.
+Ci-dessous sont listés les fichiers du projet, accompagnés d'une brève description de leur utilité. Certains fichier sont accompagné d'un fichier .mli pour de bonnes pratique d'ingénierie. 
 
 * `ast.ml` : déclaration des types récursifs de l'arbre abstrait du programme
 * `astinterp.ml` : déclaration des types utilisés lors de l'interprétation
 * `astype.ml` : déclaration des types utilisés lors du typage
-* `dune` : déclaration des directives de compilation (utilse pour intégrer Samenhir!)
+* `dune` : déclaration des directives de compilation (utilisé pour intégrer Samenhir!)
 * `dune-project` : déclarations annexes de `dune`
 * `hyper.ml` : fichier contenant le code `OCaml` utilisé par le parser
 * `hyper2.ml` : quelques fonctions aussi utilisées dans le Parser. Des soucis de référence circulaire nous ont contraints à scinder ces dernières dans deux fichiers.
@@ -201,21 +203,21 @@ Ci-dessous sont listés les fichiers du projet, accompagnés d'une brève descri
 * `lexer.mll` : déclaration du lexer
 * `logo.ml` : fichier contenant le joli logo coloré affiché au lancement du REPL
 * `Makefile` : fichier principal de compilation. Il contient plein d'options
-* `parser.sam`
+* `parser.sam` : parser sous le format nécessaire pour Samenhir
 * `parserOld.mly`
 * `parserTest.sam`
 * `pjuliac.ml` : fichier principal du compilateur. Il peut prendre plusieurs flags
 * `pjuliarepl.ml` : fichier principal du REPL. Il peut être utilisé tel quel ou bien avec `rlwrap` via le script ci-dessous!
 * `pjuliarepl-rlwrap.sh` : petit script `bash` pour lancer le REPL en utilisant `rlwrap` avec les options que nous avons choisies
 * `pjulia-words` : fichier contenant les mots-clé du langage, pour la complétion automatique dans le REPL
-* `samenhir.ml`
-* `samenhir-utilities.ml`
-* `samenhirAst.ml`
-* `samenhirLexer.ml`
-* `samenhirParserBuilder.ml`
+* `samenhir.ml` : Fichier permettant de faire l'interface de Samenhir
+* `samenhir-utilities.ml` : Corps de Samenhir
+* `samenhirAst.ml` : déclaration des types utilisé par Samenhir
+* `samenhirLexer.ml` : lexer de Samenhir
+* `samenhirParserBuilder.ml` : fichier permettant la construction du parser de Samenhir (permet l'indépendance de Samenhir vis à vis de Menhir)
 * `test.jl` : petit fichier servant à tester notre compilateur (pratique car directement dans notre environnement de compilation).
 * `tester.ml` : fichier pour l'instant inutile. Il servait à effectuer des tests automatiques depuis `OCaml`
 * `tests.txt` : fichier rempli manuellement pour garder trace des tests qui marchent ou non
 * `typer.ml` : fichier principal de typage
 * `utilities.ml` : fichier contenant des fonctions utilitaires. Ne contient aujourd'hui rien de très intéressant
-* `x86_65.ml` : fichier contenant les déclarations de base nécessaires à la génération de code `x86_64`
+* `x86_65.ml` : fichier contenant les déclarations de base nécessaires à la génération de code `x86_64`, on a rajouté une fonction pour détecter si l'ordinateur utilisé est un mac ou non

@@ -510,7 +510,7 @@ let rec unRawProd = function
 	|AssocTerminal (v,t)::tl -> Terminal t::unRawProd tl
 	|AssocNonTerminal (v,t)::tl -> NonTerminal t::unRawProd tl
 
-let unrawGrammar g = {start = g.startR; rules = List.fold_left (fun l (n,_,pr,prio,_) -> (n, unRawProd pr, prio)::l) [] g.raw_rules}
+let unrawGrammar (g:grammar_raw):grammar = {start = g.startR; rules = List.fold_left (fun l (n,_,pr,prio,_) -> (n, unRawProd pr, prio)::l) [] g.raw_rules}
 
 (* Cherche l'état de la règle de départ *)
 let rec findType start = function

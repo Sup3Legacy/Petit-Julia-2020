@@ -84,12 +84,10 @@ let rec print_value pile = function
     end
 ;;
 
-module Imap = Map.Make(String);; (* Map contenant les environnements typage *)
-
 (* Environnements : variables, fonctions et structures *)
-let globVenv = ref (Imap.singleton "nothing" Vnothing : value Imap.t);;
-let globFenv = ref (Imap.empty : ((Ast.ident * (Ast.param list) * Astype.pjtype * Ast.bloc) list) Imap.t);;
-let globSenv = ref (Imap.empty : (bool * Ast.ident * (Ast.param list)) Imap.t);;
+let globVenv = ref (Imap.singleton "nothing" Vnothing : Astinterp.varEnv);;
+let globFenv = ref (Imap.empty : Astinterp.funcEnv);;
+let globSenv = ref (Imap.empty : Astinterp.structEnv);;
 
 let rec filter_option l =
   match l with
@@ -413,15 +411,16 @@ and interp_declaration_list l vI fI sI p =
   | _ :: q -> interp_declaration_list q vI fI sI p
 ;;
 
-let interp_file file vI fI sI =
-  construct file fI sI;
+let interp_file file =
+  construct file globFenv globSenv;
   match file with
-  | DeclarationList l -> let _ = interp_declaration_list l vI fI sI true in ()
+  | DeclarationList l -> let _ = interp_declaration_list l globVenv globFenv globSenv true in ()
 ;;
 
-(*
-type varInterp = Astinterp.value Imap.t
-type funcInterp = ((ident * (param list) * pjtype * bloc) list) Imap.t
-type structInterp = (bool * string * (param list)) Imap.t
-type argsInterp = (bool * Astype.pjtype * string) Imap.t
-*)
+let flush () = 
+  globVenv := Imap.singleton "nothing" Vnothing;
+  globFenv := Imap.empty;
+  globSenv := Imap.empty
+;;
+
+
