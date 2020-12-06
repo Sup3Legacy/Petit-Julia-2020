@@ -8,17 +8,17 @@
 
 Notre projet requiert l'installation, via `opam` de la bibliothèque `ppx_deriving`.
 
-De plus, l'utilisation optimale du REPL nécessite l'installation du wrapper `rlwrap`, disponible via un gestionnaire standard de packages Linux.
+De plus, l'utilisation optimale du **REPL** nécessite l'installation du **wrapper** `rlwrap`, disponible via un gestionnaire standard de packages Linux.
 
 # I] Lexer/Parser
 
-La première étape a été de définir les types qui seront utilisés par les différentes étapes d'analyse. Dans un premier temps, nous avons suivi la grammaire donnée dans le sujet, que ce soit pour la définition de l'`ast` (les types correspondaient exactement aux règles de grammaire) ou bien pour le lexer et le parser. Cela nous a donné un analyseur à peu près fonctionnel mais souffrant de dizaines de conflits (par exemple au niveau de la construction `while expr bloc`). Cela a été résolu par un remodelage progressif du parser, éliminant tous les conflits un par un!
-Le parser a subi un nouveau remodelage général au début de notre travail sur le typeur car nosu avions oublié de transmettre les positions des token dans l'`ast`, ce qui nous empêchait de pouvoir positionner précisement les erreurs de types.
+La première étape a été de définir les **types** qui seront utilisés par les différentes étapes d'analyse. Dans un premier temps, nous avons suivi la **grammaire** donnée dans le sujet, que ce soit pour la définition de l'`ast` (les types correspondaient exactement aux **règles de grammaire**) ou bien pour le **lexer** et le **parser**. Cela nous a donné un analyseur à peu près fonctionnel mais souffrant de dizaines de **conflits** (par exemple au niveau de la construction `while expr bloc`). Cela a été résolu par un **remodelage progressif** du parser, éliminant tous les conflits un par un!
+Le parser a subi un nouveau remodelage général au début de notre travail sur le typeur car nous avions oublié de transmettre les positions des token dans l'`ast`, ce qui nous empêchait de pouvoir positionner précisement les erreurs de types.
 
 # II] Typer
 
 
-Le typeur est une étape importante du projet et certaines décisions ont été prises par rapport à ce que l'on autorisait ou non. Ces décisions ont été prises en prenant en compte le fait que nous pouvions toujours revenir modifier certains points plus tard dans le projet si besoin.
+Le **typeur** est une étape importante du projet et certaines décisions ont été prises par rapport à ce que l'on autorisait ou non. Ces décisions ont été prises en prenant en compte le fait que nous pouvions toujours revenir modifier certains points plus tard dans le projet si besoin.
 
 Pour cela le fichier est parcouru deux fois. Il s'agit des parcours 1 et 2 (vive l'originalité !):
 
@@ -152,7 +152,7 @@ function ackerman(m::Int64, n::Int64)::Int64
 end
 ```
 
-Ensuite nous avons mesuré le temps mis par le calcul de `ackermann(3,8)` sur les deux interpréteurs. Sans rien configuré, notre interpréteur a subi une défaite cuisante contre l'interpréteur Julia. Le temps de calcul sur le notre avait en effet plus qu'un facteur 50 par rapport à la référence (en utilisant exactement le même fichier de base).
+Ensuite nous avons mesuré le temps mis par le calcul de `ackermann(3,8)` sur les deux interpréteurs. Sans rien configurer, notre interpréteur a subi une défaite cuisante contre l'interpréteur Julia. Le temps de calcul sur le notre avait en effet plus qu'un facteur 50 par rapport à la référence (en utilisant exactement le même fichier de base).
 
 Cependant, nous nous sommes souvenus que le REPL de Julia "triche" un peu, en cela qu'il compile à la volée le code pour ensuite l'exécuter dans le processur courant. Nous avons refait le même test, cette fois-ci en appelant le REPL Julia de cette façon `julia --compile=no`. Le résultat est devenu beaucoup plus intéressant : notre interpréteur ne met plus qu'environ 10% plus longtemps pour calculer `ackermann(3,8)`, ce qui nous paraît être un très bon premier résultat!
 
