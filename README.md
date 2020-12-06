@@ -2,7 +2,7 @@
 
 # Projet compilation 2020
 ### Constantin Gierczak--Galle & Samuel Vivien
-### Cours de compilation, Jean-Christophe Filliâtre, ENS Ulm, 2020
+### Cours de compilation, Jean-Christophe Filliâtre & Basile Clément, ENS Ulm, 2020
 
 # 0] Prérequis
 
