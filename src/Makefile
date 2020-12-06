@@ -17,7 +17,6 @@ pjuliarepl.exe :
 	cp _build/default/pjuliarepl.exe pjuliarepl
 
 clean:
-	rm -r ../bin/*
 	dune clean
 
 explain:
