@@ -1,3 +1,15 @@
+(*
+######################################
+#                                    #
+# Fichier definissant tous les types #
+#       utilisés par Samenhir.       #
+#    (inspiration venant du TD 6)    #
+#                                    #
+######################################
+*)
+
+
+(* Différentes structures utiles pour le calcul utilisé dans le TD 6 *)
 type terminal = string
 type non_terminal = string 
 
@@ -28,13 +40,14 @@ module Tmap = Map.Make(String)
 module Pset = Set.Make(struct type t = production let compare = compare end)
 module Rset = Set.Make(struct type t = rule let compare = compare end)
 module Rmap = Map.Make(struct type t = rule let compare = compare end)
+
 type expansion_table = Pset.t Tmap.t Ntmap.t
 
+(* Redéfinis les types pour pouvoir stocker le point servant à se souvenir de la position dans la règle *)
 type symbolD = 
 	| TerminalD of terminal
 	| NonTerminalD of non_terminal
 	| Dot
-
 type productionD = symbolD list
 type ruleD = non_terminal * productionD * (string option)
 
@@ -48,6 +61,7 @@ type grammarD = {
 	rulesD : ruleD list
 }
 
+(* Structures permettant de stocker l'automate non déterministe (ND) *)
 type stateND = non_terminal * productionD * (string option) * terminal
 
 module StateMap = Map.Make(struct type t = stateND let compare = compare end)
@@ -63,6 +77,7 @@ type automatND = {
 	transND : transitionTable
 }
 
+(* Structures permettant de stocker l'automate déterministe (D) *)
 module StateSetMap = Map.Make(StateSet)
 type transitionTableD = state Smap.t StateSetMap.t 
 type successor = state StateMap.t
@@ -72,18 +87,18 @@ type automatD = {
 	transitions : transitionTableD
 }
 
-
-type assoc = 
-	| Left
-	| Right
-	| NonAssoc
-
+(* Structures servant à stocker la table *)
 type action = 
 	| REDUCE of rule
 	| SHIFT of int
 	| SUCCESS
 
 module Imap = Map.Make(Int)
+
+type assoc = 
+	| Left
+	| Right
+	| NonAssoc
 
 type priority = (assoc * non_terminal list) list
 type actionTable = action Tmap.t Imap.t
@@ -95,6 +110,7 @@ type parseTables = {
 	action : actionTable
 }
 
+(* Structures pour stocker la grammaire brute avec les opérations Ocaml à effectuer *)
 type symbol_raw = 
 	|TerminalR of terminal
 	|AssocTerminal of (string * terminal)
@@ -124,7 +140,4 @@ type program = {
 	actionTab : actionTable;
 	tokenList : (string * (string option)) list;
 	head : string;
-}
-
-exception Samenhir_Parsing_Error of int
-;;
+};;
