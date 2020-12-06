@@ -8,8 +8,7 @@
 ############################################
 *)
 
-open SamenhirAst
-open Samenhir_utilities;;
+open SamenhirAst;;
 
 let tokenList = [("CODE", Some "string");
 	("HEADER", Some "string");
@@ -87,11 +86,11 @@ let rawRules = [
 let g = {startR = startR; raw_rules = rawRules} in
 let prio = [] in
 let parsed = {header = header; g = g; prio = prio; tokenList = tokenList} in
-let table = buildTable (unrawGrammar parsed.g) parsed.prio in
+let table = Samenhir_utilities.buildTable (Samenhir_utilities.unrawGrammar parsed.g) parsed.prio in
 let p = {gR = parsed.g; startLTable = table.startLine; gotoTab = table.goto; actionTab = table.action; tokenList = parsed.tokenList; head = parsed.header} in
 let out = open_out "samenhirParser.ml" in
-let _ = pp_buildProg (Format.formatter_of_out_channel out) p in
+let _ = Samenhir_utilities.pp_buildProg (Format.formatter_of_out_channel out) p in
 let () = close_out out in
 let out = open_out "samenhirParser.mli" in
-let _ = pp_mli (Format.formatter_of_out_channel out) p in
+let _ = Samenhir_utilities.pp_mli (Format.formatter_of_out_channel out) p in
 	close_out out

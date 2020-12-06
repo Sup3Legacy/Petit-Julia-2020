@@ -10,19 +10,18 @@
 ###########################################################
 *)
 
-open Lexer
-open Parser
+(*open Lexer
+open Parser*)
 open Ast
 open Astype
 open Astinterp
-open Typer
+(*open Typer*)
 open Hyper
-open Interp
-open Logo
+(*open Interp*)
+(*open Logo*)
 
 let continue = ref true;;
 let instr = ref "";;
-let logo_file = "logo";;
 let prompt = ref "ρjυλια> ";;
 
 (* Environnements globaux de typage *)
@@ -90,7 +89,7 @@ let flush () =
   flushed := true
 ;;
 
-print_string logo2;;
+print_string Logo.logo2;;
 
 while !continue do
   (* boucle principale *)

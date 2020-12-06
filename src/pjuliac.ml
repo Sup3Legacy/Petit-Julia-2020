@@ -1,10 +1,10 @@
-open Lexer
-open Parser
 open Ast
 open Astype
-open Hyper
+(*open Lexer
+open Parser*)
+(*open Hyper
 open Typer
-open X86_64
+open X86_64*)
 
 let affiche = ref false;;
 let parse_only = ref false;;
@@ -17,7 +17,7 @@ let gSenv = ref (Tmap.empty : structEnv)
 let gAenv = ref (Tmap.empty : argsEnv)
 
 module Sset = Set.Make(String)
-let afficheL l = 
+let afficheL l =
   let conversionTokenType s = match s with
     |"INT"|"CHAINE"|"IDENT"|"NOT"|"FALSE"|"TRUE"|"FOR"|"IF"|"WHILE"|"RETURN"
 |"ENTIER_IDENT"|"IDENT_PARG"|"ENTIER_PARG"|"PARG_IDENT"|"separated_list_COMMA_expr"
