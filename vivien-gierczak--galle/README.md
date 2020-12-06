@@ -8,7 +8,7 @@
 
 Notre projet requiert l'installation, via `opam` de la bibliothèque `ppx_deriving`.
 
-De plus, l'utilisation optimale du **REPL** nécessite l'installation du **wrapper** `rlwrap`, disponible via un gestionnaire standard de packages Linux.
+De plus, l'utilisation optimale du **REPL** nécessite l'installation du **wrapper** `rlwrap`, disponible via un gestionnaire standard de packages Linux (disponible aussi sur mac).
 
 # I] Lexer/Parser
 
@@ -17,6 +17,11 @@ La première étape a été de définir les **types** qui seront utilisés par l
 Cela nous a donné un analyseur à peu près fonctionnel mais souffrant de dizaines de **conflits** (par exemple au niveau de la construction `while expr bloc`). Cela a été résolu par un **remodelage progressif** du parser, éliminant tous les conflits un par un!
 
 Le parser a subi un nouveau remodelage général au début de notre travail sur le typeur car nous avions oublié de transmettre les positions des token dans l'`ast`, ce qui nous empêchait de pouvoir positionner précisement les erreurs de types.
+
+Une erreur de parser affiche une erreur de syntaxe donnant la position du dernier lexème lu avant de planter et, s'il y a suffisament peu de possibilités, il donne la liste des catégories de lexèmes autorisés à ce moment-là.
+
+Nous avons implémenté une règle dans le lexer et le parser permetant de donner aux fonction des **docstrings**, dans le même format que `Julia`. Pour l'instant, les docstringss sont reconnues et enregistrées dans l'arbre syntaxique mais nous n'avons pas encore eu le temps d'implémenter dans le **REPL** une fonctionnalité permettant d'accéder à la docstring d'une fonction (via `help [nom fonction]`, par exemple).
+
 
 # II] Typer
 
@@ -148,7 +153,7 @@ Enfin `rlwrap` nous permet d'afficher le `ρjυλια>` en couleur, ce qui nous 
 
 Bien entendu, ayant un REPL fonctionnel (en tout cas selon nos tests), nous avons voulu le comparer, en termes de **performances**, au **REPL** `Julia` officiel!
 
-Nous avons donc tilisé la fonction de **Ackermann**, implémentée comme ceci :
+Nous avons donc utilisé la fonction de **Ackermann**, implémentée comme ceci :
 
 ```julia
 function ackerman(m::Int64, n::Int64)::Int64
@@ -186,6 +191,8 @@ Cette première partie du projet nous aura **beaucoup occupés**, d'autant plus 
 Nous avons pu mettre en place tous les outils nécessaires à la **suite du projet**, ainsi que d'autres outils nous permettant de l'approfondir.
 Cependant, nous considérons nécessaire de continuer à travailler sur **Samenhir**, ne serait-ce que pour optimiser la production de code afin de **diminuer le temps de compilation** du compilateur.
 
+Pour la deuxième partie du projet, nous projetons d'ajouter aussi à PetitJulia™ le support des **flottants** sur 64 bits ainsi que des **listes** (probablement tout simplement via des structures cachées derrière du sucre syntaxique); si nous en avons le temps!
+
 # VII] Annexes
 
 ## A] Liste des fichiers
@@ -202,7 +209,7 @@ Ci-dessous sont listés les fichiers du projet, accompagnés d'une brève descri
 * `interp.ml` : fichier contenant toutes les fonctions d'interprétation de PetitJulia™.
 * `lexer.mll` : déclaration du lexer (l'analyseur est construit par ocamllex).
 * `logo.ml` : fichier contenant le joli logo coloré affiché au lancement du REPL.
-* `logo.png` : joli logo de PetitJulia™
+* `logo.png` : logo de PetitJulia™
 * `Makefile` : fichier principal de compilation. Il contient plein d'options.
 * `parser.sam` : parser pour Samenhir.
 * `parserExemple.sam` : exemple de petit parser si vous avez envie de voir la syntaxe demandé par Samenhir.

@@ -20,6 +20,8 @@ Le parser a subi un nouveau remodelage général au début de notre travail sur 
 
 Une erreur de parser affiche une erreur de syntaxe donnant la position du dernier lexème lu avant de planter et, s'il y a suffisament peu de possibilités, il donne la liste des catégories de lexèmes autorisés à ce moment-là.
 
+Nous avons implémenté une règle dans le lexer et le parser permetant de donner aux fonction des **docstrings**, dans le même format que `Julia`. Pour l'instant, les docstringss sont reconnues et enregistrées dans l'arbre syntaxique mais nous n'avons pas encore eu le temps d'implémenter dans le **REPL** une fonctionnalité permettant d'accéder à la docstring d'une fonction (via `help [nom fonction]`, par exemple).
+
 
 # II] Typer
 
@@ -188,6 +190,8 @@ Cette première partie du projet nous aura **beaucoup occupés**, d'autant plus 
 
 Nous avons pu mettre en place tous les outils nécessaires à la **suite du projet**, ainsi que d'autres outils nous permettant de l'approfondir.
 Cependant, nous considérons nécessaire de continuer à travailler sur **Samenhir**, ne serait-ce que pour optimiser la production de code afin de **diminuer le temps de compilation** du compilateur.
+
+Pour la deuxième partie du projet, nous projetons d'ajouter aussi à PetitJulia™ le support des **flottants** sur 64 bits ainsi que des **listes** (probablement tout simplement via des structures cachées derrière du sucre syntaxique); si nous en avons le temps!
 
 # VII] Annexes
 
