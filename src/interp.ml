@@ -42,9 +42,10 @@ let positionDansPile2 element pile =
     | _::tl -> aux (n+1) tl
   in aux 1 pile
 
-let positionDansPile element pile = match  element with
-| Vstruct s -> positionDansPile2 s pile
-| _ -> None
+let positionDansPile element pile =
+  match element with
+    | Vstruct s -> positionDansPile2 s pile
+    | _ -> None
 
 (* Fonction d'affichage de valeur *)
 let rec print_value pile = function
@@ -54,6 +55,28 @@ let rec print_value pile = function
   | Vint n -> Int64.to_string n
   | Vstring s -> s
   | Vfloat f -> string_of_float f
+  | Vstruct s as liste when (match s with (n, _, _, _)-> n) = "List" ->
+    begin
+      let res = ref "" in
+      res := !res ^ "[";
+      let listecourante = ref liste in
+      let nextcourant = ref liste in
+      (*let pile = s::pile in*)
+      let get_table = function
+        Vstruct (_, _, _, t) -> t
+      in
+      nextcourant := Hashtbl.find (get_table !listecourante) "next" ;
+      while !nextcourant != Vnothing do
+        res := !res ^ (print_value pile (Hashtbl.find (get_table !listecourante) "elt"));
+        res := !res ^ ", ";
+        listecourante := !nextcourant;
+        nextcourant := Hashtbl.find (get_table !listecourante) "next" ;
+      done;
+      if (String.length !res) > 1 (* Enlève le "," en trop le cas échéant *)
+        then res := String.sub !res 0 ((String.length !res) - 2);
+      res := !res ^ "]";
+      !res
+    end
   | Vstruct s -> (* Le cas d'une structure est délicat. Si on a une référence circulaire, il faut l'identifier *)
     begin
       let (n, b, identlist, htbl) = s in
@@ -64,19 +87,19 @@ let rec print_value pile = function
       let pile = s::pile in
       let rec add_to_str point liste=
         match liste with
-          | [] -> ()
-          | [t] -> begin
-            let valeur = (Hashtbl.find htbl t) in
-            match positionDansPile valeur pile with
-            |None -> res := !res ^ (t ^ " : " ^ (print_value pile valeur))
-            |Some i -> res := !res ^ (t ^ " : #= circular reference @-"^string_of_int i^" =#")
-            end
-          | t :: q -> begin let valeur = (Hashtbl.find htbl t) in
-            match positionDansPile valeur pile with
-              |None -> res := !res ^ (t ^ " : " ^ (print_value pile valeur) ^ "; "); add_to_str point q
-              |Some i -> res := !res ^ (t ^ " : #= circular reference @-"^string_of_int i^" =#; ");
-            add_to_str point q
-            end
+        | [] -> ()
+        | [t] -> begin
+          let valeur = (Hashtbl.find htbl t) in
+          match positionDansPile valeur pile with
+          |None -> res := !res ^ (t ^ " : " ^ (print_value pile valeur))
+          |Some i -> res := !res ^ (t ^ " : #= circular reference @-"^string_of_int i^" =#")
+          end
+        | t :: q -> begin let valeur = (Hashtbl.find htbl t) in
+          match positionDansPile valeur pile with
+          |None -> res := !res ^ (t ^ " : " ^ (print_value pile valeur) ^ "; "); add_to_str point q
+          |Some i -> res := !res ^ (t ^ " : #= circular reference @-"^string_of_int i^" =#; ");
+          add_to_str point q
+          end
       in
       add_to_str res identlist;
       res := !res ^ "}";

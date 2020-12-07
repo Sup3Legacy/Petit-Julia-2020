@@ -107,7 +107,7 @@ while !continue do
   try
     begin
       let lb =
-      if startswith !instr "#run"
+      if startswith !instr "#run "
         then
           begin
             let n = String.length !instr in

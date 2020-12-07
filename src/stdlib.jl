@@ -8,8 +8,7 @@ end;
 
 # Listes
 mutable struct List elt :: Any; next; end; # structure de liste
-struct emptyList; end; # Une liste vide va être : List(Vnothing, Vnothing)
-
+# Une liste vide va être : List(Vnothing, Vnothing)
 
 """function element from pjulia-stdlib:
 
