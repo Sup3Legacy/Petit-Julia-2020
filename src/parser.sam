@@ -304,6 +304,9 @@ expr_wMin_<Ast.expression>:
       let (p2, el) = pel in
 	    Hyper2.fusionPos p1 p2, Eif (e, b, el)
     }
+  | p1 = CROCHETG liste = separated_list_COMMA_expr p2 = CROCHETD {
+    Hyper2.build_liste liste
+    }
 ;
 
 expr_w_Ret<Ast.expression>:
@@ -358,7 +361,9 @@ expr_w_Ret<Ast.expression>:
       let (p2, el) = pel in
       Hyper2.fusionPos p1 p2, Eif (e, b, el)
     }
-
+  | p1 = CROCHETG liste = separated_list_COMMA_expr p2 = CROCHETD {
+    Hyper2.build_liste liste
+    }
 ;
 
 expr<Ast.expression>:
@@ -414,7 +419,9 @@ expr<Ast.expression>:
       let (p2, el) = pel in
       Hyper2.fusionPos p1 p2, Eif (e, b, el)
     }
-
+  | p1 = CROCHETG liste = separated_list_COMMA_expr p2 = CROCHETD {
+    Hyper2.build_liste liste
+    }
 ;
 
 whileExp<Ast.expression>:
