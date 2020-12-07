@@ -87,6 +87,7 @@ print_string Logo.logo2;;
 
 while !continue do
   (* boucle principale *)
+  flushed := false;
   print_newline();
   print_newline();
   print_string !prompt;
@@ -178,5 +179,4 @@ while !continue do
         end
     end
     with Sys_error s -> Printf.printf "%s" s;
-  flushed := false;
 done;

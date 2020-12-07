@@ -7,5 +7,5 @@ let posVide:Ast.position = {ldeb = -1; cdeb = -1; lfin = -1; cfin = -1}
 
 let rec build_liste liste =
   match liste with
-  | [] -> (posVide, Eapplication(posVide, "List", [(posVide, Elvalue (Lident (posVide, "nothing"))); (posVide, Eapplication(posVide, "emptyList", []))]))
+  | [] -> (posVide, Eapplication(posVide, "List", [(posVide, Elvalue (Lident (posVide, "nothing"))); (posVide, Elvalue (Lident (posVide, "nothing")))]))
   | t :: q -> posVide, Eapplication(posVide, "List", [t; build_liste q])
