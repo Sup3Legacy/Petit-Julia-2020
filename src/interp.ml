@@ -157,14 +157,14 @@ let construct_struct s fI sI =
 (* Construction d'une fonction dans l'environnement *)
 let construct_function f fI sI =
   match f with
-  | Dfonction (_, i, params, _, ty, bloc, _) ->
+  | Dfonction (_, i, params, _, ty, bloc, docstring) ->
     if Imap.mem i !fI then
       begin
         let l = Imap.find i !fI in
-        fI := Imap.add i ((i, params, ty, bloc) :: l) !fI;
+        fI := Imap.add i ((i, params, ty, bloc, docstring) :: l) !fI;
       end
     else
-      fI := Imap.add i [(i, params, ty, bloc)] !fI;
+      fI := Imap.add i [(i, params, ty, bloc, docstring)] !fI;
   | _ -> ()
 ;;
 
@@ -183,6 +183,12 @@ let construct code fI sI =
     | DeclarationList l -> construct_declaration_list l fI sI
 ;;
 
+let rec print_function l acc =
+  (* fonction générique print *)
+  match l with
+  | [] -> Printf.printf "%s" acc; Vnothing
+  | t :: q -> print_function q (acc ^ (print_value [] t))
+;;
 
 
 (* Interprétation *)
@@ -205,7 +211,7 @@ let rec interp_expression e vI fI sI =
     let rec parcours_fonctions l expr = (* Recherche la fonction compatible avec l'arument *)
       match l with
       | [] -> interp_error ("Bad arguments for function "^i)
-      | (_, pList, _, fBloc) as f :: q ->
+      | (_, pList, _, fBloc, _) as f :: q ->
         if compatible pList expr then f else parcours_fonctions q expr
     in
     let rec add_arguments params expr vI =
@@ -222,57 +228,45 @@ let rec interp_expression e vI fI sI =
       | t1 :: q1, t2 :: q2 -> Hashtbl.add htbl t1 t2; add_elements_to_struct q1 q2 htbl
       | _, _ -> interp_error "Incorrect number of arguments for struct"
     in
-    let rec print_function l acc =
-      (* fonction générique print *)
-      match l with
-      | [] -> Printf.printf "%s" acc; Vnothing
-      | t :: q -> print_function q (acc ^ (print_value [] t))
-    in
-    if i = "print" then
-        print_function expr ""
-    else
+    let resultat =
+    match i with
+    | "print" -> print_function expr ""
+    | "println" -> print_function (expr @ [Vstring "\n"]) ""
+    | "div" ->
       begin
-        if i = "println"
-          then print_function (expr @ [Vstring "\n"]) ""
+        match expr with
+        | [Vint n1; Vint n2] -> Vint (Int64.div n1 n2)
+        | _ -> interp_error "Wrong arguments for div"
+      end
+    | _ ->
+      begin
+        if Imap.mem i !fI then (* Essaye d'appliquer une fonction *)
+          begin
+            let (i, params, t, (p, b), doc) = parcours_fonctions (Imap.find i !fI) expr in
+            let vIp = ref !vI in
+            let () = add_arguments params expr vIp in
+            try
+              let liste = List.map (fun x -> Dexpr x) b in
+              let res = interp_declaration_list liste vIp fI sI false in
+              res
+            with Return vali ->
+              vali;
+          end
         else
           begin
-            if i = "div"
-              then
-                begin
-                  match expr with
-                  | [Vint n1; Vint n2] -> Vint (Int64.div n1 n2)
-                  | _ -> interp_error "Wrong arguments for div"
-                end
-            else
+            if Imap.mem i !sI then (* Essaye de construire une structure *)
               begin
-                if Imap.mem i !fI then (* Essaye d'appliquer une fonction *)
-                  begin
-                    let (i, params, t, (p, b)) = parcours_fonctions (Imap.find i !fI) expr in
-                    let vIp = ref !vI in
-                    let () = add_arguments params expr vIp in
-                    try
-                      let liste = List.map (fun x -> Dexpr x) b in
-                      let res = interp_declaration_list liste vIp fI sI false in
-                      res
-                    with Return vali ->
-                      vali;
-                  end
-                else
-                  begin
-                    if Imap.mem i !sI then (* Essaye de construire une structure *)
-                      begin
-                        let (b, i, pList) = Imap.find i !sI in
-                        let identList = List.map (fun (Param (a, i, b, e)) -> i) pList in
-                        let htbl = Hashtbl.create (len pList) in
-                        add_elements_to_struct identList expr htbl;
-                        Vstruct (i, b, identList, htbl)
-                      end
-                    else
-                      interp_error ("Unknown function or structure " ^ i);
-                end
+                let (b, i, pList) = Imap.find i !sI in
+                let identList = List.map (fun (Param (a, i, b, e)) -> i) pList in
+                let htbl = Hashtbl.create (len pList) in
+                add_elements_to_struct identList expr htbl;
+                Vstruct (i, b, identList, htbl)
               end
+            else
+              interp_error ("Unknown function or structure " ^ i);
           end
         end
+    in resultat
   | Enot e ->
     let res = interp_expression e vI fI sI in
     let vali =
@@ -438,4 +432,11 @@ let flush () =
   globVenv := Imap.singleton "nothing" Vnothing;
   globFenv := Imap.empty;
   globSenv := Imap.empty
+;;
+let retrieve_docstring identifiant =
+  try
+    let fonctionList = Imap.find identifiant !globFenv in
+    let docstrings = List.map (fun x -> match x with (_, _, _, _, d) -> Vstring d) fonctionList in
+    let _ = print_function docstrings "" in ();
+  with Not_found -> print_string ("Unknown function " ^ identifiant)
 ;;

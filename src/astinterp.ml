@@ -22,5 +22,5 @@ and value =
 
 module Imap = Map.Make(String);; (* Map contenant les environnements typage *)
 type varEnv = value Imap.t
-type funcEnv = ((Ast.ident * (Ast.param list) * Astype.pjtype * Ast.bloc) list) Imap.t
+type funcEnv = ((Ast.ident * (Ast.param list) * Astype.pjtype * Ast.bloc * string) list) Imap.t
 type structEnv = (bool * Ast.ident * (Ast.param list)) Imap.t

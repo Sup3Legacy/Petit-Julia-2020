@@ -130,6 +130,7 @@ fonction<Ast.declaration>:
       let (pEnd, (p,eL)) = pb in
       let typ,p2 = match pt with
         | (p, "Int64") -> Int64, p
+        | (p, "Float64") -> Float64, p
         | (p, "Bool") -> Bool, p
         | (p, "String") -> String, p
         | (p, "Any") -> Any, p
@@ -152,6 +153,7 @@ fonction<Ast.declaration>:
       let (pEnd, (p,eL)) = pb in
       let typ,p2 = match pt with
         | (p, "Int64") -> Int64, p
+        | (p, "Float64") -> Float64, p
         | (p, "Bool") -> Bool, p
         | (p, "String") -> String, p
         | (p, "Any") -> Any, p
@@ -159,6 +161,52 @@ fonction<Ast.declaration>:
         | (p, s) -> S s, p
       in
       Dfonction (p1,ig, parameters, p2, typ, (Hyper2.fusionPos (fst e) p, e::eL), "")
+    }
+  | doc = DOCSTRING FUNCTION pig = IDENT_PARG parameters = separated_list_COMMA_param
+    PARD pb = bloc_END
+    {
+      let (p1,ig) = pig in
+      let (pEnd, (p,eL)) = pb in
+      Dfonction (p1,ig, parameters, p1, Any, (p,eL), doc)
+    }
+  | doc = DOCSTRING FUNCTION pig = IDENT_PARG parameters = separated_list_COMMA_param
+    PARD pt = typage pb = bloc_END
+    {
+      let (p1,ig) = pig in
+      let (pEnd, (p,eL)) = pb in
+      let typ,p2 = match pt with
+        | (p, "Int64") -> Int64, p
+        | (p, "Float64") -> Float64, p
+        | (p, "Bool") -> Bool, p
+        | (p, "String") -> String, p
+        | (p, "Any") -> Any, p
+        | (p, "Nothing") -> Nothing, p
+        | (p, s) -> S s, p
+      in
+      Dfonction (p1,ig, parameters, p2, typ, (p,eL), doc)
+    }
+  | doc = DOCSTRING FUNCTION pig = IDENT_PARG parameters = separated_list_COMMA_param
+    PARD e = expr pb = bloc_END
+    {
+      let (p1,ig) = pig in
+      let (pEnd, (p,eL)) = pb in
+      Dfonction (p1,ig, parameters, p1, Any, (Hyper2.fusionPos (fst e) p, e::eL), doc)
+    }
+  | doc = DOCSTRING FUNCTION pig = IDENT_PARG parameters = separated_list_COMMA_param
+    PARD pt = typage e = expr pb = bloc_END
+    {
+      let (p1,ig) = pig in
+      let (pEnd, (p,eL)) = pb in
+      let typ,p2 = match pt with
+        | (p, "Int64") -> Int64, p
+        | (p, "Float64") -> Float64, p
+        | (p, "Bool") -> Bool, p
+        | (p, "String") -> String, p
+        | (p, "Any") -> Any, p
+        | (p, "Nothing") -> Nothing, p
+        | (p, s) -> S s, p
+      in
+      Dfonction (p1,ig, parameters, p2, typ, (Hyper2.fusionPos (fst e) p, e::eL), doc)
     }
 ;
 

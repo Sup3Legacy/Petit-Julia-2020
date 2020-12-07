@@ -28,10 +28,10 @@ let notPar = [^'('-')']
 let unclosedPar = '('(notPar*)eof
 let space = (' ' | '\t')*
 
-let docstring = "\"\"\""(car*)"\"\"\""
+let docstring = "\"\"\""((car|'\n'|'\t')*)"\"\"\""
 
 rule tokens = parse
-  | docstring as s {Hyper.enableEnd (); [DOCSTRING (String.sub s 3 (String.length s - 6))]}
+  | docstring as s {Hyper.disableEnd (); [DOCSTRING (String.sub s 3 (String.length s - 6))]}
   | nombre as i { Hyper.enableEnd ();
     try [INT (Hyper.position lexbuf, Int64.of_string i)]
     with _ -> raise (Ast.Lexing_Error_Msg_Pos ("Overflowing integer", Hyper.position lexbuf)) }
@@ -56,7 +56,7 @@ rule tokens = parse
       try [ENTIER_IDENT (Hyper.position lexbuf, Int64.of_string nb, s)]
       with _ -> raise (Ast.Lexing_Error_Msg_Pos ("Overflowing integer", Hyper.position lexbuf))
     }
-  | "-"(nombre as nb)(ident as s) {Hyper.enableEnd ();
+  | '-'(nombre as nb)(ident as s) {Hyper.enableEnd ();
       try [MINUS (Hyper.position lexbuf); ENTIER_IDENT (Hyper.position lexbuf,Int64.of_string nb, s)]
       with _ -> if nb = "9223372036854775808"
           then [ENTIER_IDENT (Hyper.position lexbuf, Int64.of_string ("-"^nb), s)]

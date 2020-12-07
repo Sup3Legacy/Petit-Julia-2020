@@ -110,7 +110,7 @@ let parcoursFonction (vE:varEnv) (fE:funcEnv) (sE:structEnv) (posStr, nameFunc, 
 
 (* Calcule de toutes les variables definies dans les différentes structures *)
 let rec chercheDefE (isLoc:bool) (vS:Tset.t) = function
-  | Eentier _ | Echaine _ | Etrue | Efalse | EentierIdent _ -> vS
+  | Eentier _ | Eflottant _ | Echaine _ | Etrue | Efalse | EentierIdent _ -> vS
   | EentierParG (_, _, (_, eL)) | Ebloc1 (_, eL) -> chercheDefB isLoc vS eL
   | EparDIdent ((_, e), _, _) -> chercheDefE isLoc vS e
   | Eapplication (_, _, eL) -> List.fold_left (fun env (_,e) -> chercheDefE isLoc env e) vS eL
@@ -247,12 +247,18 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
       else error ("not compatible Int64 with "^typeName t) pb
   | Ebloc1 (_,eL) -> testTypEBloc isLoc vE fE sE aE rT b eL
   | EparDIdent ((pE, e), pI, ident) ->
-    if compatible Int64 (try snd (Tmap.find ident vE) with _ -> error ("undefined variable name " ^ ident) pI) then
+    let variable = try snd (Tmap.find ident vE) with _ -> error ("undefined variable name " ^ ident) pI in
+    if (compatible Int64 variable) || (compatible Float64 variable) then
       let t = (testTypageE isLoc vE fE sE aE rT b e) in
       if compatible Int64 t
         then Int64
-        else error ("not compatible Int64 with"^typeName t) pE
-    else error ("not compatible Int64 with variable "^ident^" of type"^typeName (snd (Tmap.find ident vE))) pI
+        else
+          begin
+            if compatible Float64 t
+            then Float64
+            else error ("not compatible Int64/Float64 with"^typeName t) pE
+          end
+    else error ("not compatible Int64/Float64 with variable "^ident^" of type"^typeName (snd (Tmap.find ident vE))) pI
   | Eapplication (pName, ident, eL) -> begin
     if ident = "print" || ident = "println"
     then
@@ -330,10 +336,15 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
           else error ("expected a Bool but got a "^typeName t2) p2
         else error ("expected a Bool but got a "^typeName t1) p1
       | Plus | Minus | Times | Modulo | Exp ->
-        if (compatible t1 Int64 || compatible t1 Float64)
-        then if (compatible t2 Int64 || compatible t2 Float64)
+        if compatible t1 Int64
+        then if compatible t2 Int64
           then Int64
-          else error ("expected an Int64 but got a "^typeName t2) p2
+          else
+            begin
+              if (compatible t1 Float64 || compatible t2 Float64 || compatible t1 Int64 || compatible t2 Int64)
+                then Float64
+              else error ("expected an Int64 but got a "^typeName t2) p2
+            end
         else error ("expected an Int64 but got a "^typeName t1) p1
     end
   | Elvalue lv -> begin

@@ -96,6 +96,13 @@ while !continue do
   if startswith !instr "#cof" then begin print_string "Choisissez la survivaliste"; instr := "" end;
     (* NDLR : un de nous se présente aux élections du COF sur la liste "suvivaliste" :D *)
   if startswith !instr "#tux" then begin print_string Logo.tux; instr := "" end;
+  if startswith !instr "? " then
+    begin
+      let n = String.length !instr in
+      let identifiant = String.sub !instr 2 (n - 2) in
+      Interp.retrieve_docstring identifiant;
+      instr := "";
+    end;
   try
     begin
       let lb =
