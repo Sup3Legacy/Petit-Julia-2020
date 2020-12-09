@@ -264,7 +264,7 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
       |Any, Any | Int64, Any | Any, Int64 -> Any, ParDIdentE ((t, et), variable, ident)
       |Int64, _ | Float64, _ | Any, _ -> error ("found "^typeName t^" which is not compatible for mult") pE
       |_, Int64 | _, Float64 | _, Any -> error ("found "^typeName variable^" which is not compatible for mult") pI
-      |_,_ -> error ("KABOUM !!!") pI
+      |_,_ -> error (Logo.booom) pI
     end
   | Eapplication (pName, ident, eL) -> begin
     if ident = "print" || ident = "println"
