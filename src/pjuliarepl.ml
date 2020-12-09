@@ -20,7 +20,7 @@ let prompt = ref "ρjυλια> ";;
 
 (* Environnements globaux de typage *)
 let (gVenv:Astype.varEnv ref) = ref (Tmap.singleton "nothing" (true, Nothing))
-let (gFenv:Astype.funcEnv ref) = ref (Tmap.singleton "div" [[Int64; Int64], Int64])
+let (gFenv:Astype.funcEnv ref) = ref (Tmap.singleton "div" [0, [Int64; Int64], Int64])
 let (gSenv:Astype.structEnv ref) = ref Tmap.empty
 let (gAenv:Astype.argsEnv ref) = ref Tmap.empty
 
@@ -76,7 +76,7 @@ let flushed = ref false;;
 (* vidage des environnement de typage *)
 let flush () =
   gVenv := Tmap.singleton "nothing" (true, Nothing);
-  gFenv := Tmap.singleton "div" [[Int64; Int64], Int64];
+  gFenv := Tmap.singleton "div" [0, [Int64; Int64], Int64];
   gSenv := Tmap.empty;
   gAenv := Tmap.empty;
   Interp.flush ();
@@ -124,7 +124,7 @@ while !continue do
       try
         begin
           let e = Parser.fichier Lexer.token lb in
-          let () = Typer.typerRepl e gVenv gFenv gSenv gAenv in
+          let _ = Typer.typerRepl e gVenv gFenv gSenv gAenv in
           (* print_endline (show_fichier e); *)
           Interp.interp_file e;
         end

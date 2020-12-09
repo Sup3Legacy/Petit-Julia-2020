@@ -63,7 +63,8 @@ let rec print_value pile = function
       let nextcourant = ref liste in
       (*let pile = s::pile in*)
       let get_table = function
-        Vstruct (_, _, _, t) -> t
+        |Vstruct (_, _, _, t) -> t
+        |_ -> assert false
       in
       nextcourant := Hashtbl.find (get_table !listecourante) "next" ;
       while !nextcourant != Vnothing do

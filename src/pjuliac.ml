@@ -7,7 +7,7 @@ let type_only = ref false;;
 let show_fName = ref false;;
 
 let gVenv = ref (Tmap.singleton "nothing" (false,Nothing))
-let gFenv = ref (Tmap.singleton "div" [[Int64; Int64], Int64])
+let gFenv = ref (Tmap.singleton "div" [0, [Int64; Int64], Int64])
 let gSenv = ref (Tmap.empty : structEnv)
 let gAenv = ref (Tmap.empty : argsEnv)
 
@@ -51,7 +51,7 @@ let handle () =
       else if !show_fName then print_endline !(Hyper.file); (* On peut switch entre afficher le nom (ie. compil réussie) et afficher l'arbre généré *)
       exit 0;
       end;
-    let () = Typer.typerCompilateur e gVenv gFenv gSenv gAenv in
+    let fichierType = Typer.typerCompilateur e gVenv gFenv gSenv gAenv in
     if !affiche then print_endline (show_fichier e)
     else if !show_fName then print_endline !(Hyper.file);
     exit 0;

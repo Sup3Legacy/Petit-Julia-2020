@@ -51,7 +51,7 @@ and expr =
   | Eapplication of position * ident * (expression list)
   | Enot of expression
   | Eminus of expression
-  | Ebinop of position * operateur * expression * expression
+  | Ebinop of position * Astype.operateur * expression * expression
   | Elvalue of lvalue
   | ElvalueAffect of position * lvalue * expression
   | Ereturn of position * (expression option)
@@ -69,20 +69,5 @@ and else_ =
   | Ielseif of expression * bloc * else_
 [@@deriving show]
 and bloc = position * (expression list)
-[@@deriving show]
-and operateur =
-  | Eq
-  | Neq
-  | Lo
-  | Gr
-  | Leq
-  | Geq
-  | Plus
-  | Minus
-  | Times
-  | Modulo
-  | Exp
-  | And
-  | Or
 [@@deriving show]
 ;;

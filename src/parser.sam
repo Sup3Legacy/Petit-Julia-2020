@@ -462,7 +462,7 @@ else_exp<Ast.position * Ast.else_>:
   	}
 ;
 
-operateur<Ast.position * Ast.operateur>:
+operateur<Ast.position * Astype.operateur>:
   | p = EQ {(p,Eq)}
   | p = NEQ {(p,Neq)}
   | p = L {(p,Lo)}
