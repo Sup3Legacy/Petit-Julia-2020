@@ -95,7 +95,8 @@ let handle () =
             Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(Hyper.file) p.ldeb p.cdeb p.cfin;
             Printf.printf "Lexing error : %s\n" m
           end
-        | _ -> Printf.printf "Unkown error in file %s\n" !(Hyper.file);
+        |   a -> raise a
+        (*| _ -> Printf.printf "Unkown error in file %s\n" !(Hyper.file);*)
       exit 1
     end
 ;;

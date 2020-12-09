@@ -24,7 +24,7 @@ let rec rajouteFonction (i1, n1, l1) = function
     if n1<n2 then (ISet.singleton i1, n1, l1)::tl
     else if n1 > n2 then (i2, n2, l2)::tl
     else (ISet.add i1 i2, n2, l2)::tl
-  |_ -> assert false
+  |(i2, n2, l2)::tl -> (i2, n2, l2)::rajouteFonction (i1, n1, l1) tl
 
 (* Teste si f est identiques à toutes les autres fonctions dans la liste *)
 let rec compatibleFInL ((n1,l1) as f) = function
@@ -245,7 +245,7 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
       in
       if compatible Int64 var
       then Int64, EntierIdentE (i, var, str)
-      else error ("not compatible Int64 with "^typeName (snd (Tmap.find str vE))) p
+      else error ("not compatible Int64 with "^typeName (snd (try Tmap.find str vE with Not_found -> assert false))) p
   | EentierParG (_, i, (pb, eL)) ->
       let t,eLt = (testTypEBloc isLoc vE fE sE aE rT b eL) in
       if compatible Int64 t
@@ -272,7 +272,7 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
       (Nothing, CallE ((ident, ISet.singleton 0), List.fold_right (fun (_, e) l -> testTypageE isLoc vE fE sE aE rT b e::l) eL []))
     else
       if Tmap.mem ident fE then
-        let l = Tmap.find ident fE in
+        let l = try Tmap.find ident fE with Not_found -> assert false in
         let rec calcTyp l = match l with 
           |[] -> []
           |(_, e)::tl -> (testTypageE isLoc vE fE sE aE rT b e)::calcTyp tl
@@ -345,9 +345,9 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
     end
   | Elvalue lv -> begin
     match lv with
-      |Lident (p,str) -> let t = snd (Tmap.find str vE) in t, LvalueE (IdentL (t, str))
+      |Lident (p,str) -> let t = snd (try Tmap.find str vE with Not_found -> assert false) in t, LvalueE (IdentL (t, str))
       |Lindex ((_, e), p, n) ->
-        let (b, t2, nm) = Tmap.find n aE in
+        let (b, t2, nm) = try Tmap.find n aE with Not_found -> assert false in
         let (t3, et3) = testTypageE isLoc vE fE sE aE rT b e in
         if compatible t3 (S nm) then t2, LvalueE (IndexL ((t3, et3), nm, n))
         else error ("type incompatibility in index "^typeName t3^" not compatible with struct "^nm) p
@@ -358,11 +358,11 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
       | Lident (p, str) ->
         if Tmap.mem str fE then error (str^" is also a function, can't be both") p
         else
-          let t2 = snd (Tmap.find str vE) in
+          let t2 = snd (try Tmap.find str vE with Not_found -> assert false) in
           if compatible t t2 then (if t = Any then t2 else t),LvalueAffectE (IdentL (t2, str), (t, et))
           else error ("type incompatibility in affectation : "^typeName t^" can't be given to "^str^" who has type "^typeName t2) pEqual
       | Lindex ((pe2, e2), pDot, n) ->
-        let (_mutable, t2, nm) = Tmap.find n aE in
+        let (_mutable, t2, nm) = try Tmap.find n aE with Not_found -> assert false in
         if _mutable then
           let (t3, et3) = testTypageE isLoc vE fE sE aE rT b e2 in
           if compatible t3 (S nm)
@@ -385,21 +385,21 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
     let vE1 = parcoursExpr isLoc vE fE aE sE e1 in
     let vE2 = parcoursExpr isLoc vE1 fE aE sE e2 in
     let vE3 = parcoursBloc true (Tmap.add i (true, Int64) vE2) fE aE sE eL in
-    let v = Tmap.map (fun (_,t) -> t) (Tmap.filter (fun k (b,t) -> if Tmap.mem k vE then b != fst (Tmap.find k vE) else true) vE3) in
+    let v = Tmap.map (fun (_,t) -> t) (Tmap.filter (fun k (b,t) -> if Tmap.mem k vE then b != fst (try Tmap.find k vE with Not_found -> assert false) else true) vE3) in
     let (t1, et1) = testTypageE isLoc vE1 fE sE aE rT b e1 in
     if compatible t1 Int64
     then let (t2, et2) = testTypageE isLoc vE2 fE sE aE rT b e2 in
       if compatible t2 Int64
       then let blocFor = testTypEBloc true vE3 fE sE aE rT b eL in
-        Nothing, ForE (i, v,(t1, et1), (t2, et2), blocFor)
+        Nothing, ForE (i, v, (t1, et1), (t2, et2), blocFor)
       else error ("expected an Int64 but got an "^typeName t2) p2
     else error ("expected an Int64 but got an "^typeName t1) p1
   | Ewhile ((pe, e), (pb, eL)) ->
     let vE2 = parcoursBloc true vE fE aE sE eL in
     let (t, et) = testTypageE isLoc vE2 fE sE aE rT b e in
-    let v = Tmap.map (fun (_,t) -> t) (Tmap.filter (fun k (b,t) -> if Tmap.mem k vE then b != fst (Tmap.find k vE) else true) vE2) in
+    let v = Tmap.map (fun (_,t) -> t) (Tmap.filter (fun k (b,t) -> if Tmap.mem k vE then b != fst (try Tmap.find k vE with Not_found -> assert false) else true) vE2) in
     if compatible Bool t
-    then let blocWhile = testTypEBloc true vE fE sE aE rT b eL in
+    then let blocWhile = testTypEBloc true vE2 fE sE aE rT b eL in
       Nothing, WhileE ((t, et), v, blocWhile)
     else error ("expected a Bool but got an "^typeName t) pe
   | Eif ((pe, e), (pb, eL), els) ->
@@ -437,14 +437,14 @@ let testTypageF (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:argsEnv) (posN, str,
   let newdef = chercheDefB true Tset.empty eL in
   let vE0 = Tmap.filter (fun k _ -> not (Tset.mem k newdef)) vE in
   let vE1 = List.fold_left (fun m (str, t) -> Tmap.add str (true, t) m) vE0 listP in
-  let vE2 = parcoursBloc true vE1 fE aE sE eL in
+  let vE2 = try parcoursBloc true vE1 fE aE sE eL with Not_found -> assert false in
   let vE3 = List.fold_left (fun m (str, t) -> Tmap.add str (true, t) m) vE2 listP in
-  let varSet = Tmap.map (fun (_, t) -> t) (Tmap.filter (fun k (b,t) -> if Tmap.mem k vE then b != fst (Tmap.find k vE) else true) vE3) in
-  let (tb, bt) = testTypEBloc true vE3 fE sE aE pjT true eL in
+  let varSet = Tmap.map (fun (_, t) -> t) (Tmap.filter (fun k (b,t) -> if Tmap.mem k vE then b != fst (try Tmap.find k vE with Not_found -> assert false) else true) vE3) in
+  let (tb, bt) = try testTypEBloc true vE3 fE sE aE pjT true eL with Not_found -> (print_string "Not_found in function bloc\n"; raise Not_found) in
   if compatible pjT tb
   then if Tmap.mem str fonctions
     then 
-      let imap = Tmap.find str fonctions in
+      let imap = try Tmap.find str fonctions with Not_found -> assert false in
       let imap2 = Imap.add (Imap.cardinal imap) (Funct (listP, varSet, (tb, bt))) imap in
       Tmap.add str imap2 fonctions
     else Tmap.add str (Imap.singleton 0 (Funct (listP, varSet, (tb, bt)))) fonctions
@@ -463,10 +463,10 @@ let rec parcours2 (vEnv:varEnv) (fEnv:funcEnv) (sEnv:structEnv) (aEnv:argsEnv) (
       else Tmap.add ident (Imap.singleton 0 (StructBuilder pL)) fonctions
     in parcours2 vEnv fEnv sEnv aEnv fonctions2 tl
   |Dfonction  (a, str, b, c, d, e, _)::tl ->
-    let fonctions2 = testTypageF vEnv fEnv sEnv aEnv (a, str, b, c, d, e) fonctions
+    let fonctions2 = try testTypageF vEnv fEnv sEnv aEnv (a, str, b, c, d, e) fonctions with Not_found -> failwith "not found in func"
     in parcours2 vEnv fEnv sEnv aEnv fonctions2 tl
   |Dexpr (_, e)::tl ->
-    let (t, et) = testTypageE false vEnv fEnv sEnv aEnv Any false e in
+    let (t, et) = try testTypageE false vEnv fEnv sEnv aEnv Any false e with Not_found -> failwith "not found in expr" in
     let (a, b, c, d, eL, f) = parcours2 vEnv fEnv sEnv aEnv fonctions tl in
     (a, b, c, d, et::eL, f)
 
