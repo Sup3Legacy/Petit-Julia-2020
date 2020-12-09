@@ -64,13 +64,13 @@ and exprTyper =
 	| EntierParGE of Int64.t * blocTyper
 	| BlocE of blocTyper
 	| ParDIdentE of expressionTyper * pjtype * ident
-	| CallE of ident * (expressionTyper list) * funcSet
+	| CallE of funcSet * (expressionTyper list)
 	| NotE of expressionTyper
 	| MinusE of expressionTyper
 	| BinopE of operateur * expressionTyper * expressionTyper
 	| LvalueE of lvalueTyper
 	| LvalueAffectE of lvalueTyper * expressionTyper
-	| ReturnE of pjtype * (expressionTyper option)
+	| ReturnE of pjtype * (expressionTyper option) (* expected type of the return *)
 	| ForE of ident * pjtype Tmap.t * expressionTyper * expressionTyper * blocTyper
 	| WhileE of expressionTyper * pjtype Tmap.t * blocTyper
 	| IfE of expressionTyper * blocTyper * elseTyper
@@ -95,5 +95,5 @@ type funct =
 	|StructBuilder of ((ident * pjtype) list)
 and funcMap = funct Imap.t Tmap.t
 
-type fichierTyper = expressionTyper list * pjtype Tmap.t * structEnv * funcMap
+type fichierTyper = exprTyper list * pjtype Tmap.t * structEnv * funcMap
 ;;
