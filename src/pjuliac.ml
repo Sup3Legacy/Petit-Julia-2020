@@ -17,7 +17,7 @@ let afficheL l =
     |"INT"|"CHAINE"|"IDENT"|"NOT"|"FALSE"|"TRUE"|"FOR"|"IF"|"WHILE"|"RETURN"
 |"ENTIER_IDENT"|"IDENT_PARG"|"ENTIER_PARG"|"PARG_IDENT"|"separated_list_COMMA_expr"
 |"expr_wMin_"|"expr_w_Ret"|"expr"|"whileExp"|"lvalue"|"lvalue_wMin_"|"bloc"
-|"expr_bloc"|"bloc1" -> "value"
+|"expr_bloc"|"bloc1"|"CROCHETG"|"FLOAT" -> "value"
     |"PARG" -> "("
     |"PARD" -> ")"
     |"AFFECT" -> "="
@@ -30,9 +30,10 @@ let afficheL l =
     |"typage" -> "type"
     |"TYPE" -> "::"
     |"COLON" -> ":"
+    |"CROCHETD" -> "]"
     |"SEMICOLON"|"expr_bloc2"|"bloc_END"|"bloc1bis" -> ";"
     |"COMMA"|"separated_list_C_P"|"separated_list_C_E"-> ","
-    |_ -> assert false
+    |_ -> print_string ("\n"^s^"\n");assert false
   in
   let rec aux (l:string list) = match l with
   |[] -> Sset.empty
@@ -61,42 +62,50 @@ let handle () =
       match a with
         | Lexer.Lexing_error s -> begin
             Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(Hyper.file) b.pos_lnum (b.pos_cnum - b.pos_bol) (e.pos_cnum - e.pos_bol);
-            Printf.printf "Lexical error at lexeme : \"%s\"\n" s
+            Printf.printf "Lexical error at lexeme : \"%s\"\n" s;
+            exit 1
           end
         | Parser.Samenhir_Parsing_Error sl -> begin
             Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(Hyper.file) b.pos_lnum (b.pos_cnum - b.pos_bol) (e.pos_cnum - e.pos_bol);
-            Printf.printf "Syntax error, expected: ";afficheL sl
+            Printf.printf "Syntax error, expected: ";afficheL sl;
+            exit 1
           end
         | Ast.Parsing_Error -> begin
             Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(Hyper.file) b.pos_lnum (b.pos_cnum - b.pos_bol) (e.pos_cnum - e.pos_bol);
-            Printf.printf "Syntax error\n"
+            Printf.printf "Syntax error\n";
+            exit 1
           end
         | Ast.Typing_Error -> begin
             Printf.printf "File \"%s\", unknown position:\n" !(Hyper.file);
-            Printf.printf "Typing error\n"
+            Printf.printf "Typing error\n";
+            exit 1
           end
         | Ast.Typing_Error_Msg m -> begin
             Printf.printf "File \"%s\", unknown position\n" !(Hyper.file);
-            Printf.printf "Typing error : %s\n" m
+            Printf.printf "Typing error : %s\n" m;
+            exit 1
           end
         | Ast.Typing_Error_Msg_Pos (m,p) -> begin
             Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(Hyper.file) p.ldeb p.cdeb p.cfin;
-            Printf.printf "Typing error : %s\n" m
+            Printf.printf "Typing error : %s\n" m;
+            exit 1
           end
         | Ast.Lexing_Error -> begin
             Printf.printf "File \"%s\", unknown position:\n" !(Hyper.file);
-            Printf.printf "Lexing error"
+            Printf.printf "Lexing error";
+            exit 1
           end
         | Ast.Lexing_Error_Msg m -> begin
             Printf.printf "File \"%s\", unknown position:\n" !(Hyper.file);
-            Printf.printf "Lexing error : %s\n" m
+            Printf.printf "Lexing error : %s\n" m;
+            exit 1
           end
         | Ast.Lexing_Error_Msg_Pos (m, p) -> begin
             Printf.printf "File \"%s\", line %d, character %d-%d :\n" !(Hyper.file) p.ldeb p.cdeb p.cfin;
-            Printf.printf "Lexing error : %s\n" m
+            Printf.printf "Lexing error : %s\n" m;
+            exit 1
           end
-        |   a -> raise a
-        (*| _ -> Printf.printf "Unkown error in file %s\n" !(Hyper.file);*)
+        | _ -> Printf.printf "Unkown error in file %s\n" !(Hyper.file);
       exit 1
     end
 ;;
@@ -111,10 +120,10 @@ let set_filename n =
 let main () =
   begin
     let speclist = [
-    ("-print_abstrac", Arg.Set affiche, "print of the abstract");
-    ("--parse_only", Arg.Set parse_only, "Stop after parsing");
-    ("--type_only", Arg.Set type_only, "Stop after typing");
-    ("-show_file_name", Arg.Set show_fName, "Print the name of the file to compile")
+    ("-print-abstrac", Arg.Set affiche, "print of the abstract");
+    ("--parse-only", Arg.Set parse_only, "Stop after parsing");
+    ("--type-only", Arg.Set type_only, "Stop after typing");
+    ("-show-file-name", Arg.Set show_fName, "Print the name of the file to compile")
     ] in
     Arg.parse speclist set_filename "file to process.";
     let file = open_out "out.s" in
