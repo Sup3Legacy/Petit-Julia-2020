@@ -53,6 +53,7 @@ let handle () =
       exit 0;
       end;
     let fichierType = Typer.typerCompilateur e gVenv gFenv gSenv gAenv in
+    let _ = CompilNaif.alloc_fichier fichierType in
     if !affiche then print_endline (show_fichier e)
     else if !show_fName then print_endline !(Hyper.file);
     exit 0;

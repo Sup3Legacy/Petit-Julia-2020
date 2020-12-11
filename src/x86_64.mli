@@ -138,8 +138,12 @@ val imm: int -> [>] operand
   (** opérande immédiate $i *)
 val imm32: int32 -> [>] operand
   (** opérande immédiate $i *)
-val imm64: int64 -> [>] operand
+val imm64: Int64.t -> [>] operand
   (** opérande immédiate $i *)
+val immF : float -> [`L] operand
+  (** opérande immédiate $f *)
+val immD : float -> [`Q] operand
+  (** opérande immédiate $f *)
 val reg: 'size register -> 'size operand
 val (!%): 'size register -> 'size operand
   (** registre *)
@@ -174,6 +178,25 @@ val movzwl: [`W] operand -> [`L] register -> text
 val movzwq: [`W] operand -> [`Q] register -> text
   (** 8->64 bit, avec extension par zéro *)
 
+val movsd: [`Q] operand -> [`Q] register -> text
+val movss: [`L] operand -> [`L] register -> text
+  (** deplacement de flottants *)
+
+val cvtss2sd: [`L] operand -> [`Q] register -> text
+val cvtsd2ss: [`Q] operand -> [`L] register -> text
+
+  (** conversion from integer to float/double *)
+val cvtsi2sd: [`L] operand -> [`Q] register -> text
+val cvtsi2ss: [`L] operand -> [`L] register -> text
+val cvtsi2sdq: [`Q] operand -> [`Q] register -> text
+val cvtsi2ssq: [`Q] operand -> [`L] register -> text
+
+  (** conversion from float/integer to integer *)
+val cvttss2si: [`L] operand -> [`L] register -> text
+val cvttsd2si: [`Q] operand -> [`L] register -> text
+val cvttss2siq: [`L] operand -> [`Q] register -> text
+val cvttsd2siq: [`Q] operand -> [`Q] register -> text
+
 val movabsq: [`Q] operand -> [`Q] register -> text
   (** copie une valeur immédiate 64 bits dans un registre *)
 
@@ -203,18 +226,29 @@ val addb: [`B] operand -> [`B] operand -> text
 val addw: [`W] operand -> [`W] operand -> text
 val addl: [`L] operand -> [`L] operand -> text
 val addq: [`Q] operand -> [`Q] operand -> text
+val addss: [`L] operand -> [`L] operand -> text
+val addsd: [`Q] operand -> [`Q] operand -> text
 
 val subb: [`B] operand -> [`B] operand -> text
 val subw: [`W] operand -> [`W] operand -> text
 val subl: [`L] operand -> [`L] operand -> text
 val subq: [`Q] operand -> [`Q] operand -> text
+val subss: [`L] operand -> [`L] operand -> text
+val subsd: [`Q] operand -> [`Q] operand -> text
 
 val imulw: [`W] operand -> [`W] operand -> text
 val imull: [`L] operand -> [`L] operand -> text
 val imulq: [`Q] operand -> [`Q] operand -> text
+val mulss: [`L] operand -> [`L] operand -> text
+val mulsd: [`Q] operand -> [`Q] operand -> text
 
 val idivq: [`Q] operand -> text
+val divss: [`L] operand -> [`L] operand -> text
+val divsd: [`Q] operand -> [`Q] operand -> text
 val cqto: text
+
+val sqrtss: [`L] operand -> [`L] operand -> text
+val sqrtsd: [`Q] operand -> [`Q] operand -> text
 
 (** {2 Opérations logiques } *)
 
@@ -293,6 +327,8 @@ val cmpb: [`B] operand -> [`B] operand -> text
 val cmpw: [`W] operand -> [`W] operand -> text
 val cmpl: [`L] operand -> [`L] operand -> text
 val cmpq: [`Q] operand -> [`Q] operand -> text
+val ucomiss: [`L] operand -> [`L] operand -> text
+val ucomisd: [`Q] operand -> [`Q] operand -> text
 
 val testb: [`B] operand -> [`B] operand -> text
 val testw: [`W] operand -> [`W] operand -> text

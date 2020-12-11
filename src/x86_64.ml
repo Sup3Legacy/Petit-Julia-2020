@@ -101,7 +101,9 @@ let reg r = fun fmt () -> fprintf fmt "%s" r
 let (!%) = reg
 let imm i = fun fmt () -> fprintf fmt "$%i" i
 let imm32 i = fun fmt () -> fprintf fmt "$%ld" i
-let imm64 i = fun fmt () -> fprintf fmt "$%Ld" i
+let imm64 i = fun fmt () -> fprintf fmt "$%s" (Int64.to_string i)
+let immF f = fun fmt () -> fprintf fmt "$%f" f
+let immD f = fun fmt () -> fprintf fmt "$%f" f
 let ind ?(ofs=0) ?index ?(scale=1) r = fun fmt () -> match index with
   | None -> fprintf fmt "%d(%s)" ofs r
   | Some r1 -> fprintf fmt "%d(%s,%s,%d)" ofs r r1 scale
@@ -165,6 +167,24 @@ let movzbq a b = ins "movzbq %a, %s" a () b
 let movzwl a b = ins "movzwl %a, %s" a () b
 let movzwq a b = ins "movzwq %a, %s" a () b
 
+let movsd a b = ins "movsd %a, %s" a () b
+let movss a b = ins "movsd %a, %s" a () b
+
+let cvtss2sd a b = ins "movsd %a, %s" a () b
+let cvtsd2ss a b = ins "movsd %a, %s" a () b
+
+  (** conversion from integer to float/double *)
+let cvtsi2sd a b = ins "movsd %a, %s" a () b
+let cvtsi2ss a b = ins "movsd %a, %s" a () b
+let cvtsi2sdq a b = ins "movsd %a, %s" a () b
+let cvtsi2ssq a b = ins "movsd %a, %s" a () b
+
+  (** conversion from float/integer to integer *)
+let cvttss2si a b = ins "movsd %a, %s" a () b
+let cvttsd2si a b = ins "movsd %a, %s" a () b
+let cvttss2siq a b = ins "movsd %a, %s" a () b
+let cvttsd2siq a b = ins "movsd %a, %s" a () b
+
 let leab op r = ins "leab %a, %s" op () r
 let leaw op r = ins "leaw %a, %s" op () r
 let leal op r = ins "leal %a, %s" op () r
@@ -189,18 +209,30 @@ let addb a b = ins "addb %a, %a" a () b ()
 let addw a b = ins "addw %a, %a" a () b ()
 let addl a b = ins "addl %a, %a" a () b ()
 let addq a b = ins "addq %a, %a" a () b ()
+let addss a b = ins "adds %a, %a" a () b ()
+let addsd a b = ins "adds %a, %a" a () b ()
 
 let subb a b = ins "subb %a, %a" a () b ()
 let subw a b = ins "subw %a, %a" a () b ()
 let subl a b = ins "subl %a, %a" a () b ()
 let subq a b = ins "subq %a, %a" a () b ()
+let subss a b = ins "subss %a, %a" a () b ()
+let subsd a b = ins "subsd %a, %a" a () b ()
 
 let imulw a b = ins "imulw %a, %a" a () b ()
 let imull a b = ins "imull %a, %a" a () b ()
 let imulq a b = ins "imulq %a, %a" a () b ()
+let mulss a b = ins "imulss %a, %a" a () b ()
+let mulsd a b = ins "imulsd %a, %a" a () b ()
 
 let idivq a = ins "idivq %a" a ()
+let divss a b = ins "divss %a, %a" a () b ()
+let divsd a b = ins "divsd %a, %a" a () b ()
 let cqto = S "\tcqto\n"
+
+let sqrtss a b = ins "sqrtsd %a, %a" a () b ()
+let sqrtsd a b = ins "sqrtsd %a, %a" a () b ()
+
 
 let notb a = ins "notb %a" a ()
 let notw a = ins "notw %a" a ()
@@ -264,6 +296,8 @@ let cmpb a b = ins "cmpb %a, %a" a () b ()
 let cmpw a b = ins "cmpw %a, %a" a () b ()
 let cmpl a b = ins "cmpl %a, %a" a () b ()
 let cmpq a b = ins "cmpq %a, %a" a () b ()
+let ucomiss a b = ins "cmpq %a, %a" a () b ()
+let ucomisd a b = ins "cmpq %a, %a" a () b ()
 
 let testb a b = ins "testb %a, %a" a () b ()
 let testw a b = ins "testw %a, %a" a () b ()
