@@ -244,7 +244,7 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
         with _ -> error ("undefined variable name " ^ str) p
       in
       if compatible Int64 var
-      then Int64, EntierIdentE (i, var, str)
+      then Int64, EntierIdentE (i, var, str, fst (Tmap.find str vE))
       else error ("not compatible Int64 with "^typeName (snd (try Tmap.find str vE with Not_found -> assert false))) p
   | EentierParG (_, i, (pb, eL)) ->
       let t,eLt = (testTypEBloc isLoc vE fE sE aE rT b eL) in
@@ -258,10 +258,10 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
     let variable = try snd (Tmap.find ident vE) with _ -> error ("undefined variable name " ^ ident) pI in
     let (t,et) = (testTypageE isLoc vE fE sE aE rT b e) in
     match variable, t with
-      |Int64, Int64 -> Int64, ParDIdentE ((t, et), variable, ident)
-      |Float64, Float64 |Any, Float64 |Float64, Any -> Float64, ParDIdentE ((t, et), variable, ident)
-      |Float64, Int64 | Int64, Float64 -> Float64, ParDIdentE ((t, et), variable, ident)
-      |Any, Any | Int64, Any | Any, Int64 -> Any, ParDIdentE ((t, et), variable, ident)
+      |Int64, Int64 -> Int64, ParDIdentE ((t, et), variable, ident, fst (Tmap.find ident vE))
+      |Float64, Float64 |Any, Float64 |Float64, Any -> Float64, ParDIdentE ((t, et), variable, ident, fst (Tmap.find ident vE))
+      |Float64, Int64 | Int64, Float64 -> Float64, ParDIdentE ((t, et), variable, ident, fst (Tmap.find ident vE))
+      |Any, Any | Int64, Any | Any, Int64 -> Any, ParDIdentE ((t, et), variable, ident, fst (Tmap.find ident vE))
       |Int64, _ | Float64, _ | Any, _ -> error ("found "^typeName t^" which is not compatible for mult") pE
       |_, Int64 | _, Float64 | _, Any -> error ("found "^typeName variable^" which is not compatible for mult") pI
       |_,_ -> error (Logo.booom) pI
@@ -345,7 +345,7 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
     end
   | Elvalue lv -> begin
     match lv with
-      |Lident (p,str) -> let t = snd (try Tmap.find str vE with Not_found -> assert false) in t, LvalueE (IdentL (t, str))
+      |Lident (p,str) -> let t = snd (try Tmap.find str vE with Not_found -> assert false) in t, LvalueE (IdentL (t, str, fst (Tmap.find str vE)))
       |Lindex ((_, e), p, n) ->
         let (b, t2, nm) = try Tmap.find n aE with Not_found -> assert false in
         let (t3, et3) = testTypageE isLoc vE fE sE aE rT b e in
@@ -359,7 +359,7 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
         if Tmap.mem str fE then error (str^" is also a function, can't be both") p
         else
           let t2 = snd (try Tmap.find str vE with Not_found -> assert false) in
-          if compatible t t2 then (if t = Any then t2 else t),LvalueAffectE (IdentL (t2, str), (t, et))
+          if compatible t t2 then (if t = Any then t2 else t),LvalueAffectE (IdentL (t2, str, fst (Tmap.find str vE)), (t, et))
           else error ("type incompatibility in affectation : "^typeName t^" can't be given to "^str^" who has type "^typeName t2) pEqual
       | Lindex ((pe2, e2), pDot, n) ->
         let (_mutable, t2, nm) = try Tmap.find n aE with Not_found -> assert false in

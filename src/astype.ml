@@ -59,10 +59,10 @@ and exprTyper =
 	| ChaineE of string
 	| TrueE
 	| FalseE
-	| EntierIdentE of Int64.t * pjtype * ident
+	| EntierIdentE of Int64.t * pjtype * ident * bool
 	| EntierParGE of Int64.t * blocTyper
 	| BlocE of blocTyper
-	| ParDIdentE of expressionTyper * pjtype * ident
+	| ParDIdentE of expressionTyper * pjtype * ident * bool
 	| CallE of funcSet * (expressionTyper list)
 	| NotE of expressionTyper
 	| MinusE of expressionTyper
@@ -74,7 +74,7 @@ and exprTyper =
 	| WhileE of expressionTyper * pjtype Tmap.t * blocTyper
 	| IfE of expressionTyper * blocTyper * elseTyper
 and lvalueTyper = 
-	| IdentL of pjtype * ident
+	| IdentL of pjtype * ident * bool
 	| IndexL of expressionTyper * ident * ident (* expression, name of struct, name of value *)
 and elseTyper = 
 	|EndI
