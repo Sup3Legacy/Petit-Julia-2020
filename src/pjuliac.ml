@@ -25,7 +25,7 @@ let afficheL l =
     |"DOT" -> "."
     |"ELSE"|"ELSEIF"|"else_exp" -> "else(if)"
     |"END" -> "end"
-    |"FUNCTION"|"fonction"|"STRUCT"|"MUTABLE"|"DOCSTRING"|"fichier"|"declarations_list"|"structure"|"EOF" -> "declaration" 
+    |"FUNCTION"|"fonction"|"STRUCT"|"MUTABLE"|"DOCSTRING"|"fichier"|"declarations_list"|"structure"|"EOF" -> "declaration"
     |"param_list"|"separated_list_COMMA_param"|"param" -> "parameter"
     |"typage" -> "type"
     |"TYPE" -> "::"

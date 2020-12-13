@@ -2,7 +2,7 @@ open Astype
 
 module TypeMap = Map.Make(struct type t = pjtype let compare = compare end)
 
-type functArbr = 
+type functArbr =
 	| Conflit
 	| Arborescence of functArbr TypeMap.t
 	| Appel of int
@@ -10,9 +10,10 @@ type functArbr =
 type label =
 	| Dec of (int * int)
 	| Tag of ident
-and expression = 
+
+type expression =
 	| Entier of Int64.t
-	| Flottant of float 
+	| Flottant of float
 	| Chaine of string
 	| True
 	| False
@@ -33,7 +34,7 @@ and expression =
 	| For of int * expression * expression * bloc
 	| While of expression * int * bloc
 	| If of expression * bloc * else_
-and else_ = 
+and else_ =
 	| End
 	| Else of bloc
 	| Elseif of expression * bloc * else_
@@ -42,7 +43,7 @@ and bloc = (expression list)
 
 module Imap = Map.Make(Int)
 
-type functBuilded = 
+type functBuilded =
 	|Funct of (int * bloc)
 	|StructBuilder of int
 and funcBMap = functBuilded Imap.t Tmap.t

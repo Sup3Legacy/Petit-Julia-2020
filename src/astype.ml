@@ -53,9 +53,9 @@ module ISet = Set.Make(Int)
 type funcSet = ident * ISet.t
 
 type expressionTyper = pjtype * exprTyper
-and exprTyper = 
+and exprTyper =
 	| EntierE of Int64.t
-	| FlottantE of float 
+	| FlottantE of float
 	| ChaineE of string
 	| TrueE
 	| FalseE
@@ -73,10 +73,10 @@ and exprTyper =
 	| ForE of ident * pjtype Tmap.t * expressionTyper * expressionTyper * blocTyper
 	| WhileE of expressionTyper * pjtype Tmap.t * blocTyper
 	| IfE of expressionTyper * blocTyper * elseTyper
-and lvalueTyper = 
+and lvalueTyper =
 	| IdentL of pjtype * ident * bool
 	| IndexL of expressionTyper * ident * ident (* expression, name of struct, name of value *)
-and elseTyper = 
+and elseTyper =
 	|EndI
 	|ElseI of blocTyper
 	|ElseifI of expressionTyper * blocTyper * elseTyper
@@ -85,7 +85,7 @@ and blocTyper = pjtype * (expressionTyper list)
 
 module Imap = Map.Make(Int)
 
-type funct = 
+type funct =
 	|Funct of ((ident * pjtype) list * pjtype Tmap.t * blocTyper)
 	|StructBuilder of ((ident * pjtype) list)
 and funcMap = funct Imap.t Tmap.t
