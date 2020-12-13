@@ -77,9 +77,9 @@ and lvalueTyper =
 	| IdentL of pjtype * ident * bool
 	| IndexL of expressionTyper * ident * ident (* expression, name of struct, name of value *)
 and elseTyper =
-	|EndI
-	|ElseI of blocTyper
-	|ElseifI of expressionTyper * blocTyper * elseTyper
+	| EndI
+	| ElseI of blocTyper
+	| ElseifI of expressionTyper * blocTyper * elseTyper
 and blocTyper = pjtype * (expressionTyper list)
 ;;
 

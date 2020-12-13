@@ -114,31 +114,82 @@ let pushn n =
 	done;
 	!s
 
-let rec compile_expr = function
-	| Entier i -> pushq (imm nTypeInt) ++ pushq (imm64 i)
-	| Flottant f -> pushq (imm nTypeFloat) ++ pushq ()
+let rec compile_expr line = function
+	| Entier i -> line + 2, pushq (imm nTypeInt) ++ pushq (imm64 i)
+	| Flottant f -> line + 2, pushq (imm nTypeFloat) ++ pushq ()
 	| Chaine s -> failwith "not implemented"
-	| True -> pushq (imm nTypeBool) ++ pushq (imm 1)
-	| False -> pushq (imm nTypeBool) ++ pushq (imm 0)
-	| Nothing -> pushq (imm nTypeNothing) ++ pushq (imm 0)
-	| EntierIdent (entier, label) -> compile_expr (Binop (Times, Entier entier, Ident label))
-	| EntierParG (entier, bloc) -> compile_expr (Binop (Times, Entier entier, Bloc bloc))
-	| Bloc bloc -> compile_bloc bloc
-	| ParDIdent (exp, label) -> compile_expr (Binop (Times, exp, Ident label))
+	| True -> line + 2, pushq (imm nTypeBool) ++ pushq (imm 1)
+	| False -> line + 2, pushq (imm nTypeBool) ++ pushq (imm 0)
+	| Nothing -> line + 2, pushq (imm nTypeNothing) ++ pushq (imm 0)
+	| EntierIdent (entier, label) -> compile_expr line (Binop (Times, Entier entier, Ident label))
+	| EntierParG (entier, bloc) -> compile_expr line (Binop (Times, Entier entier, Bloc bloc))
+	| Bloc bloc -> compile_bloc line bloc
+	| ParDIdent (exp, label) -> compile_expr line (Binop (Times, exp, Ident label))
 	| Call (ident, funcArbr, expList) ->
-		let rec parcours liste =
+		let rec parcours ligne liste =
 			match liste with
-			| [] -> nop
-			| t :: q -> (compile_expr t) ++ (parcours q)
+			| [] -> (ligne + 1), nop
+			| t :: q ->
+				let (lq, eq) = parcours ligne q in
+				let (l, e) = (compile_expr lq t) in
+				l, e :: eq
 		in
-		(parcours expList) ++ (call ident) ++ popn (8 * List.length l) ++ pushq rax
+		let (l, e) = parcours ligne expList in
+		(l + 3), e ++ (call ident) ++ popn (8 * List.length l) ++ pushq rax
 	| Not expr ->
-		(compile_expr expr) ++ (popq rbx) ++ (popq rax) ++
+		let (l, e) = (compile_expr ligne expr)
+		in (l + ), e ++ (popq rbx) ++ (popq rax) ++
 		 	(* Teste que c'est bien un booléen *)
-		(cmpq nTypeBool rax) ++ (jne 1) (* On aura en 1 la commande pour exit en cas d'erreur!
-		 	En 0 il y aura un jmp 2 pour ne pas le trigger au début du programme *)
-	| Minus expr -> compile_expr (Binop (Minus, Entier 0, expr))
-	| Binop of operateur * expression * expression
+		(cmpq nTypeBool rax) ++ (jne 1) ++ (* On aura en ligne 1 la commande pour exit en cas d'erreur!
+		 	En ligne 0, il y aura un jmp 2 pour ne pas le trigger au début du programme *)
+		(pushq (imm nTypeBool)) ++ (cmpq 0 rax) ++ (je (l + 9)) ++ (pushq (imm 0)) ++ (jmp (l + 10)) ++ (pushq (imm 1))
+	| Minus expr -> compile_expr ligne (Binop (Minus, Entier 0, expr))
+	| Binop (op, e1, e2) ->
+		let (l1, ins1) = compile_expr ligne e1 in
+		let (l2, ins2) = compile_expr l1 e2 in
+		let depilation = (popq rbx) ++ (popq rax) ++ (popq rdx) ++ (popq rcx) in
+		let ligne_pre = l2 + 4 in (* ligne de la première instruction générée dans le match suivant *)
+		let taille, operation =
+		match op with
+		| Eq -> 8, (cmpq rax rcx) ++ (jne (imm 1)) ++ (pushq nTypeBool) ++
+							 (cmpq rbx rcx) ++ (je (imm (ligne_pre + 7))) ++ (pushq (imm 0)) ++
+							 								   (jmp (imm (ligne_pre + 8))) ++ (pushq (imm 1))
+	  | Neq -> 8, (cmpq rax rcx) ++ (jne (imm 1)) ++ (pushq nTypeBool) ++
+							  (cmpq rbx rcx) ++ (je (imm (ligne_pre + 7))) ++ (pushq (imm 1)) ++
+							 								    (jmp (imm (ligne_pre + 8))) ++ (pushq (imm 0))
+	  | Lo -> 10, (cmpq rax (imm nTypeInt)) ++ (jne (imm 1)) ++
+							 (cmpq rcx (imm nTypeInt)) ++ (jne (imm 1)) ++
+							 (pushq nTypeBool) ++
+							 (cmpq rbx rcx) ++ (jge (imm (ligne_pre + 9))) ++ (pushq (imm 1)) ++
+							 								   (jmp (imm (ligne_pre + 10))) ++ (pushq (imm 0))
+	  | Gr -> 10, (cmpq rax (imm nTypeInt)) ++ (jne (imm 1)) ++
+							  (cmpq rcx (imm nTypeInt)) ++ (jne (imm 1)) ++
+							  (pushq nTypeBool) ++
+							  (cmpq rbx rcx) ++ (jle (imm (ligne_pre + 9))) ++ (pushq (imm 1)) ++
+							 								    (jmp (imm (ligne_pre + 10))) ++ (pushq (imm 0))
+	  | Leq -> 10, (cmpq rax (imm nTypeInt)) ++ (jne (imm 1)) ++
+							   (cmpq rcx (imm nTypeInt)) ++ (jne (imm 1)) ++
+							   (pushq nTypeBool) ++
+							   (cmpq rbx rcx) ++ (jg (imm (ligne_pre + 9))) ++ (pushq (imm 1)) ++
+							 								     (jmp (imm (ligne_pre + 10))) ++ (pushq (imm 0))
+	  | Geq -> 10, (cmpq rax (imm nTypeInt)) ++ (jne (imm 1)) ++
+							   (cmpq rcx (imm nTypeInt)) ++ (jne (imm 1)) ++
+							   (pushq nTypeBool) ++
+							   (cmpq rbx rcx) ++ (jl (imm (ligne_pre + 9))) ++ (pushq (imm 1)) ++
+							 								     (jmp (imm (ligne_pre + 10))) ++ (pushq (imm 0))
+	  | Plus -> 7, (cmpq rax (imm nTypeInt)) ++ (jne (imm 1)) ++
+							    (cmpq rcx (imm nTypeInt)) ++ (jne (imm 1)) ++
+							    (pushq nTypeInt) ++
+							    (addq rcx rax) ++ (pushq rax)
+	  | Minus -> 7, (cmpq rax (imm nTypeInt)) ++ (jne (imm 1)) ++
+							    (cmpq rcx (imm nTypeInt)) ++ (jne (imm 1)) ++
+							    (pushq nTypeInt) ++
+							    (addq rcx rax) ++ (pushq rax)
+	  | Times
+	  | Modulo
+	  | Exp
+	  | And
+	  | Or
 	| Ident of label
 	| Index of expression * ident * int
 	| LvalueAffectV of label * expression
