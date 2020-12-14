@@ -225,8 +225,9 @@ let rec compile_expr = function
 	| Ident label ->
 		let offset = 0 in (* /!\ distinction local/global *)
 		(pushq (ind ~ofs:offset rbp)) ++ (pushq (ind ~ofs:(offset + 8) rbp))
-	| Index (exp, ident, entier) ->
-		failwith "Not implemented"
+	| Index (exp, ident, offset) ->
+		let numClasse = assert false in
+		(compile_expr exp) ++ (popq rbx) ++ (popq rax) ++ (cmpq !%rax (imm numClasse)) ++ (jne exitLabel) ++ (movq (ind ~ofs:(offset + 8) rbx) !%rax) ++ (movq (ind ~ofs:offset rbx) !%rbx)
 	| LvalueAffectV (label, expr) -> failwith "Not implemented"
 	| LvalueAffectI (exp1, ident, entier, exp2) -> failwith "Not implemented"
 	| Ret (pjtype, exp) -> failwith "Not implemented" (* expected type of the return *)
