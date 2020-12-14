@@ -145,7 +145,7 @@ let pushn n =
 
 let rec compile_expr = function
 	| Entier i -> pushq (imm nTypeInt) ++ pushq (imm64 i)
-	| Flottant f -> pushq (imm nTypeFloat) ++ pushq (imm64 (Int64.of_int 0)) (* À changer *)
+	| Flottant f -> pushq (imm nTypeFloat) ++ pushq (immD f) (* À changer *)
 	| Chaine s -> failwith "not implemented"
 	| True -> pushq (imm nTypeBool) ++ pushq (imm 1)
 	| False -> pushq (imm nTypeBool) ++ pushq (imm 0)
@@ -166,12 +166,9 @@ let rec compile_expr = function
 		let e = parcours expList in
 		e ++ (call ident) ++ popn (8 * List.length expList) ++ (pushq !%rax)
 	| Not expr ->
-		let (label1, label2) = (getIf (), getIf ()) in
 		compile_expr expr ++ (popq rbx) ++ (popq rax) ++
-		 	(* Teste que c'est bien un booléen *)
 		(cmpq (imm nTypeBool) !%rax) ++ (jne exitLabel) ++ (* Commande pour exit en cas d'erreur!*)
-		(pushq (imm nTypeBool)) ++ (cmpq (imm 0) !%rax) ++ (je label1) ++ (pushq (imm 0)) ++
-		(jmp label2) ++ (label label1) ++ (pushq (imm 1)) ++ (label label2)
+		(pushq (imm nTypeBool)) ++ (notq !%rax) ++ (pushq !%rax)
 	| Minus expr -> compile_expr (Binop (Minus, Entier (Int64.of_int 0), expr))
 	| Binop (op, e1, e2) ->
 		let ins1 = compile_expr e1 in
@@ -220,8 +217,10 @@ let rec compile_expr = function
 							    (imulq !%rdx !%rax) ++ (pushq !%rax)
 	  | Modulo -> failwith "Not implemented"
 	  | Exp -> failwith "Not implemented"
-	  | And -> failwith "Not implemented"
-	  | Or -> failwith "Not implemented"
+	  | And -> (cmpq !%rax (imm nTypeBool)) ++ (jne exitLabel) ++ (cmpq !%rcx (imm nTypeBool)) ++ (jne exitLabel) ++
+	  							(andq !%rbx !%rdx) ++ (pushq (imm nTypeBool)) ++ (pushq !%rdx)
+	  | Or -> (cmpq !%rax (imm nTypeBool)) ++ (jne exitLabel) ++ (cmpq !%rcx (imm nTypeBool)) ++ (jne exitLabel) ++
+	  							(orq !%rbx !%rdx) ++ (pushq (imm nTypeBool)) ++ (pushq !%rdx)
 	in ins1 ++ ins2 ++ depilation ++ operation
 	| Ident label ->
 		let offset = 0 in (* /!\ distinction local/global *)
