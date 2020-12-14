@@ -93,7 +93,7 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 	| ForE (i, tmap, (_, e1), (_, e2), (_, eL)) ->
 		let (e1, o1) = alloc_expr env offset e1 in
 		let (e2, o2) = alloc_expr env offset e2 in
-		let (env2, fpcur2) = Tmap.fold (fun k _ (m, n) -> if k!= i then (Tmap.add k (0, n-16) m, n-16) else (m, n)) tmap (env, offset - 16) in
+		let (env2, fpcur2) = Tmap.fold (fun k _ (m, n) -> if k!= i then (Tmap.add k (n-16) m, n-16) else (m, n)) tmap (env, offset - 16) in
 		let env = Tmap.add i offset env2 in
 		let (l,o3) = List.fold_right (fun (_, e) (o1, l) -> let e,o2 = (alloc_expr env fpcur2 e) in (e::l, min o1 o2)) eL ([], min fpcur2 (min o1 o2)) in
 		For (offset, fpcur2, e1, e2, l), o3
@@ -208,7 +208,7 @@ let rec compile_expr = function
 	  							(andq !%rbx !%rdx) ++ (pushq (imm nTypeBool)) ++ (pushq !%rdx)
 	  | Or -> (cmpq !%rax (imm nTypeBool)) ++ (jne exitLabel) ++ (cmpq !%rcx (imm nTypeBool)) ++ (jne exitLabel) ++
 	  							(orq !%rbx !%rdx) ++ (pushq (imm nTypeBool)) ++ (pushq !%rdx)
-	in ins1 ++ ins2 ++ depilation ++ operation
+		in ins1 ++ ins2 ++ depilation ++ operation
 	| Ident label ->
 		let offset = 0 in (* /!\ distinction local/global *)
 		(pushq (ind ~ofs:offset rbp)) ++ (pushq (ind ~ofs:(offset + 8) rbp))
@@ -243,7 +243,9 @@ and compile_else_ = function
 	| End -> nop
 	| Else bloc -> compile_bloc bloc
 	| Elseif (exp, bloc, else_) -> compile_expr (If (exp, bloc, else_))
-and compile_bloc = failwith "Not implemented"
+and compile_bloc = function
+	| [] -> nop
+	| t :: q -> (compile_expr t) ++ (compile_bloc q)
 
 
 let compile_function f e fpmax =
