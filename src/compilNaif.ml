@@ -110,7 +110,7 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 and alloc_else (env:local_env) (offset:int) = function
 	|EndI -> End, offset
 	|ElseI (_, eL) ->
-		let (l, o) = List.fold_right (fun (_, e) (o1, l) -> let e,o2 = (alloc_expr env fpcur2 e) in (e::l, min o1 o2)) eL ([], offset) in
+		let (l, o) = List.fold_right (fun (_, e) (o1, l) -> let e,o2 = (alloc_expr env fpcur2 e) in (e::l, min o1 o2)) eL ([], offset)
 		in Else l, o
 	|ElseifI ((_, e), (_, eL), els) ->
 		let (e, o1) = alloc_expr env offset e in
