@@ -282,8 +282,10 @@ expr_wMin_<Ast.expression>:
     let (p2,i) = pi in
     Hyper2.fusionPos p1 p2, EparDIdent (e, p2, i)}
   | pi = IDENT_PARG l = separated_list_COMMA_expr p2 = PARD {
-    let (p,i) = pi in
-    Hyper2.fusionPos p p2, Eapplication (p, i, l)}
+    let (p1,i) = pi in
+    if i = "println" then
+      Hyper2.fusionPos p1 p2, Eapplication (p1, "print", l @ [(p1,Echaine "\\n")])
+    else Hyper2.fusionPos p1 p2, Eapplication (p1, i, l)}
   | p = NOT e = expr {Hyper2.fusionPos p (fst e), Enot e}
   | pl = expr_wMin_ AFFECT e = expr {
   		match pl with
@@ -340,7 +342,9 @@ expr_w_Ret<Ast.expression>:
     Hyper2.fusionPos p1 p2, EparDIdent (e, p2, i)}
   | pi = IDENT_PARG l = separated_list_COMMA_expr p2 = PARD {
     let (p1,i) = pi in
-    Hyper2.fusionPos p1 p2, Eapplication (p1, i, l)}
+    if i = "println" then
+      Hyper2.fusionPos p1 p2, Eapplication (p1, "print", l @ [(p1,Echaine "\\n")])
+    else Hyper2.fusionPos p1 p2, Eapplication (p1, i, l)}
   | p = NOT e = expr_w_Ret {Hyper2.fusionPos p (fst e), Enot e}
   | pl = expr AFFECT e = expr_w_Ret {
   		match pl with
@@ -397,7 +401,9 @@ expr<Ast.expression>:
     Hyper2.fusionPos p1 p2, EparDIdent (e, p2, i)}
   | pi = IDENT_PARG l = separated_list_COMMA_expr p2 = PARD {
     let (p1,i) = pi in
-    Hyper2.fusionPos p1 p2, Eapplication (p1, i, l)}
+    if i = "println" then
+      Hyper2.fusionPos p1 p2, Eapplication (p1, "print", l @ [(p1,Echaine "\\n")])
+    else Hyper2.fusionPos p1 p2, Eapplication (p1, i, l)}
   | p = NOT e = expr {Hyper2.fusionPos p (fst e), Enot e}
   | pl = expr AFFECT e = expr {
   		match pl with

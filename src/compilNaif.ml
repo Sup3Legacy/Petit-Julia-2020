@@ -142,80 +142,78 @@ let pushn n =
 	done;
 	!s
 
-let rec compile_expr ligne = function
-	| Entier i -> ligne + 2, pushq (imm nTypeInt) ++ pushq (imm64 i)
-	| Flottant f -> ligne + 2, pushq (imm nTypeFloat) ++ pushq (imm64 (Int64.of_int 0)) (* À changer *)
+let rec compile_expr = function
+	| Entier i -> pushq (imm nTypeInt) ++ pushq (imm64 i)
+	| Flottant f -> pushq (imm nTypeFloat) ++ pushq (imm64 (Int64.of_int 0)) (* À changer *)
 	| Chaine s -> failwith "not implemented"
-	| True -> ligne + 2, pushq (imm nTypeBool) ++ pushq (imm 1)
-	| False -> ligne + 2, pushq (imm nTypeBool) ++ pushq (imm 0)
-	| Nothing -> ligne + 2, pushq (imm nTypeNothing) ++ pushq (imm 0)
-	| EntierIdent (entier, label) -> compile_expr ligne (Binop (Times, Entier entier, Ident label))
-	| EntierParG (entier, bloc) -> compile_expr ligne (Binop (Times, Entier entier, Bloc bloc))
-	| Bloc bloc -> compile_bloc ligne bloc
-	| ParDIdent (exp, label) -> compile_expr ligne (Binop (Times, exp, Ident label))
+	| True -> pushq (imm nTypeBool) ++ pushq (imm 1)
+	| False -> pushq (imm nTypeBool) ++ pushq (imm 0)
+	| Nothing -> pushq (imm nTypeNothing) ++ pushq (imm 0)
+	| EntierIdent (entier, label) -> compile_expr (Binop (Times, Entier entier, Ident label))
+	| EntierParG (entier, bloc) -> compile_expr (Binop (Times, Entier entier, Bloc bloc))
+	| Bloc bloc -> compile_bloc bloc
+	| ParDIdent (exp, label) -> compile_expr (Binop (Times, exp, Ident label))
 	| Call (ident, funcArbr, expList) ->
-		let rec parcours ligne liste =
+		let rec parcours liste =
 			match liste with
-			| [] -> (ligne + 1), nop
+			| [] -> nop
 			| t :: q ->
-				let (lq, eq) = parcours ligne q in
-				let (l, e) = (compile_expr lq t) in
-				l, e ++ eq
+				let eq = parcours q in
+				let e = compile_expr t in
+			e ++ eq
 		in
-		let (l, e) = parcours ligne expList in
-		(l + 3), e ++ (call ident) ++ popn (8 * List.length expList) ++ (pushq !%rax)
+		let e = parcours expList in
+		e ++ (call ident) ++ popn (8 * List.length expList) ++ (pushq !%rax)
 	| Not expr ->
-		let (l, e) = (compile_expr ligne expr) in
 		let (label1, label2) = (getIf (), getIf ()) in
-		(l + 10), e ++ (popq rbx) ++ (popq rax) ++
+		compile_expr expr ++ (popq rbx) ++ (popq rax) ++
 		 	(* Teste que c'est bien un booléen *)
 		(cmpq (imm nTypeBool) !%rax) ++ (jne exitLabel) ++ (* Commande pour exit en cas d'erreur!*)
 		(pushq (imm nTypeBool)) ++ (cmpq (imm 0) !%rax) ++ (je label1) ++ (pushq (imm 0)) ++
 		(jmp label2) ++ (label label1) ++ (pushq (imm 1)) ++ (label label2)
-	| Minus expr -> compile_expr ligne (Binop (Minus, Entier (Int64.of_int 0), expr))
+	| Minus expr -> compile_expr (Binop (Minus, Entier (Int64.of_int 0), expr))
 	| Binop (op, e1, e2) ->
-		let (l1, ins1) = compile_expr ligne e1 in
-		let (l2, ins2) = compile_expr l1 e2 in
-		let label1, label2, label3, label4 = getIf (), getIf (), getIf (), getIf () in
+		let ins1 = compile_expr e1 in
+		let ins2 = compile_expr  e2 in
+		let (label1, label2) = getIf (), getIf () in
 		let depilation = (popq rbx) ++ (popq rax) ++ (popq rdx) ++ (popq rcx) in
-		let ligne_pre = l2 + 4 in (* ligne de la première instruction générée dans le match suivant *)
-		let taille, operation =
+		let operation =
 		match op with
-		| Eq -> 8, (cmpq !%rax !%rcx) ++ (jne exitLabel) ++ (pushq (imm nTypeBool)) ++
+		| Eq -> (cmpq !%rax !%rcx) ++ (jne exitLabel) ++ (pushq (imm nTypeBool)) ++
 							 (cmpq !%rbx !%rcx) ++ (je label1) ++ (pushq (imm 0)) ++
 							 								   (jmp label2) ++ (label label1) ++ (pushq (imm 1)) ++ (label label2)
-	  | Neq -> 8, (cmpq !%rax !%rcx) ++ (jne exitLabel) ++ (pushq (imm nTypeBool)) ++
+	  | Neq -> (cmpq !%rax !%rcx) ++ (jne exitLabel) ++ (pushq (imm nTypeBool)) ++
 							  (cmpq !%rbx !%rcx) ++ (je label1) ++ (pushq (imm 1)) ++
 							 								   (jmp label2) ++ (label label1) ++ (pushq (imm 0)) ++ (label label2)
-	  | Lo -> 10, (cmpq !%rax (imm nTypeInt)) ++ (jne exitLabel) ++
+	  | Lo -> (cmpq !%rax (imm nTypeInt)) ++ (jne exitLabel) ++
 							  (cmpq !%rcx (imm nTypeInt)) ++ (jne exitLabel) ++
 							  (pushq (imm nTypeBool)) ++
 							  (cmpq !%rbx !%rcx) ++ (jge label1) ++ (pushq (imm 1)) ++
 							 								   (jmp label2) ++ (label label1) ++ (pushq (imm 0)) ++ (label label2)
-	  | Gr -> 10, (cmpq !%rax (imm nTypeInt)) ++ (jne exitLabel) ++
+	  | Gr -> (cmpq !%rax (imm nTypeInt)) ++ (jne exitLabel) ++
 							  (cmpq !%rcx (imm nTypeInt)) ++ (jne exitLabel) ++
 							  (pushq (imm nTypeBool)) ++
 							  (cmpq !%rbx !%rcx) ++ (jle label1) ++ (pushq (imm 1)) ++
 							 								   (jmp label2) ++ (label label1) ++ (pushq (imm 0)) ++ (label label2)
-	  | Leq -> 10, (cmpq !%rax (imm nTypeInt)) ++ (jne exitLabel) ++
+	  | Leq -> (cmpq !%rax (imm nTypeInt)) ++ (jne exitLabel) ++
 							   (cmpq !%rcx (imm nTypeInt)) ++ (jne exitLabel) ++
 							   (pushq (imm nTypeBool)) ++
 							   (cmpq !%rbx !%rcx) ++ (jg label1) ++ (pushq (imm 1)) ++
 							 								   (jmp label2) ++ (label label1) ++ (pushq (imm 0)) ++ (label label2)
-	  | Geq -> 10, (cmpq !%rax (imm nTypeInt)) ++ (jne exitLabel) ++
+	  | Geq -> (cmpq !%rax (imm nTypeInt)) ++ (jne exitLabel) ++
 							   (cmpq !%rcx (imm nTypeInt)) ++ (jne exitLabel) ++
 							   (pushq (imm nTypeBool)) ++
 							   (cmpq !%rbx !%rcx) ++ (jl label1) ++ (pushq (imm 1)) ++
 							 								   (jmp label2) ++ (label label1) ++ (pushq (imm 0)) ++ (label label2)
-	  | Plus -> 7,  (cmpq !%rax (imm nTypeInt)) ++ (jne exitLabel) ++
+	  | Plus -> (cmpq !%rax (imm nTypeInt)) ++ (jne exitLabel) ++
 							    (cmpq !%rcx (imm nTypeInt)) ++ (jne exitLabel) ++
 							    (pushq (imm nTypeInt)) ++
 							    (addq !%rcx !%rax) ++ (pushq !%rax)
-	  | Minus -> 7, (cmpq !%rax (imm nTypeInt)) ++ (jne exitLabel) ++
+	  | Minus -> (cmpq !%rax (imm nTypeInt)) ++ (jne exitLabel) ++
 							    (cmpq !%rcx (imm nTypeInt)) ++ (jne exitLabel) ++
 							    (pushq (imm nTypeInt)) ++
 							    (subq !%rcx !%rax) ++ (pushq !%rax)
-	  | Times -> 8, (cmpq !%rax (imm nTypeInt)) ++ (jne exitLabel) ++
+	  | Times -> (cmpq !%rax (imm nTypeInt)) ++ (jne exitLabel) ++
 							    (cmpq !%rcx (imm nTypeInt)) ++ (jne exitLabel) ++
 							    (pushq (imm nTypeInt)) ++
 							    (imulq !%rdx !%rax) ++ (pushq !%rax)
@@ -223,10 +221,10 @@ let rec compile_expr ligne = function
 	  | Exp -> failwith "Not implemented"
 	  | And -> failwith "Not implemented"
 	  | Or -> failwith "Not implemented"
-	in taille + ligne_pre, ins1 ++ ins2 ++ depilation ++ operation
+	in ins1 ++ ins2 ++ depilation ++ operation
 	| Ident label ->
 		let offset = 0 in (* /!\ distinction local/global *)
-		ligne + 2, (pushq (ind ~ofs:offset rbp)) ++ (pushq (ind ~ofs:(offset + 8) rbp))
+		(pushq (ind ~ofs:offset rbp)) ++ (pushq (ind ~ofs:(offset + 8) rbp))
 	| Index (exp, ident, entier) ->
 		failwith "Not implemented"
 	| LvalueAffectV (label, expr) -> failwith "Not implemented"
@@ -234,7 +232,7 @@ let rec compile_expr ligne = function
 	| Ret (pjtype, exp) -> failwith "Not implemented" (* expected type of the return *)
 	| For (entier, exp1, exp2, bloc) -> failwith "Not implemented"
 	| While (exp, entier, bloc) ->
-		let (l, e) = compile_expr ligne exp in
+		let e = compile_expr exp in
 		let code = (popq rax) ++ (cmpq (imm (nTypeBool)) !%rax) ++ (jne exitLabel) in
 		failwith "Not implemented"
 	| If (exp, bloc, else_) -> failwith "Not implemented"
@@ -242,19 +240,46 @@ and compile_else_ = function
 	| End -> failwith "Not implemented"
 	| Else bloc -> failwith "Not implemented"
 	| Elseif (exp, bloc, else_) -> failwith "Not implemented"
-and compile_bloc expList = failwith "Not implemented"
+and compile_bloc = failwith "Not implemented"
 
 
 let compile_function f e fpmax =
-	let (l, c) = compile_expr 0 e in
 	let code =
 		label f ++
 		pushq !%rbp ++
 		movq !%rsp !%rbp ++ pushn fpmax ++
-		c ++ popq rax ++
+		compile_expr e ++ popq rax ++
 		popn fpmax ++ popq rbp ++ ret
 	in
 	code
 
-let compile_fichier file =
- failwith("Not implemented")
+(*
+let compile_program p ofile =
+ let p = alloc p in
+ Format.eprintf "%a@." print p;
+ let codefun, code = List.fold_left compile_stmt (nop, nop) p in
+ let p =
+   { text =
+       globl "main" ++ label "main" ++
+       movq !%rsp !%rbp ++
+       code ++
+       movq (imm 0) !%rax ++ (* exit *)
+       ret ++
+       label "print_int" ++
+       movq !%rdi !%rsi ++
+       movq (ilab ".Sprint_int") !%rdi ++
+       movq (imm 0) !%rax ++
+       call "printf" ++
+       ret ++
+       codefun;
+     data =
+       Hashtbl.fold (fun x _ l -> label x ++ dquad [1] ++ l) genv
+         (label ".Sprint_int" ++ string "%d\n")
+   }
+ in
+ let f = open_out ofile in
+ let fmt = formatter_of_out_channel f in
+ X86_64.print_program fmt p;
+ fprintf fmt "@?";
+ close_out f
+*)

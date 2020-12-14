@@ -254,7 +254,7 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
   | Ebloc1 (_,eL) ->
     let (t, eLt) = testTypEBloc isLoc vE fE sE aE rT b eL in
     t, BlocE (t, eLt)
-  | EparDIdent ((pE, e), pI, ident) -> begin 
+  | EparDIdent ((pE, e), pI, ident) -> begin
     let variable = try snd (Tmap.find ident vE) with _ -> error ("undefined variable name " ^ ident) pI in
     let (t,et) = (testTypageE isLoc vE fE sE aE rT b e) in
     match variable, t with
@@ -273,7 +273,7 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
     else
       if Tmap.mem ident fE then
         let l = try Tmap.find ident fE with Not_found -> assert false in
-        let rec calcTyp l = match l with 
+        let rec calcTyp l = match l with
           |[] -> []
           |(_, e)::tl -> (testTypageE isLoc vE fE sE aE rT b e)::calcTyp tl
         in let argL = calcTyp eL in
@@ -313,7 +313,7 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
     else error ("incompatibility of type in Not "^typeName t) p
   | Eminus (p, e) -> begin
     let (t, et) = testTypageE isLoc vE fE sE aE rT b e in
-    match t with 
+    match t with
       |Int64 -> Int64, MinusE (t, et)
       |Float64 -> Float64, MinusE (t, et)
       |Any -> Any, MinusE (t, et)
@@ -334,7 +334,7 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
           then Bool, BinopE (o, (t1, et1), (t2, et2))
           else error ("expected a Bool but got a "^typeName t2) p2
         else error ("expected a Bool but got a "^typeName t1) p1
-      | Plus | Minus | Times | Modulo | Exp -> begin 
+      | Plus | Minus | Times | Modulo | Exp -> begin
         match t1,t2 with
         |Int64, Int64 -> Int64, BinopE (o, (t1, et1), (t2, et2))
         |Float64, Float64 |Any, Float64 |Float64, Any -> Float64, BinopE (o, (t1, et1), (t2, et2))
@@ -443,7 +443,7 @@ let testTypageF (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:argsEnv) (posN, str,
   let (tb, bt) = try testTypEBloc true vE3 fE sE aE pjT true eL with Not_found -> (print_string "Not_found in function bloc\n"; raise Not_found) in
   if compatible pjT tb
   then if Tmap.mem str fonctions
-    then 
+    then
       let imap = try Tmap.find str fonctions with Not_found -> assert false in
       let imap2 = Imap.add (Imap.cardinal imap) (Funct (listP, varSet, (tb, bt))) imap in
       Tmap.add str imap2 fonctions
@@ -454,9 +454,9 @@ let testTypageF (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:argsEnv) (posN, str,
 let rec parcours2 (vEnv:varEnv) (fEnv:funcEnv) (sEnv:structEnv) (aEnv:argsEnv) (fonctions:funcMap)= function
   |[] ->  (vEnv, fEnv, sEnv, aEnv, [], fonctions)
   |Dstruct (b, position, ident, pL)::tl ->
-    let fonctions2 = 
+    let fonctions2 =
       let pL = List.fold_right (fun (Param (_, str, _, t)) l -> (str, t)::l) pL [] in
-      if Tmap.mem ident fonctions then 
+      if Tmap.mem ident fonctions then
         let imap = Tmap.find ident fonctions in
         let imap2 = Imap.add (Imap.cardinal imap) (StructBuilder pL) imap in
         Tmap.add ident imap2 fonctions
