@@ -48,88 +48,75 @@ let calcPos (prof:int) (nm:string) (env:local_env) =
 	let (p, dec) = Smap.find nm env in
 	(prof - p, dec)
 
-let rec alloc_expr (prof:int) (env: local_env):Astype.exprTyper -> AstcompilN.expression = function
-	| EntierE i -> Entier i
-	| FlottantE f -> Flottant f
-	| ChaineE s -> Chaine s
-	| TrueE -> True
-	| FalseE -> False
+let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN.expression * int) = function
+	| EntierE i -> Entier i, offset
+	| FlottantE f -> Flottant f, offset
+	| ChaineE s -> Chaine s, offset
+	| TrueE -> True, offset
+	| FalseE -> False, offset
 	| BlocE (_, eL) ->
 		Bloc (
 			List.fold_right
-				(fun (_, e) l -> (alloc_expr prof env e)::l)
+				(fun (_, e) l -> (alloc_expr env offset e)::l)
 				eL
-				[])
-(*	| EntierIdentE (i, _,  nm, true) -> EntierIdent (i, Dec (calcPos prof nm env))
-	| EntierIdentE (i, _,  nm, false) -> EntierIdent (i, Tag nm)
-	| EntierParGE  (i, (_, eL)) ->
-		let l = List.fold_right
-			(fun (_, e) l -> (alloc_expr prof env e)::l)
-			eL
-			[]
-		in EntierParG (i, l)
-
-	| ParDIdentE ((_, e), _, nm, true) ->
-		ParDIdent (alloc_expr prof env e, Dec (calcPos prof nm env))
-	| ParDIdentE ((_, e), _, nm, false) ->
-		ParDIdent (alloc_expr prof env e, Tag nm)*)
+				[]), offset
 	| CallE _ -> assert false
-	| NotE (_,e) -> Not (alloc_expr prof env e)
-	| MinusE (_, e) -> Minus (alloc_expr prof env e)
+	| NotE (_,e) -> let (e, o) = alloc_expr env offset e in Not e, o
+	| MinusE (_, e) -> let (e, o) = alloc_expr env offset e in Minus e, o
 	| BinopE (o, (_, e1), (_, e2)) ->
-		let e1 = alloc_expr prof env e1 in
-		let e2 = alloc_expr prof env e2 in
-		Binop (o, e1, e2)
+		let (e1, o1) = alloc_expr env offset e1 in
+		let (e2, o2) = alloc_expr env offset e2 in
+		Binop (o, e1, e2), min o1 o2
 	| LvalueE l -> begin
 		match l with
-			| IdentL (_, ident, true) -> Ident (Dec (calcPos prof ident env))
-			| IdentL (_, ident, false) -> Ident (Tag ident)
+			| IdentL (_, ident, true) -> Ident (Dec (Tmap.find ident env)), offset
+			| IdentL (_, ident, false) -> Ident (Tag ident), offset
 			| IndexL ((_, e), nameS, nameC) ->
-				let e = alloc_expr prof env e in
-				let i2 = 0 in
-				Index (e, nameS, i2)
+				let (e, offset) = alloc_expr env offset e in
+				let i2 = assert false in
+				Index (e, nameS, i2), offset
 		end
 	| LvalueAffectE (l, (_, e)) -> begin
-		let e = alloc_expr prof env e in
+		let e, offset = alloc_expr env offset e in
 		match l with
-			| IdentL (_, ident, false) -> LvalueAffectV ((Tag ident), e)
-			| IdentL (_, ident, true) -> LvalueAffectV (Dec (calcPos prof ident env), e)
+			| IdentL (_, ident, false) -> LvalueAffectV ((Tag ident), e), offset
+			| IdentL (_, ident, true) -> LvalueAffectV (Dec (Tmap.find ident env), e), offset
 			| IndexL ((_, e2), nameS, nameC) ->
-				let e2 = alloc_expr prof env e2 in
-				let i2 = 0 in
-				LvalueAffectI (e2, nameS, i2, e)
+				let (e2, o2) = alloc_expr env offset e2 in
+				let i2 = assert false in
+				LvalueAffectI (e2, nameS, i2, e), min o2 offset
 		end
 	| ReturnE (p, None) -> Ret (p, Nothing)
 	| ReturnE (p, Some (_, e)) ->
-		let e = alloc_expr prof env e in
-		Ret (p, e)
+		let (e, offset) = alloc_expr env offset e in
+		Ret (p, e), offset
 	| ForE (i, tmap, (_, e1), (_, e2), (_, eL)) ->
-		let e1 = alloc_expr prof env e1 in
-		let e2 = alloc_expr prof env e2 in
-		let env2, fpcur2 = Tmap.fold (fun k _ (m, n) -> if k!= i then (Tmap.add k (prof+1, n-16) m, n-16) else (m, n)) Tmap.empty (env, -32) in
-		let env = Tmap.add i (prof+1, -16) env2 in
-		let l = List.fold_right (fun (_, e) l -> (alloc_expr (prof+1) env e)::l) eL [] in
-		For (fpcur2, e1, e2, l)
+		let (e1, o1) = alloc_expr env offset e1 in
+		let (e2, o2) = alloc_expr env offset e2 in
+		let env2, fpcur2 = Tmap.fold (fun k _ (m, n) -> if k!= i then (Tmap.add k (n-16) m, n-16) else (m, n)) tmap (env, offset - 16) in
+		let env = Tmap.add i offset env2 in
+		let (l,o3) = List.fold_right (fun (_, e) (o1, l) -> let e,o2 = (alloc_expr env fpcur2 e) in (e::l, min o1 o2)) eL ([], min fpcur2 (min o1 o2)) in
+		For (offset, fpcur2, e1, e2, l), o3
 	| WhileE ((_, e), tmap, (_, eL)) ->
-		let e = alloc_expr prof env e in
-		let env2, fpcur2 = Tmap.fold (fun k _ (m, n) -> (Tmap.add k (prof+1, n-16) m, n-16)) Tmap.empty (env, 0) in
-		let l = List.fold_right (fun (_, e) l -> (alloc_expr (prof+1) env2 e)::l) eL [] in
-		While (e, fpcur2, l)
+		let (e, o1) = alloc_expr env offset e in
+		let env2, fpcur2 = Tmap.fold (fun k _ (m, n) -> if k!= i then (Tmap.add k (n-16) m, n-16) else (m, n)) tmap (env, offset) in
+		let (l,o2) = List.fold_right (fun (_, e) (o1, l) -> let e,o2 = (alloc_expr env fpcur2 e) in (e::l, min o1 o2)) eL ([], min fpcur2 o1) in
+		While (e, fpcur2, l), o2
 	| IfE ((_, e), (_, eL), els) ->
-		let e = alloc_expr prof env e in
-		let l = List.fold_right (fun (_, e) l -> (alloc_expr prof env e)::l) eL [] in
-		let els = alloc_else prof env els in
-		If (e, l, els)
-and alloc_else (prof:int) (env:local_env) = function
-	|EndI -> End
+		let (e, o1) = alloc_expr env offset e in
+		let (l, o2) = List.fold_right (fun (_, e) (o1, l) -> let e,o2 = (alloc_expr env fpcur2 e) in (e::l, min o1 o2)) eL ([], o1) in
+		let (els, o3) = alloc_else env offset els in
+		If (e, l, els), min o2 o3
+and alloc_else (env:local_env) (offset:int) = function
+	|EndI -> End, offset
 	|ElseI (_, eL) ->
-		let l = List.fold_right (fun (_, e) l -> (alloc_expr prof env e)::l) eL []
-		in Else l
+		let (l, o) = List.fold_right (fun (_, e) (o1, l) -> let e,o2 = (alloc_expr env fpcur2 e) in (e::l, min o1 o2)) eL ([], offset) in
+		in Else l, o
 	|ElseifI ((_, e), (_, eL), els) ->
-		let e = alloc_expr prof env e in
-		let l = List.fold_right (fun (_, e) l -> (alloc_expr prof env e)::l) eL [] in
-		let els = alloc_else prof env els in
-		Elseif (e, l, els)
+		let (e, o1) = alloc_expr env offset e in
+		let (l, o2) = List.fold_right (fun (_, e) (o1, l) -> let e,o2 = (alloc_expr env fpcur2 e) in (e::l, min o1 o2)) eL ([], o1) in
+		let (els, o3) = alloc_else env offset els in
+		Elseif (e, l, els), min o3 o2
 
 let alloc_fichier (eL, varMap, sEnv, fMap:fichierTyper):fichier =
 	structMap := sEnv;

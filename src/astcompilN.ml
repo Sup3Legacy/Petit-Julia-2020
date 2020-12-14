@@ -31,8 +31,8 @@ type expression =
 	| LvalueAffectV of label * expression
 	| LvalueAffectI of expression * ident * int * expression
 	| Ret of pjtype * expression (* expected type of the return *)
-	| For of int * expression * expression * bloc
-	| While of expression * int * bloc
+	| For of int * int * expression * expression * bloc
+	| While of expression * int * int * bloc
 	| If of expression * bloc * else_
 and else_ =
 	| End
