@@ -59,10 +59,10 @@ and exprTyper =
 	| ChaineE of string
 	| TrueE
 	| FalseE
-	| EntierIdentE of Int64.t * pjtype * ident * bool
-	| EntierParGE of Int64.t * blocTyper
+(*	| EntierIdentE of Int64.t * pjtype * ident * bool
+	| EntierParGE of Int64.t * blocTyper*)
 	| BlocE of blocTyper
-	| ParDIdentE of expressionTyper * pjtype * ident * bool
+	(*| ParDIdentE of expressionTyper * pjtype * ident * bool*)
 	| CallE of funcSet * (expressionTyper list)
 	| NotE of expressionTyper
 	| MinusE of expressionTyper

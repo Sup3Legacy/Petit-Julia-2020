@@ -18,10 +18,10 @@ type expression =
 	| True
 	| False
 	| Nothing
-	| EntierIdent of Int64.t * label
-	| EntierParG of Int64.t * bloc
 	| Bloc of bloc
-	| ParDIdent of expression * label
+(*	| EntierIdent of Int64.t * label
+	| EntierParG of Int64.t * bloc
+	| ParDIdent of expression * label*)
 	| Call of ident * functArbr * (expression list)
 	| Not of expression
 	| Minus of expression

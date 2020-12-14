@@ -244,12 +244,12 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
         with _ -> error ("undefined variable name " ^ str) p
       in
       if compatible Int64 var
-      then Int64, EntierIdentE (i, var, str, fst (Tmap.find str vE))
+      then Int64, BinopE (Times, (Int64, EntierE i), (var, LvalueE (IdentL (var, str, fst (Tmap.find str vE)))))
       else error ("not compatible Int64 with "^typeName (snd (try Tmap.find str vE with Not_found -> assert false))) p
   | EentierParG (_, i, (pb, eL)) ->
       let t,eLt = (testTypEBloc isLoc vE fE sE aE rT b eL) in
       if compatible Int64 t
-      then Int64, EntierParGE (i, (t, eLt))
+      then Int64, BinopE (Times, (Int64, EntierE i), (t, BlocE (t, eLt)))
       else error ("not compatible Int64 with "^typeName t) pb
   | Ebloc1 (_,eL) ->
     let (t, eLt) = testTypEBloc isLoc vE fE sE aE rT b eL in
@@ -258,10 +258,10 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
     let variable = try snd (Tmap.find ident vE) with _ -> error ("undefined variable name " ^ ident) pI in
     let (t,et) = (testTypageE isLoc vE fE sE aE rT b e) in
     match variable, t with
-      |Int64, Int64 -> Int64, ParDIdentE ((t, et), variable, ident, fst (Tmap.find ident vE))
-      |Float64, Float64 |Any, Float64 |Float64, Any -> Float64, ParDIdentE ((t, et), variable, ident, fst (Tmap.find ident vE))
-      |Float64, Int64 | Int64, Float64 -> Float64, ParDIdentE ((t, et), variable, ident, fst (Tmap.find ident vE))
-      |Any, Any | Int64, Any | Any, Int64 -> Any, ParDIdentE ((t, et), variable, ident, fst (Tmap.find ident vE))
+      |Int64, Int64 -> Int64, BinopE (Times, (t, et), (variable, LvalueE (IdentL (variable, ident, fst (Tmap.find ident vE)))))
+      |Float64, Float64 |Any, Float64 |Float64, Any -> Float64, BinopE (Times, (t, et), (variable, LvalueE (IdentL (variable, ident, fst (Tmap.find ident vE)))))
+      |Float64, Int64 | Int64, Float64 -> Float64, BinopE (Times, (t, et), (variable, LvalueE (IdentL (variable, ident, fst (Tmap.find ident vE)))))
+      |Any, Any | Int64, Any | Any, Int64 -> Any, BinopE (Times, (t, et), (variable, LvalueE (IdentL (variable, ident, fst (Tmap.find ident vE)))))
       |Int64, _ | Float64, _ | Any, _ -> error ("found "^typeName t^" which is not compatible for mult") pE
       |_, Int64 | _, Float64 | _, Any -> error ("found "^typeName variable^" which is not compatible for mult") pI
       |_,_ -> error (Logo.booom) pI
@@ -409,7 +409,7 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
         let(tE, elt) = testTypEElse isLoc vE fE sE aE rT b els in
         (if tb = tE then tE else Any), IfE ((t, et), (tb, bt), elt)
       else error ("expected a Bool but got an "^typeName t) pe
-and testTypEBloc (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:argsEnv) (rT:Astype.pjtype) (b:bool) = function
+and testTypEBloc (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:argsEnv) (rT:Astype.pjtype) (b:bool):expression list -> blocTyper = function
   |[] -> Nothing,[]
   |[(p,e)] -> let (t, et) = testTypageE isLoc vE fE sE aE rT b e in t, [t,et]
   |(p,e)::tl ->

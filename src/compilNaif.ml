@@ -54,7 +54,13 @@ let rec alloc_expr (prof:int) (env: local_env):Astype.exprTyper -> AstcompilN.ex
 	| ChaineE s -> Chaine s
 	| TrueE -> True
 	| FalseE -> False
-	| EntierIdentE (i, _,  nm, true) -> EntierIdent (i, Dec (calcPos prof nm env))
+	| BlocE (_, eL) ->
+		Bloc (
+			List.fold_right
+				(fun (_, e) l -> (alloc_expr prof env e)::l)
+				eL
+				[])
+(*	| EntierIdentE (i, _,  nm, true) -> EntierIdent (i, Dec (calcPos prof nm env))
 	| EntierIdentE (i, _,  nm, false) -> EntierIdent (i, Tag nm)
 	| EntierParGE  (i, (_, eL)) ->
 		let l = List.fold_right
@@ -62,16 +68,11 @@ let rec alloc_expr (prof:int) (env: local_env):Astype.exprTyper -> AstcompilN.ex
 			eL
 			[]
 		in EntierParG (i, l)
-	| BlocE (_, eL) ->
-		Bloc (
-			List.fold_right
-				(fun (_, e) l -> (alloc_expr prof env e)::l)
-				eL
-				[])
+
 	| ParDIdentE ((_, e), _, nm, true) ->
 		ParDIdent (alloc_expr prof env e, Dec (calcPos prof nm env))
 	| ParDIdentE ((_, e), _, nm, false) ->
-		ParDIdent (alloc_expr prof env e, Tag nm)
+		ParDIdent (alloc_expr prof env e, Tag nm)*)
 	| CallE _ -> assert false
 	| NotE (_,e) -> Not (alloc_expr prof env e)
 	| MinusE (_, e) -> Minus (alloc_expr prof env e)
@@ -149,10 +150,10 @@ let rec compile_expr = function
 	| True -> pushq (imm nTypeBool) ++ pushq (imm 1)
 	| False -> pushq (imm nTypeBool) ++ pushq (imm 0)
 	| Nothing -> pushq (imm nTypeNothing) ++ pushq (imm 0)
-	| EntierIdent (entier, label) -> compile_expr (Binop (Times, Entier entier, Ident label))
-	| EntierParG (entier, bloc) -> compile_expr (Binop (Times, Entier entier, Bloc bloc))
 	| Bloc bloc -> compile_bloc bloc
-	| ParDIdent (exp, label) -> compile_expr (Binop (Times, exp, Ident label))
+(*	| EntierIdent (entier, label) -> compile_expr (Binop (Times, Entier entier, Ident label))
+	| EntierParG (entier, bloc) -> compile_expr (Binop (Times, Entier entier, Bloc bloc))
+	| ParDIdent (exp, label) -> compile_expr (Binop (Times, exp, Ident label))*)
 	| Call (ident, funcArbr, expList) ->
 		let rec parcours liste =
 			match liste with
