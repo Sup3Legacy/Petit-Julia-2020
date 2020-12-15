@@ -304,6 +304,7 @@ let compile_program f ofile =
 		ret ++
 
 		label "print_value" ++ (*Il doit y avoir le type dans rax et la valur dans rbx*)
+		(movq !%rbx !%rdi) ++
 		(cmpq (imm nTypeInt) !%rax) ++
 		je "ifInt" ++
 		(cmpq (imm nTypeFloat) !%rax) ++
