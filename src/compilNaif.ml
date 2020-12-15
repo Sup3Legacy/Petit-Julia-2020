@@ -479,7 +479,7 @@ let compile_program f ofile =
 		ret ++
        codefun;
      data =
-       Hashtbl.fold (fun x i l -> l ++ label ("string_"^string_of_int i) ++ string x) sMap nop ++
+       Hashtbl.fold (fun x i l -> l ++ label ("string_"^string_of_int i) ++ string (Scanf.unescaped x)) sMap nop ++
 
        (label ".Sprint_int" ++ string "%d") ++
 			 (label ".Sprint_float" ++ string "%f") ++
