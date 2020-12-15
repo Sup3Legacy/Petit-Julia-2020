@@ -16,3 +16,7 @@ src/pjuliac
 src/pjuliarepl
 
 bin/*
+
+*.s
+
+src/test
