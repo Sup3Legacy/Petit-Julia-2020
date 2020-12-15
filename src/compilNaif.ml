@@ -39,8 +39,8 @@ let getIf () =
 	("if_" ^ (string_of_int temp))
 ;;
 let getFunc () =
-	let temp = !getFunc in
-	getFunc := !getFunc + 1;
+	let temp = !compteurFunc in
+	compteurFunc := !compteurFunc + 1;
 	("func_" ^ (string_of_int temp))
 ;;
 
@@ -275,10 +275,10 @@ let compile_fun n i = function
     let nType = assert false in
     let n = List.length eL in
     let code = ref nop in
-    for i = 0 to -1 do 
-      code := code ++ 
+    for i = 0 to -1 do
+      code := code ++
         movq (ind ~ofs:(8+i*16) rsp) (ind ~ofs:(16*(n-i-1)) rax) ++
-        movq (ind ~ofs:(16+i*16) rsp) (ind ~ofs:(16*(n-i-1)+8) rax)     
+        movq (ind ~ofs:(16+i*16) rsp) (ind ~ofs:(16*(n-i-1)+8) rax)
     done
     movq (imm (16*n)) !%rdi ++ call (label "malloc") ++ code ++
     movq (!%rax) !%rbx ++ movq (imm nType) !%rax
@@ -305,7 +305,7 @@ let compile_program f ofile =
        codefun;
      data =
        Hashtbl.fold (fun x _ l -> label x ++ dquad [1] ++ l) genv
-  
+
        (label ".Sprint_int" ++ string "%d\n")
    }
  in
