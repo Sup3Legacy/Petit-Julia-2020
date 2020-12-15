@@ -291,24 +291,29 @@ let compile_program f ofile =
  let codefun = Tmap.fold (fun k imap asm -> Imap.fold (fun i f asm2 -> asm2 ++ compile_fun k i f) imap asm) fmap nop in
  let p =
    { text =
-       globl "main" ++ label "main" ++
-       pushq !%rbp ++
-       movq !%rsp !%rbp ++
-       pushn i ++
-       code ++
-       movq !%rbp !%rsp ++
-       popq rbp ++
-       movq (imm 0) !%rax ++ (* exit *)
-       ret ++
-       label "print_int" ++
-       movq !%rdi !%rsi ++
-       movq (ilab ".Sprint_int") !%rdi ++
-       movq (imm 0) !%rax ++
-       call "printf" ++
-       ret ++
-			 label exitLabel ++
-			 movq (imm 0) !%rax ++
-			 ret ++
+		globl "main" ++ label "main" ++
+		pushq !%rbx ++ pushq !%r12 ++ 
+		pushq !%rbp ++ movq !%rsp !%r12 ++
+		movq !%rsp !%rbp ++
+		pushn i ++
+		code ++
+		movq !%rbp !%rsp ++
+		popq rbp ++
+		popq r12 ++ popq rbx ++
+		movq (imm 0) !%rax ++ (* exit *)
+		ret ++
+		label "print_int" ++
+		movq !%rdi !%rsi ++
+		movq (ilab ".Sprint_int") !%rdi ++
+		movq (imm 0) !%rax ++
+		call "printf" ++
+    	ret ++
+		label exitLabel ++
+		movq !%r12 !%rsp ++
+		popq rbp ++
+		popq r12 ++ popq rbx ++
+		movq (imm 1) !%rax ++
+		ret ++
        codefun;
      data =
        (*Hashtbl.fold (fun x _ l -> label x ++ dquad [1] ++ l) genv*)
