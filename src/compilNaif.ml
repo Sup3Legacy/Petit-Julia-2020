@@ -308,7 +308,10 @@ let rec compile_expr = function
 		(compile_expr exp) ++ (popq rbx) ++ (popq rax) ++ (cmpq !%rax (imm numClasse)) ++ (jne exitLabel) ++ (movq (ind ~ofs:(offset + 8) rbx) !%rax) ++ (movq (ind ~ofs:offset rbx) !%rbx)
 	| LvalueAffectV (label, expr) -> failwith "Not implemented"
 	| LvalueAffectI (exp1, ident, entier, exp2) -> failwith "Not implemented"
-	| Ret (pjtype, exp) -> failwith "Not implemented" (* expected type of the return *)
+	| Ret (pjtype, exp) -> 
+		compile_expr exp ++ (popq rbx) ++ (popq rax) ++
+		(if pjtype = Any then nop else (cmpq (imm (int_of_type pjtype)) !%rax ++
+		jne exitLabel)) ++ movq !%rbp !%rsp ++ popq rbp ++ ret
 	| For (posC, posFLoc, exp1, exp2, bloc) ->
 		let e1 = compile_expr exp1 in
 		let e2 = compile_expr exp2 in
