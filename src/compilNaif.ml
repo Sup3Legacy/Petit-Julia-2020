@@ -196,7 +196,7 @@ let newFlagArb () =
 	compteurArbreAppel := 1 +t;
 	"jmp"^string_of_int t
 
-let rec buildArb p l = function
+let rec buildArb (p:int) (l:string):functArbr -> [`text] asm = function
 	|Failure -> label l ++ jmp exitLabel
 	|Feuille (s,i) -> label l ++ call (s^"_"^string_of_int i)
 	|Appels tM -> 
@@ -204,11 +204,11 @@ let rec buildArb p l = function
 			if TypeMap.mem Any tM then buildArb (p-1) l (TypeMap.find Any tM)
 			else 
 				let (t,arb) = TypeMap.choose tM in
-				label l ++ cmpq (imm (int_of_type t)) (assert false) ++ jne exitLabel ++ buildArb (p-1) (newFlagArb ()) arb
+				label l ++ cmpq (imm (int_of_type t)) (ind ~ofs:(16*p - 8) rsp) ++ jne exitLabel ++ buildArb (p-1) (newFlagArb ()) arb
 		else
 			let (c1,l1) = TypeMap.fold (fun k a (c,l) -> if k=Any then (c,l)
 								else let dir = newFlagArb () in
-								(c ++ cmpq (imm (int_of_type k)) (assert false) ++ je dir, (dir,a)::l)
+								(c ++ cmpq (imm (int_of_type k)) (ind ~ofs:(16*p - 8) rsp) ++ je dir, (dir,a)::l)
 							) tM (label l, []) in
 			let c = if TypeMap.mem Any tM then
 					buildArb (p-1) (newFlagArb ()) (TypeMap.find Any tM)
@@ -241,7 +241,8 @@ let rec compile_expr = function
 			e ++ eq
 		in
 		let e = parcours expList in
-		e ++ (call ident) ++ popn (8 * List.length expList) ++ (pushq !%rax)
+		e ++ (buildArb (List.length expList) (newFlagArb ()) funcArbr) ++
+		popn (16 * List.length expList) ++ (pushq !%rax) ++ pushq !%rbx
 	| Not expr ->
 		compile_expr expr ++ (popq rbx) ++ (popq rax) ++
 		(cmpq (imm nTypeBool) !%rax) ++ (jne exitLabel) ++ (* Commande pour exit en cas d'erreur!*)
