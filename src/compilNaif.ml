@@ -303,6 +303,9 @@ let compile_program f ofile =
        movq (imm 0) !%rax ++
        call "printf" ++
        ret ++
+			 label exitLabel ++
+			 movq (imm 0) !%rax ++
+			 ret ++
        codefun;
      data =
        (*Hashtbl.fold (fun x _ l -> label x ++ dquad [1] ++ l) genv*)
