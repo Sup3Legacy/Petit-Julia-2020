@@ -292,7 +292,7 @@ let compile_program f ofile =
  let p =
    { text =
 		globl "main" ++ label "main" ++
-		pushq !%rbx ++ pushq !%r12 ++ 
+		pushq !%rbx ++ pushq !%r12 ++
 		pushq !%rbp ++ movq !%rsp !%r12 ++
 		movq !%rsp !%rbp ++
 		pushn i ++
@@ -302,12 +302,55 @@ let compile_program f ofile =
 		popq r12 ++ popq rbx ++
 		movq (imm 0) !%rax ++ (* exit *)
 		ret ++
+
+		label "print_value" ++ (*Il doit y avoir le type dans rax et la valur dans rbx*)
+		(cmpq (imm nTypeInt) !%rax) ++
+		je "ifInt" ++
+		(cmpq (imm nTypeFloat) !%rax) ++
+		je "ifFloat" ++
+		(cmpq (imm nTypeString) !%rax) ++
+		je "ifString" ++
+		label "ifBool" ++
+		call "print_bool" ++
+		ret ++
+		label "ifInt" ++
+		call "print_int" ++
+		ret ++
+		label "ifFloat" ++
+		call "print_float" ++
+		ret ++
+		label "ifString" ++
+		call "print_string" ++
+    ret ++
+
 		label "print_int" ++
 		movq !%rdi !%rsi ++
 		movq (ilab ".Sprint_int") !%rdi ++
 		movq (imm 0) !%rax ++
 		call "printf" ++
-    	ret ++
+    ret ++
+
+		label "print_float" ++
+		movq !%rdi !%rsi ++
+		movq (ilab ".Sprint_float") !%rdi ++
+		movq (imm 0) !%rax ++
+		call "printf" ++
+    ret ++
+
+		label "print_string" ++
+		movq !%rdi !%rsi ++
+		movq (ilab ".Sprint_string") !%rdi ++
+		movq (imm 0) !%rax ++
+		call "printf" ++
+    ret ++
+
+		label "print_bool" ++
+		movq !%rdi !%rsi ++
+		movq (ilab ".Sprint_bool") !%rdi ++
+		movq (imm 0) !%rax ++
+		call "printf" ++
+    ret ++
+
 		label exitLabel ++
 		movq !%r12 !%rsp ++
 		popq rbp ++
@@ -318,7 +361,13 @@ let compile_program f ofile =
      data =
        (*Hashtbl.fold (fun x _ l -> label x ++ dquad [1] ++ l) genv*)
 
-       (label ".Sprint_int" ++ string "%d\n")
+       (label ".Sprint_int" ++ string "%d") ++
+			 (label ".Sprint_float" ++ string "%f") ++
+			 (label ".Sprint_string" ++ string "%s") ++
+			 (label ".Sprint_bool" ++ string "%q") ++
+			 (label ".Sprint_endline" ++ string "\n") ++
+			 (label ".Sprint_true" ++ string "true") ++
+			 (label ".Sprint_false" ++ string "false")
    }
  in
  let f = open_out ofile in
