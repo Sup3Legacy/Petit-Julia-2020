@@ -223,7 +223,7 @@ let rec compile_expr = function
 	| Flottant f -> pushq (imm nTypeFloat) ++ pushq (immD f) (* À changer *)
 	| Chaine s ->
 		let n = string_of_int (Hashtbl.find sMap s) in
-		pushq (imm nTypeString) ++ pushq (lab ("string_"^n))
+		pushq (imm nTypeString) ++ pushq (lab ("$string_"^n))
 	| True -> pushq (imm nTypeBool) ++ pushq (imm valTrue)
 	| False -> pushq (imm nTypeBool) ++ pushq (imm valFalse)
 	| Nothing -> pushq (imm nTypeNothing) ++ pushq (imm 0)
@@ -460,8 +460,6 @@ let compile_program f ofile =
     ret ++
 
 		label "print_string" ++
-		movq !%rdi !%rsi ++
-		movq (ilab ".Sprint_string") !%rdi ++
 		movq (imm 0) !%rax ++
 		call "printf" ++
     ret ++
