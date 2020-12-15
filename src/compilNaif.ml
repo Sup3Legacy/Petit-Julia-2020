@@ -42,11 +42,7 @@ module Smap = Map.Make(String)
 
 let structMap = ref (Smap.empty: Astype.structEnv)
 
-type local_env = (int * int) Smap.t
-
-let calcPos (prof:int) (nm:string) (env:local_env) =
-	let (p, dec) = Smap.find nm env in
-	(prof - p, dec)
+type local_env = int Smap.t
 
 let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN.expression * int) = function
 	| EntierE i -> Entier i, offset
@@ -95,33 +91,33 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 		let (e2, o2) = alloc_expr env offset e2 in
 		let (env2, fpcur2) = Tmap.fold (fun k _ (m, n) -> if k!= i then (Tmap.add k (n-16) m, n-16) else (m, n)) tmap (env, offset - 16) in
 		let env = Tmap.add i offset env2 in
-		let (l,o3) = List.fold_right (fun (_, e) (o1, l) -> let e,o2 = (alloc_expr env fpcur2 e) in (e::l, min o1 o2)) eL ([], min fpcur2 (min o1 o2)) in
+		let (l,o3) = List.fold_right (fun (_, e) (l, o1) -> let e,o2 = (alloc_expr env fpcur2 e) in (e::l, min o1 o2)) eL ([], min fpcur2 (min o1 o2)) in
 		For (offset, fpcur2, e1, e2, l), o3
 	| WhileE ((_, e), tmap, (_, eL)) ->
 		let (e, o1) = alloc_expr env offset e in
-		let env2, fpcur2 = Tmap.fold (fun k _ (m, n) -> if k!= i then (Tmap.add k (n-16) m, n-16) else (m, n)) tmap (env, offset) in
-		let (l,o2) = List.fold_right (fun (_, e) (o1, l) -> let e,o2 = (alloc_expr env fpcur2 e) in (e::l, min o1 o2)) eL ([], min fpcur2 o1) in
-		While (e, fpcur2, l), o2
+		let env2, fpcur2 = Tmap.fold (fun k _ (m, n) -> (Tmap.add k (n-16) m, n-16)) tmap (env, offset) in
+		let (l,o2) = List.fold_right (fun (_, e) (l, o1) -> let e,o2 = (alloc_expr env fpcur2 e) in (e::l, min o1 o2)) eL ([], min fpcur2 o1) in
+		While (e, offset, fpcur2, l), o2
 	| IfE ((_, e), (_, eL), els) ->
 		let (e, o1) = alloc_expr env offset e in
-		let (l, o2) = List.fold_right (fun (_, e) (o1, l) -> let e,o2 = (alloc_expr env fpcur2 e) in (e::l, min o1 o2)) eL ([], o1) in
+		let (l, o2) = List.fold_right (fun (_, e) (l, o1) -> let e,o2 = (alloc_expr env offset e) in (e::l, min o1 o2)) eL ([], o1) in
 		let (els, o3) = alloc_else env offset els in
 		If (e, l, els), min o2 o3
 and alloc_else (env:local_env) (offset:int) = function
 	|EndI -> End, offset
 	|ElseI (_, eL) ->
-		let (l, o) = List.fold_right (fun (_, e) (o1, l) -> let e,o2 = (alloc_expr env fpcur2 e) in (e::l, min o1 o2)) eL ([], offset)
+		let (l, o) = List.fold_right (fun (_, e) (l, o1) -> let e,o2 = (alloc_expr env offset e) in (e::l, min o1 o2)) eL ([], offset)
 		in Else l, o
 	|ElseifI ((_, e), (_, eL), els) ->
 		let (e, o1) = alloc_expr env offset e in
-		let (l, o2) = List.fold_right (fun (_, e) (o1, l) -> let e,o2 = (alloc_expr env fpcur2 e) in (e::l, min o1 o2)) eL ([], o1) in
+		let (l, o2) = List.fold_right (fun (_, e) (l, o1) -> let e,o2 = (alloc_expr env offset e) in (e::l, min o1 o2)) eL ([], o1) in
 		let (els, o3) = alloc_else env offset els in
 		Elseif (e, l, els), min o3 o2
 
 let alloc_fichier (eL, varMap, sEnv, fMap:fichierTyper):fichier =
 	structMap := sEnv;
-	let l = List.fold_right (fun e l -> alloc_expr 0 Tmap.empty e::l) eL [] in
-	(l, varMap, fMap)
+	let (l, o) = List.fold_right (fun e (l, o) -> let (e, o2) = alloc_expr Tmap.empty 0 e in (e::l, min o o2)) eL ([], 0) in
+	(l, o, varMap, fMap)
 
 let pushn n =
 	let s = ref nop in
@@ -218,18 +214,18 @@ let rec compile_expr = function
 	| LvalueAffectV (label, expr) -> failwith "Not implemented"
 	| LvalueAffectI (exp1, ident, entier, exp2) -> failwith "Not implemented"
 	| Ret (pjtype, exp) -> failwith "Not implemented" (* expected type of the return *)
-	| For (entier, exp1, exp2, bloc) ->
+	| For (posC, posFLoc, exp1, exp2, bloc) ->
 		let e1 = compile_expr exp1 in
 		let e2 = compile_expr exp2 in
 		let b = compile_bloc bloc in
 		let depile = (popq rdx) ++ (popq rcx) ++ (popq rbx) ++ (popq rax) in
-		let test_type = (compq (imm nTypeBool) !%rax) ++ (jne exitLabel) ++ (compq (imm nTypeBool) !%rbx) ++ (jne exitLabel) in
+		let test_type = (cmpq (imm nTypeBool) !%rax) ++ (jne exitLabel) ++ (cmpq (imm nTypeBool) !%rbx) ++ (jne exitLabel) in
 		failwith "Problème : comment est-ce qu'on sauvegarde l'entier ainsi que les bornes? Variables globales?"
-	| While (exp, entier, bloc) ->
+	| While (exp, debLoc, finLoc, bloc) ->
 		let e = compile_expr exp in
 		let b = compile_bloc bloc in
 		let (label1, label2) = (getWhile (), getWhile ()) in
-		let comp = (label label1) ++ e ++ (popq rbx) ++ (popq rax) ++ (cmpq (imm (nTypeBool)) !%rax) ++ (jne exitLabel) ++ (cmpq (imm 1)) ++ (jne label2) in
+		let comp = (label label1) ++ e ++ (popq rbx) ++ (popq rax) ++ (cmpq (imm (nTypeBool)) !%rax) ++ (jne exitLabel) ++ (cmpq !%rbx (imm 1)) ++ (jne label2) in
 		let corps = b ++ (jmp label1) ++ (label label2) in
 		comp ++ corps
 	| If (exp, bloc, else_) ->

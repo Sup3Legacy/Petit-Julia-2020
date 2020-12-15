@@ -48,5 +48,5 @@ type functBuilded =
 	|StructBuilder of int
 and funcBMap = functBuilded Imap.t Tmap.t
 
-type fichier = expression list * pjtype Tmap.t * funcMap
+type fichier = expression list * int * pjtype Tmap.t * funcMap
 ;;
