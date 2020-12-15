@@ -59,6 +59,23 @@ let numStruct ident = nTypeStruct + snd (Smap.find ident !structMap)
 
 type local_env = int Smap.t
 
+let rec calcArb s = function
+	|[] -> Failure
+	|([],i)::tl -> if List.length tl = 0 then Feuille (s,i) else Failure
+	|l -> let tM1 = List.fold_left (fun t (l,i) -> match l with 
+				|[] -> assert false
+				|hd::tl -> if TypeMap.mem hd t then 
+						let l1 = TypeMap.find hd t in TypeMap.add hd ((tl,i)::l1) t
+					else TypeMap.add hd [tl,i] t) TypeMap.empty l in
+		let tM2 = if TypeMap.mem Any tM1 then 
+				let l = TypeMap.find Any tM1 in
+				TypeMap.map (fun l2 -> l@l2) tM1
+			else tM1
+		in
+		let tM3 = TypeMap.map (calcArb s) tM2 in
+		Appels tM3
+
+
 let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN.expression * int) = function
 	| EntierE i -> Entier i, offset
 	| FlottantE f -> Flottant f, offset
@@ -85,10 +102,14 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 				(fun (_, e) (o1, l) -> let (e1, o2) = alloc_expr env offset e in (min o1 o2, e1::l))
 				eL
 				(offset, [])
-		in let f = Tmap.find ident !functionMap in 
-		let arb:AstcompilN.functArbr = Hyper3.calcArb (ISet.fold (fun i l -> match Imap.find i f with 
-				|StructBuilder l1 |Funct (l1, _, _)  -> (List.fold_right (fun (_, p) l2 -> p::l2) l1 [],i)::l) iSet [])
-		in Call (ident, arb, eL), offset
+		in
+		if ident = "print" then 
+			Call (ident, Failure, eL), offset
+		else
+			let f = Tmap.find ident !functionMap in 
+			let arb:AstcompilN.functArbr = calcArb ident (ISet.fold (fun i l -> match Imap.find i f with 
+					|StructBuilder l1 |Funct (l1, _, _)  -> (List.fold_right (fun (_, p) l2 -> p::l2) l1 [],i)::l) iSet [])
+			in Call (ident, arb, eL), offset
 	| NotE (_,e) -> let (e, o) = alloc_expr env offset e in Not e, o
 	| MinusE (_, e) -> let (e, o) = alloc_expr env offset e in Minus e, o
 	| BinopE (o, (_, e1), (_, e2)) ->
@@ -158,6 +179,44 @@ let pushn n =
 		s := !s ++ pushq (imm nTypeUndef) ++ pushq !%rax
 	done;
 	!s
+
+let compteurArbreAppel = ref 0
+
+let int_of_type t = match t with
+  | Any -> assert false
+  | Nothing -> nTypeNothing
+  | Int64 -> nTypeInt
+  | Float64 -> nTypeFloat
+  | Bool -> nTypeBool
+  | String -> nTypeString
+  | S s -> numStruct s
+
+let newFlagArb () = 
+	let t = !compteurArbreAppel in
+	compteurArbreAppel := 1 +t;
+	"jmp"^string_of_int t
+
+let rec buildArb p l = function
+	|Failure -> label l ++ jmp exitLabel
+	|Feuille (s,i) -> label l ++ call (s^"_"^string_of_int i)
+	|Appels tM -> 
+		if TypeMap.cardinal tM == 1 then 
+			if TypeMap.mem Any tM then buildArb (p-1) l (TypeMap.find Any tM)
+			else 
+				let (t,arb) = TypeMap.choose tM in
+				label l ++ cmpq (imm (int_of_type t)) (assert false) ++ jne exitLabel ++ buildArb (p-1) (newFlagArb ()) arb
+		else
+			let (c1,l1) = TypeMap.fold (fun k a (c,l) -> if k=Any then (c,l)
+								else let dir = newFlagArb () in
+								(c ++ cmpq (imm (int_of_type k)) (assert false) ++ je dir, (dir,a)::l)
+							) tM (label l, []) in
+			let c = if TypeMap.mem Any tM then
+					buildArb (p-1) (newFlagArb ()) (TypeMap.find Any tM)
+				else
+					jmp exitLabel in
+			let c2 = List.fold_left (fun c (dir,a) -> c ++ buildArb (p-1) dir a) (c1 ++ c) l1 in
+			c2
+
 
 let rec compile_expr = function
 	| Entier i -> pushq (imm nTypeInt) ++ pushq (imm64 i)

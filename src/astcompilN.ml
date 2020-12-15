@@ -5,7 +5,7 @@ module TypeMap = Map.Make(struct type t = pjtype let compare = compare end)
 type functArbr =
 	| Failure
 	| Appels of functArbr TypeMap.t
-	| Feuille of int
+	| Feuille of string * int
 
 type label =
 	| Dec of int
