@@ -294,3 +294,14 @@ let compile_program p ofile =
  fprintf fmt "@?";
  close_out f
 *)
+
+(*
+label "print_int" ++
+movq !%rdi !%rsi ++
+movq (ilab ".Sprint_int") !%rdi ++
+movq (imm 0) !%rax ++
+call "printf" ++
+ret
+
+avec dans data : (label ".Sprint_int" ++ string "%d\n")
+*)
