@@ -39,8 +39,8 @@ let getIf () =
 	("if_" ^ (string_of_int temp))
 ;;
 let getFunc () =
-	let temp = !getFunc in
-	getFunc := !getFunc + 1;
+	let temp = !compteurFunc in
+	compteurFunc := !compteurFunc + 1;
 	("func_" ^ (string_of_int temp))
 ;;
 
@@ -265,9 +265,10 @@ let compile_function f e fpmax =
 
 
 let compile_fun n i = function
-  |Funct (argL, tmap, ()) ->
+  |Funct (argL, tmap, eL) ->
+  	let code = nop in
     pushq !%rbp ++ movq !%rsp !%rbp ++
-    code
+    code ++
     popq rbx ++ popq rax ++
     movq !%rbp !%rsp ++ popq rbp ++
     ret
@@ -276,23 +277,24 @@ let compile_fun n i = function
     let n = List.length eL in
     let code = ref nop in
     for i = 0 to -1 do 
-      code := code ++ 
+      code := !code ++ 
         movq (ind ~ofs:(8+i*16) rsp) (ind ~ofs:(16*(n-i-1)) rax) ++
         movq (ind ~ofs:(16+i*16) rsp) (ind ~ofs:(16*(n-i-1)+8) rax)     
-    done
-    movq (imm (16*n)) !%rdi ++ call (label "malloc") ++ code ++
-    movq (!%rax) !%rbx ++ movq (imm nType) !%rax
+    done;
+    movq (imm (16*n)) !%rdi ++ call "malloc" ++ !code ++
+    movq (!%rax) !%rbx ++ movq (imm nType) !%rax ++
     ret
 
 let compile_program f ofile =
- let (eL, i, smap, fmap) = alloc_fichier f in
- let code = List.fold_left (fun d e -> (if d!=nop then d ++ popn (imm 16) else nop) ++ compile_expr e) nop eL in
- let codeFun = Tmap.fold (fun k imap asm -> Imap.fold (fun i f asm2 -> asm2 + compile_fun k i f) imap asm) fmap nop in
- let p =
-   { text =
+	let (_, smap, _, _) = f in
+	let (eL, i, smap, fmap) = alloc_fichier f in
+	let code = List.fold_left (fun d e -> (if d!=nop then d ++ popn 16 else nop) ++ compile_expr e) nop eL in
+	let codefun = Tmap.fold (fun k imap asm -> Imap.fold (fun i f asm2 -> asm2 ++ compile_fun k i f) imap asm) fmap nop in
+	let p =
+   	{ text =
        globl "main" ++ label "main" ++
        movq !%rsp !%rbp ++
-       pushn (imm i) ++
+       pushn i ++
        code ++
        movq (imm 0) !%rax ++ (* exit *)
        ret ++
@@ -304,15 +306,15 @@ let compile_program f ofile =
        ret ++
        codefun;
      data =
-       Hashtbl.fold (fun x _ l -> label x ++ dquad [1] ++ l) genv
+       (*Hashtbl.fold (fun x _ l -> label x ++ dquad [1] ++ l) genv*)
   
        (label ".Sprint_int" ++ string "%d\n")
    }
  in
  let f = open_out ofile in
- let fmt = formatter_of_out_channel f in
+ let fmt = Format.formatter_of_out_channel f in
  X86_64.print_program fmt p;
- fprintf fmt "@?";
+ Format.fprintf fmt "@?";
  close_out f
 
 

@@ -43,10 +43,10 @@ and bloc = (expression list)
 
 module Imap = Map.Make(Int)
 
-type functBuilded =
+(*type functBuilded =
 	|Funct of (int * bloc)
 	|StructBuilder of int
-and funcBMap = functBuilded Imap.t Tmap.t
+and funcBMap = functBuilded Imap.t Tmap.t*)
 
 type fichier = expression list * int * pjtype Tmap.t * funcMap
 ;;
