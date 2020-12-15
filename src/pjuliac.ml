@@ -44,6 +44,12 @@ let afficheL l =
 let handle () =
   let c = open_in !(Hyper.file) in
   let lb = Lexing.from_channel c in
+
+  (* Sorti dy try_with pour voir les erreurs jetées par la production de code *)
+  let e = Parser.fichier Lexer.token lb in
+  let fichierType = Typer.typerCompilateur e gVenv gFenv gSenv gAenv in
+  CompilNaif.compile_program fichierType (!Hyper.file ^ ".s");
+
   try
     let e = Parser.fichier Lexer.token lb
     in
@@ -56,6 +62,7 @@ let handle () =
     let _ = CompilNaif.alloc_fichier fichierType in
     if !affiche then print_endline (show_fichier e)
     else if !show_fName then print_endline !(Hyper.file);
+    CompilNaif.compile_program fichierType (!Hyper.file ^ ".s");
     exit 0;
   with a -> begin
       let b = Lexing.lexeme_start_p lb in
