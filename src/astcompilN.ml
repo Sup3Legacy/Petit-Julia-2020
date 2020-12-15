@@ -8,8 +8,8 @@ type functArbr =
 	| Appel of int
 
 type label =
-	| Dec of (int * int)
-	| Tag of ident
+	| Dec of int
+	| Tag of ident;;
 
 type expression =
 	| Entier of Int64.t
