@@ -10,6 +10,9 @@ let nTypeBool = 3
 let nTypeString = 4
 (* À partir de 5 : structs *)
 
+let valTrue = -1
+let valFalse = 0
+
 let popn n = addq (imm n) !%rsp
 let pushn n = subq (imm n) !%rsp
 
@@ -18,6 +21,7 @@ let pushn n = subq (imm n) !%rsp
 let compteurFor = ref 0
 let compteurWhile = ref 0
 let compteurIf = ref 0
+let compteurFunc = ref 0
 
 let getFor () =
 	let temp = !compteurFor in
@@ -33,6 +37,11 @@ let getIf () =
 	let temp = !compteurIf in
 	compteurIf := !compteurIf + 1;
 	("if_" ^ (string_of_int temp))
+;;
+let getFunc () =
+	let temp = !getFunc in
+	getFunc := !getFunc + 1;
+	("func_" ^ (string_of_int temp))
 ;;
 
 
@@ -130,8 +139,8 @@ let rec compile_expr = function
 	| Entier i -> pushq (imm nTypeInt) ++ pushq (imm64 i)
 	| Flottant f -> pushq (imm nTypeFloat) ++ pushq (immD f) (* À changer *)
 	| Chaine s -> failwith "not implemented"
-	| True -> pushq (imm nTypeBool) ++ pushq (imm 1)
-	| False -> pushq (imm nTypeBool) ++ pushq (imm 0)
+	| True -> pushq (imm nTypeBool) ++ pushq (imm valTrue)
+	| False -> pushq (imm nTypeBool) ++ pushq (imm valFalse)
 	| Nothing -> pushq (imm nTypeNothing) ++ pushq (imm 0)
 	| Bloc bloc -> compile_bloc bloc
 (*	| EntierIdent (entier, label) -> compile_expr (Binop (Times, Entier entier, Ident label))
@@ -161,31 +170,31 @@ let rec compile_expr = function
 		let operation =
 		match op with
 		| Eq -> (cmpq !%rax !%rcx) ++ (jne exitLabel) ++ (pushq (imm nTypeBool)) ++
-							 (cmpq !%rbx !%rcx) ++ (je label1) ++ (pushq (imm 0)) ++
-							 								   (jmp label2) ++ (label label1) ++ (pushq (imm 1)) ++ (label label2)
+							 (cmpq !%rbx !%rcx) ++ (je label1) ++ (pushq (imm valFalse)) ++
+							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valTrue)) ++ (label label2)
 	  | Neq -> (cmpq !%rax !%rcx) ++ (jne exitLabel) ++ (pushq (imm nTypeBool)) ++
-							  (cmpq !%rbx !%rcx) ++ (je label1) ++ (pushq (imm 1)) ++
-							 								   (jmp label2) ++ (label label1) ++ (pushq (imm 0)) ++ (label label2)
+							  (cmpq !%rbx !%rcx) ++ (je label1) ++ (pushq (imm valTrue)) ++
+							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valFalse)) ++ (label label2)
 	  | Lo -> (cmpq !%rax (imm nTypeInt)) ++ (jne exitLabel) ++
 							  (cmpq !%rcx (imm nTypeInt)) ++ (jne exitLabel) ++
 							  (pushq (imm nTypeBool)) ++
-							  (cmpq !%rbx !%rcx) ++ (jge label1) ++ (pushq (imm 1)) ++
-							 								   (jmp label2) ++ (label label1) ++ (pushq (imm 0)) ++ (label label2)
+							  (cmpq !%rbx !%rcx) ++ (jge label1) ++ (pushq (imm valTrue)) ++
+							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valFalse)) ++ (label label2)
 	  | Gr -> (cmpq !%rax (imm nTypeInt)) ++ (jne exitLabel) ++
 							  (cmpq !%rcx (imm nTypeInt)) ++ (jne exitLabel) ++
 							  (pushq (imm nTypeBool)) ++
-							  (cmpq !%rbx !%rcx) ++ (jle label1) ++ (pushq (imm 1)) ++
-							 								   (jmp label2) ++ (label label1) ++ (pushq (imm 0)) ++ (label label2)
+							  (cmpq !%rbx !%rcx) ++ (jle label1) ++ (pushq (imm valTrue)) ++
+							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valFalse)) ++ (label label2)
 	  | Leq -> (cmpq !%rax (imm nTypeInt)) ++ (jne exitLabel) ++
 							   (cmpq !%rcx (imm nTypeInt)) ++ (jne exitLabel) ++
 							   (pushq (imm nTypeBool)) ++
-							   (cmpq !%rbx !%rcx) ++ (jg label1) ++ (pushq (imm 1)) ++
-							 								   (jmp label2) ++ (label label1) ++ (pushq (imm 0)) ++ (label label2)
+							   (cmpq !%rbx !%rcx) ++ (jg label1) ++ (pushq (imm valTrue)) ++
+							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valFalse)) ++ (label label2)
 	  | Geq -> (cmpq !%rax (imm nTypeInt)) ++ (jne exitLabel) ++
 							   (cmpq !%rcx (imm nTypeInt)) ++ (jne exitLabel) ++
 							   (pushq (imm nTypeBool)) ++
-							   (cmpq !%rbx !%rcx) ++ (jl label1) ++ (pushq (imm 1)) ++
-							 								   (jmp label2) ++ (label label1) ++ (pushq (imm 0)) ++ (label label2)
+							   (cmpq !%rbx !%rcx) ++ (jl label1) ++ (pushq (imm valTrue)) ++
+							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valFalse)) ++ (label label2)
 	  | Plus -> (cmpq !%rax (imm nTypeInt)) ++ (jne exitLabel) ++
 							    (cmpq !%rcx (imm nTypeInt)) ++ (jne exitLabel) ++
 							    (pushq (imm nTypeInt)) ++
@@ -225,7 +234,7 @@ let rec compile_expr = function
 		let e = compile_expr exp in
 		let b = compile_bloc bloc in
 		let (label1, label2) = (getWhile (), getWhile ()) in
-		let comp = (label label1) ++ e ++ (popq rbx) ++ (popq rax) ++ (cmpq (imm (nTypeBool)) !%rax) ++ (jne exitLabel) ++ (cmpq !%rbx (imm 1)) ++ (jne label2) in
+		let comp = (label label1) ++ e ++ (popq rbx) ++ (popq rax) ++ (cmpq (imm (nTypeBool)) !%rax) ++ (jne exitLabel) ++ (cmpq !%rbx (imm valTrue)) ++ (jne label2) in
 		let corps = b ++ (jmp label1) ++ (label label2) in
 		comp ++ corps
 	| If (exp, bloc, else_) ->
@@ -275,7 +284,7 @@ let compile_program p ofile =
        codefun;
      data =
        Hashtbl.fold (fun x _ l -> label x ++ dquad [1] ++ l) genv
-  
+
        (label ".Sprint_int" ++ string "%d\n")
    }
  in
