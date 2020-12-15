@@ -62,12 +62,12 @@ type local_env = int Smap.t
 let rec calcArb s = function
 	|[] -> Failure
 	|([],i)::tl -> if List.length tl = 0 then Feuille (s,i) else Failure
-	|l -> let tM1 = List.fold_left (fun t (l,i) -> match l with 
+	|l -> let tM1 = List.fold_left (fun t (l,i) -> match l with
 				|[] -> assert false
-				|hd::tl -> if TypeMap.mem hd t then 
+				|hd::tl -> if TypeMap.mem hd t then
 						let l1 = TypeMap.find hd t in TypeMap.add hd ((tl,i)::l1) t
 					else TypeMap.add hd [tl,i] t) TypeMap.empty l in
-		let tM2 = if TypeMap.mem Any tM1 then 
+		let tM2 = if TypeMap.mem Any tM1 then
 				let l = TypeMap.find Any tM1 in
 				TypeMap.map (fun l2 -> l@l2) tM1
 			else tM1
@@ -79,10 +79,10 @@ let rec calcArb s = function
 let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN.expression * int) = function
 	| EntierE i -> Entier i, offset
 	| FlottantE f -> Flottant f, offset
-	| ChaineE s -> 
-		begin 
+	| ChaineE s ->
+		begin
 		if not (Hashtbl.mem sMap s)
-		then 
+		then
 			(Hashtbl.add sMap s !compteurString;
 			compteurString := !compteurString + 1);
 		Chaine s, offset
@@ -90,24 +90,24 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 	| TrueE -> True, offset
 	| FalseE -> False, offset
 	| BlocE (_, eL) ->
-		let (offset, eL) = 
+		let (offset, eL) =
 			List.fold_right
 				(fun (_, e) (o1, l) -> let (e1, o2) = alloc_expr env offset e in (min o1 o2, e1::l))
 				eL
 				(offset, [])
 		in Bloc eL, offset
 	| CallE ((ident, iSet:(string * ISet.t)), eL) ->
-		let (offset, eL) = 
+		let (offset, eL) =
 			List.fold_right
 				(fun (_, e) (o1, l) -> let (e1, o2) = alloc_expr env offset e in (min o1 o2, e1::l))
 				eL
 				(offset, [])
 		in
-		if ident = "print" then 
-			Call (ident, Failure, eL), offset
+		if ident = "print" then
+			Call (ident, Feuille ("print", 0), eL), offset
 		else
-			let f = Tmap.find ident !functionMap in 
-			let arb:AstcompilN.functArbr = calcArb ident (ISet.fold (fun i l -> match Imap.find i f with 
+			let f = Tmap.find ident !functionMap in
+			let arb:AstcompilN.functArbr = calcArb ident (ISet.fold (fun i l -> match Imap.find i f with
 					|StructBuilder l1 |Funct (l1, _, _)  -> (List.fold_right (fun (_, p) l2 -> p::l2) l1 [],i)::l) iSet [])
 			in Call (ident, arb, eL), offset
 	| NotE (_,e) -> let (e, o) = alloc_expr env offset e in Not e, o
@@ -191,7 +191,7 @@ let int_of_type t = match t with
   | String -> nTypeString
   | S s -> numStruct s
 
-let newFlagArb () = 
+let newFlagArb () =
 	let t = !compteurArbreAppel in
 	compteurArbreAppel := 1 +t;
 	"jmp"^string_of_int t
@@ -199,10 +199,10 @@ let newFlagArb () =
 let rec buildArb (p:int) (l:string):functArbr -> [`text] asm = function
 	|Failure -> label l ++ jmp exitLabel
 	|Feuille (s,i) -> label l ++ call (s^"_"^string_of_int i)
-	|Appels tM -> 
-		if TypeMap.cardinal tM == 1 then 
+	|Appels tM ->
+		if TypeMap.cardinal tM == 1 then
 			if TypeMap.mem Any tM then buildArb (p-1) l (TypeMap.find Any tM)
-			else 
+			else
 				let (t,arb) = TypeMap.choose tM in
 				label l ++ cmpq (imm (int_of_type t)) (ind ~ofs:(16*p - 8) rsp) ++ jne exitLabel ++ buildArb (p-1) (newFlagArb ()) arb
 		else
@@ -221,8 +221,8 @@ let rec buildArb (p:int) (l:string):functArbr -> [`text] asm = function
 let rec compile_expr = function
 	| Entier i -> pushq (imm nTypeInt) ++ pushq (imm64 i)
 	| Flottant f -> pushq (imm nTypeFloat) ++ pushq (immD f) (* À changer *)
-	| Chaine s -> 
-		let n = string_of_int (Hashtbl.find sMap s) in 
+	| Chaine s ->
+		let n = string_of_int (Hashtbl.find sMap s) in
 		pushq (imm nTypeString) ++ pushq (lab ("string_"^n))
 	| True -> pushq (imm nTypeBool) ++ pushq (imm valTrue)
 	| False -> pushq (imm nTypeBool) ++ pushq (imm valFalse)
@@ -241,8 +241,16 @@ let rec compile_expr = function
 			e ++ eq
 		in
 		let e = parcours expList in
-		e ++ (buildArb (List.length expList) (newFlagArb ()) funcArbr) ++
-		popn (16 * List.length expList) ++ (pushq !%rax) ++ pushq !%rbx
+		if ident = "print" then
+			begin
+			e ++ (pushq (imm (List.length expList))) ++ (buildArb (List.length expList) (newFlagArb ()) funcArbr) ++
+			popn (16 * List.length expList) ++ (pushq !%rax) ++ pushq !%rbx
+			end
+		else
+			begin
+				e ++ (buildArb (List.length expList) (newFlagArb ()) funcArbr) ++
+				popn (16 * List.length expList) ++ (pushq !%rax) ++ pushq !%rbx
+			end
 	| Not expr ->
 		compile_expr expr ++ (popq rbx) ++ (popq rax) ++
 		(cmpq (imm nTypeBool) !%rax) ++ (jne exitLabel) ++ (* Commande pour exit en cas d'erreur!*)
@@ -256,43 +264,43 @@ let rec compile_expr = function
 		let operation =
 		match op with
 		| Eq -> (cmpq !%rax !%rcx) ++ (jne exitLabel) ++ (pushq (imm nTypeBool)) ++
-							 (cmpq !%rbx !%rcx) ++ (je label1) ++ (pushq (imm valFalse)) ++
+							 (cmpq !%rbx !%rdx) ++ (je label1) ++ (pushq (imm valFalse)) ++
 							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valTrue)) ++ (label label2)
 	  | Neq -> (cmpq !%rax !%rcx) ++ (jne exitLabel) ++ (pushq (imm nTypeBool)) ++
-							  (cmpq !%rbx !%rcx) ++ (je label1) ++ (pushq (imm valTrue)) ++
+							  (cmpq !%rbx !%rdx) ++ (je label1) ++ (pushq (imm valTrue)) ++
 							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valFalse)) ++ (label label2)
 	  | Lo -> (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
 							  (cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
 							  (pushq (imm nTypeBool)) ++
-							  (cmpq !%rbx !%rcx) ++ (jge label1) ++ (pushq (imm valTrue)) ++
+							  (cmpq !%rbx !%rdx) ++ (jge label1) ++ (pushq (imm valTrue)) ++
 							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valFalse)) ++ (label label2)
 	  | Gr -> (cmpq !%rax (imm nTypeInt)) ++ (jne exitLabel) ++
 							  (cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
 							  (pushq (imm nTypeBool)) ++
-							  (cmpq !%rbx !%rcx) ++ (jle label1) ++ (pushq (imm valTrue)) ++
+							  (cmpq !%rbx !%rdx) ++ (jle label1) ++ (pushq (imm valTrue)) ++
 							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valFalse)) ++ (label label2)
 	  | Leq -> (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
 							   (cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
 							   (pushq (imm nTypeBool)) ++
-							   (cmpq !%rbx !%rcx) ++ (jg label1) ++ (pushq (imm valTrue)) ++
+							   (cmpq !%rbx !%rdx) ++ (jg label1) ++ (pushq (imm valTrue)) ++
 							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valFalse)) ++ (label label2)
 	  | Geq -> (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
 							   (cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
 							   (pushq (imm nTypeBool)) ++
-							   (cmpq !%rbx !%rcx) ++ (jl label1) ++ (pushq (imm valTrue)) ++
+							   (cmpq !%rbx !%rdx) ++ (jl label1) ++ (pushq (imm valTrue)) ++
 							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valFalse)) ++ (label label2)
 	  | Plus -> (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
 							    (cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
 							    (pushq (imm nTypeInt)) ++
-							    (addq !%rcx !%rax) ++ (pushq !%rax)
+							    (addq !%rdx !%rbx) ++ (pushq !%rbx)
 	  | Minus -> (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
 							    (cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
 							    (pushq (imm nTypeInt)) ++
-							    (subq !%rcx !%rax) ++ (pushq !%rax)
+							    (subq !%rdx !%rbx) ++ (pushq !%rbx)
 	  | Times -> (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
 							    (cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
 							    (pushq (imm nTypeInt)) ++
-							    (imulq !%rdx !%rax) ++ (pushq !%rax)
+							    (imulq !%rdx !%rbx) ++ (pushq !%rbx)
 	  | Modulo -> failwith "Not implemented"
 	  | Exp -> failwith "Not implemented"
 	  | And -> (cmpq (imm nTypeBool) !%rax) ++ (jne exitLabel) ++ (cmpq (imm nTypeBool) !%rcx) ++ (jne exitLabel) ++
@@ -308,7 +316,7 @@ let rec compile_expr = function
 		(compile_expr exp) ++ (popq rbx) ++ (popq rax) ++ (cmpq !%rax (imm numClasse)) ++ (jne exitLabel) ++ (movq (ind ~ofs:(offset + 8) rbx) !%rax) ++ (movq (ind ~ofs:offset rbx) !%rbx)
 	| LvalueAffectV (label, expr) -> failwith "Not implemented"
 	| LvalueAffectI (exp1, ident, entier, exp2) -> failwith "Not implemented"
-	| Ret (pjtype, exp) -> 
+	| Ret (pjtype, exp) ->
 		compile_expr exp ++ (popq rbx) ++ (popq rax) ++
 		(if pjtype = Any then nop else (cmpq (imm (int_of_type pjtype)) !%rax ++
 		jne exitLabel)) ++ movq !%rbp !%rsp ++ popq rbp ++ ret
@@ -356,8 +364,8 @@ let compile_function f e fpmax =
 let compile_fun (n:string) (i:int) = function
   |Funct (argL, tmap, (_, eL)) ->
   	let (_, env) = List.fold_right (fun (i, _) (n,t) -> (n + 16, Tmap.add i n t)) argL (16, Tmap.empty) in
-	let env2, fpcur2 = Tmap.fold (fun k _ (m, n) -> if Tmap.mem k env then (m,n) else (Tmap.add k (n-16) m, n-16)) tmap (env, 0) in
-	let (eL,o2) = List.fold_right (fun (_, e) (l, o1) -> let e,o2 = (alloc_expr env fpcur2 e) in (e::l, min o1 o2)) eL ([], fpcur2) in
+		let env2, fpcur2 = Tmap.fold (fun k _ (m, n) -> if Tmap.mem k env then (m,n) else (Tmap.add k (n-16) m, n-16)) tmap (env, 0) in
+		let (eL,o2) = List.fold_right (fun (_, e) (l, o1) -> let e,o2 = (alloc_expr env fpcur2 e) in (e::l, min o1 o2)) eL ([], fpcur2) in
   	let code = List.fold_left (fun c e -> c ++ compile_expr e ++ popq rbx ++ popq rax) nop eL in
     pushq !%rbp ++ movq !%rsp !%rbp ++
     pushn (-o2) ++
@@ -395,12 +403,33 @@ let compile_program f ofile =
 		movq (imm 0) !%rax ++ (* exit *)
 		ret ++
 
+		label "print_0" ++ (* Fonction principale print *)
+		pushq !%rbp ++
+		movq !%rsp !%rbp ++
+		movq (ind ~ofs:(16) rbp) !%r13 ++ (* Compteur d'arguments /!\ un seul mot!! *)
+		label "print_loop" ++
+		cmpq (imm 0) !%r13 ++
+		je "print_exit" ++
+		movq !%r13 !%r9 ++
+		imulq (imm 2) !%r9 ++
+		 (* Nouvel index *)
+		movq (ind ~ofs:(8) ~index:r9 ~scale:8 rbp) !%rbx ++
+		movq (ind ~ofs:(16) ~index:r9 ~scale:8 rbp) !%rax ++
+		call "print_value" ++
+		decq !%r13 ++
+		jmp "print_loop" ++
+		label "print_exit" ++
+		popq rbp ++
+		ret ++
+
 		label "print_value" ++ (*Il doit y avoir le type dans rax et la valur dans rbx*)
 		(movq !%rbx !%rdi) ++
 		(cmpq (imm nTypeInt) !%rax) ++
 		je "ifInt" ++
 		(cmpq (imm nTypeFloat) !%rax) ++
 		je "ifFloat" ++
+		(cmpq (imm nTypeBool) !%rax) ++
+		je "ifBool" ++
 		(cmpq (imm nTypeString) !%rax) ++
 		je "ifString" ++
 		label "ifBool" ++
@@ -439,7 +468,7 @@ let compile_program f ofile =
 
 		label "print_bool" ++
 		movq !%rdi !%rsi ++
-		movq (ilab ".Sprint_bool") !%rdi ++
+		movq (ilab ".Sprint_true") !%rdi ++
 		movq (imm 0) !%rax ++
 		call "printf" ++
     ret ++
