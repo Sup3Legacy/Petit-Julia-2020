@@ -62,7 +62,7 @@ let handle () =
     let _ = CompilNaif.alloc_fichier fichierType in
     if !affiche then print_endline (show_fichier e)
     else if !show_fName then print_endline !(Hyper.file);
-    CompilNaif.compile_program fichierType (!Hyper.file ^ ".s");
+    (* CompilNaif.compile_program fichierType (!Hyper.file ^ ".s"); *)
     exit 0;
   with a -> begin
       let b = Lexing.lexeme_start_p lb in
