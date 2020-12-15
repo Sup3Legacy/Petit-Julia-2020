@@ -264,12 +264,15 @@ let compile_function f e fpmax =
 	code
 
 
-let compile_fun n i = function
-  |Funct (argL, tmap, eL) ->
-  	let code = nop in
+let compile_fun (n:string) (i:int) = function
+  |Funct (argL, tmap, (_, eL)) ->
+  	let (_, env) = List.fold_right (fun (i, _) (n,t) -> (n + 16, Tmap.add i n t)) argL (16, Tmap.empty) in
+	let env2, fpcur2 = Tmap.fold (fun k _ (m, n) -> if Tmap.mem k env then (m,n) else (Tmap.add k (n-16) m, n-16)) tmap (env, 0) in
+	let (eL,o2) = List.fold_right (fun (_, e) (l, o1) -> let e,o2 = (alloc_expr env fpcur2 e) in (e::l, min o1 o2)) eL ([], fpcur2) in
+  	let code = List.fold_left (fun c e -> c ++ compile_expr e ++ popq rbx ++ popq rax) nop eL in
     pushq !%rbp ++ movq !%rsp !%rbp ++
+    pushn (-o2) ++
     code ++
-    popq rbx ++ popq rax ++
     movq !%rbp !%rsp ++ popq rbp ++
     ret
   |StructBuilder eL ->
