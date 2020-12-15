@@ -22,6 +22,9 @@ let compteurFor = ref 0
 let compteurWhile = ref 0
 let compteurIf = ref 0
 let compteurFunc = ref 0
+let compteurString = ref 0
+
+let sMap = Hashtbl.create 8
 
 let getFor () =
 	let temp = !compteurFor in
@@ -59,7 +62,14 @@ type local_env = int Smap.t
 let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN.expression * int) = function
 	| EntierE i -> Entier i, offset
 	| FlottantE f -> Flottant f, offset
-	| ChaineE s -> Chaine s, offset
+	| ChaineE s -> 
+		begin 
+		if not (Hashtbl.mem sMap s)
+		then 
+			(Hashtbl.add sMap s !compteurString;
+			compteurString := !compteurString + 1);
+		Chaine s, offset
+		end
 	| TrueE -> True, offset
 	| FalseE -> False, offset
 	| BlocE (_, eL) ->
@@ -152,7 +162,9 @@ let pushn n =
 let rec compile_expr = function
 	| Entier i -> pushq (imm nTypeInt) ++ pushq (imm64 i)
 	| Flottant f -> pushq (imm nTypeFloat) ++ pushq (immD f) (* À changer *)
-	| Chaine s -> failwith "not implemented"
+	| Chaine s -> 
+		let n = string_of_int (Hashtbl.find sMap s) in 
+		pushq (imm nTypeString) ++ pushq (lab ("string_"^n))
 	| True -> pushq (imm nTypeBool) ++ pushq (imm valTrue)
 	| False -> pushq (imm nTypeBool) ++ pushq (imm valFalse)
 	| Nothing -> pushq (imm nTypeNothing) ++ pushq (imm 0)
@@ -377,7 +389,7 @@ let compile_program f ofile =
 		ret ++
        codefun;
      data =
-       (*Hashtbl.fold (fun x _ l -> label x ++ dquad [1] ++ l) genv*)
+       Hashtbl.fold (fun x i l -> l ++ label ("string_"^string_of_int i) ++ string x) sMap nop ++
 
        (label ".Sprint_int" ++ string "%d") ++
 			 (label ".Sprint_float" ++ string "%f") ++
