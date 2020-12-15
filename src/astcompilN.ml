@@ -3,9 +3,9 @@ open Astype
 module TypeMap = Map.Make(struct type t = pjtype let compare = compare end)
 
 type functArbr =
-	| Conflit
-	| Arborescence of functArbr TypeMap.t
-	| Appel of int
+	| Failure
+	| Appels of functArbr TypeMap.t
+	| Feuille of int
 
 type label =
 	| Dec of int

@@ -8,13 +8,13 @@ let nTypeInt = 1
 let nTypeFloat = 2
 let nTypeBool = 3
 let nTypeString = 4
+let nTypeStruct = 5
 (* À partir de 5 : structs *)
 
 let valTrue = -1
 let valFalse = 0
 
 let popn n = addq (imm n) !%rsp
-let pushn n = subq (imm n) !%rsp
 
 
 (* Compteur pour les étiquettes *)
@@ -50,6 +50,9 @@ let exitLabel = "exit"
 module Smap = Map.Make(String)
 
 let structMap = ref (Smap.empty: Astype.structEnv)
+let functionMap = ref (Smap.empty: Astype.funcMap)
+
+let numStruct ident = nTypeStruct + snd (Smap.find ident !structMap)
 
 type local_env = int Smap.t
 
@@ -60,12 +63,22 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 	| TrueE -> True, offset
 	| FalseE -> False, offset
 	| BlocE (_, eL) ->
-		(Bloc (
+		let (offset, eL) = 
 			List.fold_right
-				(fun (_, e) l -> let (e1, _) = alloc_expr env offset e in e1::l)
+				(fun (_, e) (o1, l) -> let (e1, o2) = alloc_expr env offset e in (min o1 o2, e1::l))
 				eL
-				[]), offset)
-	| CallE _ -> failwith "Not implemented"
+				(offset, [])
+		in Bloc eL, offset
+	| CallE ((ident, iSet:(string * ISet.t)), eL) ->
+		let (offset, eL) = 
+			List.fold_right
+				(fun (_, e) (o1, l) -> let (e1, o2) = alloc_expr env offset e in (min o1 o2, e1::l))
+				eL
+				(offset, [])
+		in let f = Tmap.find ident !functionMap in 
+		let arb:AstcompilN.functArbr = Hyper3.calcArb (ISet.fold (fun i l -> match Imap.find i f with 
+				|StructBuilder l1 |Funct (l1, _, _)  -> (List.fold_right (fun (_, p) l2 -> p::l2) l1 [],i)::l) iSet [])
+		in Call (ident, arb, eL), offset
 	| NotE (_,e) -> let (e, o) = alloc_expr env offset e in Not e, o
 	| MinusE (_, e) -> let (e, o) = alloc_expr env offset e in Minus e, o
 	| BinopE (o, (_, e1), (_, e2)) ->
@@ -125,13 +138,14 @@ and alloc_else (env:local_env) (offset:int) = function
 
 let alloc_fichier (eL, varMap, sEnv, fMap:fichierTyper):fichier =
 	structMap := sEnv;
+	functionMap := fMap;
 	let (l, o) = List.fold_right (fun e (l, o) -> let (e, o2) = alloc_expr Tmap.empty 0 e in (e::l, min o o2)) eL ([], 0) in
 	(l, o, varMap, fMap)
 
 let pushn n =
 	let s = ref nop in
 	for i = 1 to n do
-		s := !s ++ pushq (imm (-1)) ++ pushq !%rax
+		s := !s ++ pushq (imm nTypeUndef) ++ pushq !%rax
 	done;
 	!s
 

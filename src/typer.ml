@@ -77,7 +77,7 @@ let parcoursStruct (sE:structEnv) (aE:argsEnv) (fE:funcEnv) (b,p,str,l):(structE
         then let liste = Tmap.find str fE in
             Tmap.add str ((List.length liste, typeList, S str)::liste) fE
         else Tmap.add str [(0, typeList, S str)] fE
-      in (Tmap.add str ajout sE, aE2, fE2)
+      in (Tmap.add str (ajout, Tmap.cardinal sE) sE, aE2, fE2)
 
 (* teste la correction d'une déclaration de fonction et la rajoute à l'environnement des fonctions *)
 let parcoursFonction (vE:varEnv) (fE:funcEnv) (sE:structEnv) (posStr, nameFunc, pL, posT, pjT, _):funcEnv =

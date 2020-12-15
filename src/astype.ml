@@ -41,10 +41,11 @@ type pjtype = (* types de petitjulia *)
 module Tmap = Map.Make(String)
 module Tset = Set.Make(String)
 module TypeSet = Set.Make(struct type t = pjtype let compare = compare end)
+module TypeMap = Map.Make(struct type t = pjtype let compare = compare end)
 
 type varEnv = (bool * pjtype) Tmap.t
 type funcEnv = (int * (pjtype list) * pjtype) list Tmap.t
-type structEnv = (int * pjtype) Tmap.t Tmap.t
+type structEnv = ((int * pjtype) Tmap.t * int) Tmap.t
 type argsEnv = (bool * pjtype * string) Tmap.t
 
 module ISet = Set.Make(Int)
