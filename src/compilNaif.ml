@@ -292,9 +292,12 @@ let compile_program f ofile =
  let p =
    { text =
        globl "main" ++ label "main" ++
+       pushq !%rbp ++
        movq !%rsp !%rbp ++
        pushn i ++
        code ++
+       movq !%rbp !%rsp ++
+       popq rbp ++
        movq (imm 0) !%rax ++ (* exit *)
        ret ++
        label "print_int" ++
