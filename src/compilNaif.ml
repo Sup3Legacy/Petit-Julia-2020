@@ -55,12 +55,12 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 	| TrueE -> True, offset
 	| FalseE -> False, offset
 	| BlocE (_, eL) ->
-		Bloc (
+		(Bloc (
 			List.fold_right
-				(fun (_, e) l -> (alloc_expr env offset e)::l)
+				(fun (_, e) l -> let (e1, _) = alloc_expr env offset e in e1::l)
 				eL
-				[]), offset
-	| CallE _ -> assert false
+				[]), offset)
+	| CallE _ -> failwith "Not implemented"
 	| NotE (_,e) -> let (e, o) = alloc_expr env offset e in Not e, o
 	| MinusE (_, e) -> let (e, o) = alloc_expr env offset e in Minus e, o
 	| BinopE (o, (_, e1), (_, e2)) ->
@@ -86,14 +86,14 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 				let i2 = assert false in
 				LvalueAffectI (e2, nameS, i2, e), min o2 offset
 		end
-	| ReturnE (p, None) -> Ret (p, Nothing)
+	| ReturnE (p, None) -> Ret (p, Nothing), offset (* À vérifier *)
 	| ReturnE (p, Some (_, e)) ->
 		let (e, offset) = alloc_expr env offset e in
 		Ret (p, e), offset
 	| ForE (i, tmap, (_, e1), (_, e2), (_, eL)) ->
 		let (e1, o1) = alloc_expr env offset e1 in
 		let (e2, o2) = alloc_expr env offset e2 in
-		let env2, fpcur2 = Tmap.fold (fun k _ (m, n) -> if k!= i then (Tmap.add k (n-16) m, n-16) else (m, n)) tmap (env, offset - 16) in
+		let (env2, fpcur2) = Tmap.fold (fun k _ (m, n) -> if k!= i then (Tmap.add k (n-16) m, n-16) else (m, n)) tmap (env, offset - 16) in
 		let env = Tmap.add i offset env2 in
 		let (l,o3) = List.fold_right (fun (_, e) (o1, l) -> let e,o2 = (alloc_expr env fpcur2 e) in (e::l, min o1 o2)) eL ([], min fpcur2 (min o1 o2)) in
 		For (offset, fpcur2, e1, e2, l), o3
@@ -110,8 +110,8 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 and alloc_else (env:local_env) (offset:int) = function
 	|EndI -> End, offset
 	|ElseI (_, eL) ->
-		let (l, o) = List.fold_right (fun (_, e) (o1, l) -> let e,o2 = (alloc_expr env fpcur2 e) in (e::l, min o1 o2)) eL ([], offset) in
-		Else l, o
+		let (l, o) = List.fold_right (fun (_, e) (o1, l) -> let e,o2 = (alloc_expr env fpcur2 e) in (e::l, min o1 o2)) eL ([], offset)
+		in Else l, o
 	|ElseifI ((_, e), (_, eL), els) ->
 		let (e, o1) = alloc_expr env offset e in
 		let (l, o2) = List.fold_right (fun (_, e) (o1, l) -> let e,o2 = (alloc_expr env fpcur2 e) in (e::l, min o1 o2)) eL ([], o1) in
@@ -208,7 +208,7 @@ let rec compile_expr = function
 	  							(andq !%rbx !%rdx) ++ (pushq (imm nTypeBool)) ++ (pushq !%rdx)
 	  | Or -> (cmpq !%rax (imm nTypeBool)) ++ (jne exitLabel) ++ (cmpq !%rcx (imm nTypeBool)) ++ (jne exitLabel) ++
 	  							(orq !%rbx !%rdx) ++ (pushq (imm nTypeBool)) ++ (pushq !%rdx)
-	in ins1 ++ ins2 ++ depilation ++ operation
+		in ins1 ++ ins2 ++ depilation ++ operation
 	| Ident label ->
 		let offset = 0 in (* /!\ distinction local/global *)
 		(pushq (ind ~ofs:offset rbp)) ++ (pushq (ind ~ofs:(offset + 8) rbp))
@@ -218,17 +218,34 @@ let rec compile_expr = function
 	| LvalueAffectV (label, expr) -> failwith "Not implemented"
 	| LvalueAffectI (exp1, ident, entier, exp2) -> failwith "Not implemented"
 	| Ret (pjtype, exp) -> failwith "Not implemented" (* expected type of the return *)
-	| For (entier, exp1, exp2, bloc) -> failwith "Not implemented"
+	| For (entier, exp1, exp2, bloc) ->
+		let e1 = compile_expr exp1 in
+		let e2 = compile_expr exp2 in
+		let b = compile_bloc bloc in
+		let depile = (popq rdx) ++ (popq rcx) ++ (popq rbx) ++ (popq rax) in
+		let test_type = (compq (imm nTypeBool) !%rax) ++ (jne exitLabel) ++ (compq (imm nTypeBool) !%rbx) ++ (jne exitLabel) in
+		failwith "Problème : comment est-ce qu'on sauvegarde l'entier ainsi que les bornes? Variables globales?"
 	| While (exp, entier, bloc) ->
 		let e = compile_expr exp in
-		let code = (popq rax) ++ (cmpq (imm (nTypeBool)) !%rax) ++ (jne exitLabel) in
-		failwith "Not implemented"
-	| If (exp, bloc, else_) -> failwith "Not implemented"
+		let b = compile_bloc bloc in
+		let (label1, label2) = (getWhile (), getWhile ()) in
+		let comp = (label label1) ++ e ++ (popq rbx) ++ (popq rax) ++ (cmpq (imm (nTypeBool)) !%rax) ++ (jne exitLabel) ++ (cmpq (imm 1)) ++ (jne label2) in
+		let corps = b ++ (jmp label1) ++ (label label2) in
+		comp ++ corps
+	| If (exp, bloc, else_) ->
+		let c = compile_expr exp in
+		let c1 = compile_bloc bloc in
+		let c2 = compile_else_ else_ in
+		let (label1, label2) = (getIf (), getIf ()) in
+		c ++ (popq rbx) ++ (popq rax) ++ (cmpq !%rax (imm nTypeBool)) ++ (jne exitLabel) ++
+		(cmpq !%rbx (imm 0)) ++ (jne label1) ++ c1 ++ (jmp label2) ++ (label label1) ++ c2 ++ (label label2)
 and compile_else_ = function
-	| End -> failwith "Not implemented"
-	| Else bloc -> failwith "Not implemented"
-	| Elseif (exp, bloc, else_) -> failwith "Not implemented"
-and compile_bloc = failwith "Not implemented"
+	| End -> nop
+	| Else bloc -> compile_bloc bloc
+	| Elseif (exp, bloc, else_) -> compile_expr (If (exp, bloc, else_))
+and compile_bloc = function
+	| [] -> nop
+	| t :: q -> (compile_expr t) ++ (compile_bloc q)
 
 
 let compile_function f e fpmax =
@@ -262,7 +279,8 @@ let compile_program p ofile =
        codefun;
      data =
        Hashtbl.fold (fun x _ l -> label x ++ dquad [1] ++ l) genv
-         (label ".Sprint_int" ++ string "%d\n")
+  
+       (label ".Sprint_int" ++ string "%d\n")
    }
  in
  let f = open_out ofile in
