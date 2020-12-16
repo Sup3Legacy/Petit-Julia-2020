@@ -422,8 +422,8 @@ let compile_program f ofile =
 		popq rbp ++
 		ret ++
 
-		label "print_value" ++ (*Il doit y avoir le type dans rax et la valur dans rbx*)
-		(movq !%rbx !%rdi) ++
+		label "print_value" ++ (* Prend un argument et appelle la fonction print spécialisée en fonction de son type *)
+		(movq !%rbx !%rdi) ++ (*Il doit y avoir le type dans rax et la valur dans rbx*)
 		(cmpq (imm nTypeInt) !%rax) ++
 		je "ifInt" ++
 		(cmpq (imm nTypeFloat) !%rax) ++
@@ -466,7 +466,13 @@ let compile_program f ofile =
 
 		label "print_bool" ++
 		movq !%rdi !%rsi ++
+		cmpq (imm valFalse) !%rsi ++
+		je "print_false" ++
 		movq (ilab ".Sprint_true") !%rdi ++
+		jmp "print_end" ++
+		label "print_false" ++
+		movq (ilab ".Sprint_false") !%rdi ++
+		label "print_end" ++
 		movq (imm 0) !%rax ++
 		call "printf" ++
     ret ++
@@ -484,7 +490,6 @@ let compile_program f ofile =
        (label ".Sprint_int" ++ string "%d") ++
 			 (label ".Sprint_float" ++ string "%f") ++
 			 (label ".Sprint_string" ++ string "%s") ++
-			 (label ".Sprint_bool" ++ string "%q") ++
 			 (label ".Sprint_endline" ++ string "\n") ++
 			 (label ".Sprint_true" ++ string "true") ++
 			 (label ".Sprint_false" ++ string "false")
