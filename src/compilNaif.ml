@@ -233,7 +233,7 @@ let rec compile_expr = function
 	| Entier i -> pushq (imm nTypeInt) ++ pushq (imm64 i)
 	| Flottant f -> (*pushq (imm nTypeFloat) ++ pushq (immD f)*) (* À changer *)
 		let n = string_of_int (Hashtbl.find fMap (string_of_float f)) in
-		pushq (imm nTypeFloat) ++ pushq (lab ("$float_"^n))
+		pushq (imm nTypeFloat) ++ pushq (lab ("float_"^n))
 	| Chaine s ->
 		let n = string_of_int (Hashtbl.find sMap s) in
 		pushq (imm nTypeString) ++ (if estMac then (fun x -> leaq x rax ++ pushq !%rax) else pushq) (lab ("string_"^n))
@@ -309,7 +309,7 @@ let rec compile_expr = function
 	  | Minus -> (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
 							    (cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
 							    (pushq (imm nTypeInt)) ++
-							    (subq !%rdx !%rbx) ++ (pushq !%rbx)
+							    (subq !%rbx !%rdx) ++ (pushq !%rdx)
 	  | Times -> (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
 							    (cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
 							    (pushq (imm nTypeInt)) ++
