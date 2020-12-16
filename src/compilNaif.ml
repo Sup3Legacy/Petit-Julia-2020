@@ -107,7 +107,7 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 				eL
 				(offset, [])
 		in Bloc eL, offset
-	| CallE ((ident, iSet:(string * ISet.t)), eL) ->
+	| CallE ((ident, iSet:(string * ISet.t)), eL) -> begin
 		let (offset, eL) =
 			List.fold_right
 				(fun (_, e) (o1, l) -> let (e1, o2) = alloc_expr env offset e in (min o1 o2, e1::l))
@@ -121,6 +121,7 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 			let arb:AstcompilN.functArbr = calcArb ident (ISet.fold (fun i l -> match Imap.find i f with
 					|StructBuilder l1 |Funct (l1, _, _)  -> (List.fold_right (fun (_, p) l2 -> p::l2) l1 [],i)::l) iSet [])
 			in Call (ident, arb, eL), offset
+		end
 	| NotE (_,e) -> let (e, o) = alloc_expr env offset e in Not e, o
 	| MinusE (_, e) -> let (e, o) = alloc_expr env offset e in Minus e, o
 	| BinopE (o, (_, e1), (_, e2)) ->
@@ -207,25 +208,25 @@ let newFlagArb () =
 	compteurArbreAppel := 1 +t;
 	"jmp"^string_of_int t
 
-let rec buildArb (p:int) (l:string):functArbr -> [`text] asm = function
-	|Failure -> label l ++ jmp exitLabel
-	|Feuille (s,i) -> label l ++ call (s^"_"^string_of_int i)
+let rec buildArb (p:int) (f:string) (l:string):functArbr -> [`text] asm = function
+	|Failure -> (print_string l;print_newline ();label l ++ jmp exitLabel)
+	|Feuille (s,i) -> label l ++ call (s^"_"^string_of_int i) ++ jmp f
 	|Appels tM ->
 		if TypeMap.cardinal tM == 1 then
-			if TypeMap.mem Any tM then buildArb (p-1) l (TypeMap.find Any tM)
+			if TypeMap.mem Any tM then buildArb (p-1) f l (TypeMap.find Any tM)
 			else
 				let (t,arb) = TypeMap.choose tM in
-				label l ++ cmpq (imm (int_of_type t)) (ind ~ofs:(16*p - 8) rsp) ++ jne exitLabel ++ buildArb (p-1) (newFlagArb ()) arb
+				label l ++ cmpq (imm (int_of_type t)) (ind ~ofs:(16*p - 8) rsp) ++ jne exitLabel ++ buildArb (p-1) f (newFlagArb ()) arb
 		else
 			let (c1,l1) = TypeMap.fold (fun k a (c,l) -> if k=Any then (c,l)
 								else let dir = newFlagArb () in
 								(c ++ cmpq (imm (int_of_type k)) (ind ~ofs:(16*p - 8) rsp) ++ je dir, (dir,a)::l)
 							) tM (label l, []) in
 			let c = if TypeMap.mem Any tM then
-					buildArb (p-1) (newFlagArb ()) (TypeMap.find Any tM)
+					buildArb (p-1) f (newFlagArb ()) (TypeMap.find Any tM)
 				else
 					jmp exitLabel in
-			let c2 = List.fold_left (fun c (dir,a) -> c ++ buildArb (p-1) dir a) (c1 ++ c) l1 in
+			let c2 = List.fold_left (fun c (dir,a) -> c ++ buildArb (p-1) f dir a) (c1 ++ c) l1 in
 			c2
 
 
@@ -261,7 +262,10 @@ let rec compile_expr = function
 			end
 		else
 			begin
-				e ++ (buildArb (List.length expList) (newFlagArb ()) funcArbr) ++
+				let flagfin = newFlagArb () in 
+				let flagdeb = newFlagArb () in 
+				e ++ (buildArb (List.length expList) flagfin flagdeb funcArbr) ++
+				label flagfin ++
 				popn (16 * List.length expList) ++ (pushq !%rax) ++ pushq !%rbx
 			end
 	| Not expr ->
@@ -321,9 +325,13 @@ let rec compile_expr = function
 	  | Or -> (cmpq (imm nTypeBool) !%rax) ++ (jne exitLabel) ++ (cmpq (imm nTypeBool) !%rcx) ++ (jne exitLabel) ++
 	  							(orq !%rbx !%rdx) ++ (pushq (imm nTypeBool)) ++ (pushq !%rdx)
 		in ins1 ++ ins2 ++ depilation ++ operation
-	| Ident label ->
-		let offset = 0 in (* /!\ distinction local/global *)
-		(pushq (ind ~ofs:offset rbp)) ++ (pushq (ind ~ofs:(offset + 8) rbp))
+	| Ident (Tag name) -> 
+		if estMac then 
+			leaq (lab (name^"_type")) rax ++ pushq !%rax ++ leaq (lab (name^"_val")) rax ++ pushq !%rax
+		else 
+			pushq (lab (name^"_type")) ++ pushq (lab (name^"_val"))
+	| Ident (Dec offset) -> 
+		pushq (ind ~ofs:(offset+8) rbp) ++ pushq (ind ~ofs:offset rbp)
 	| Index (exp, ident, offset) ->
 		let numClasse = assert false in
 		(compile_expr exp) ++ (popq rbx) ++ (popq rax) ++ (cmpq !%rax (imm numClasse)) ++ (jne exitLabel) ++ (movq (ind ~ofs:(offset + 8) rbx) !%rax) ++ (movq (ind ~ofs:offset rbx) !%rbx)
@@ -375,16 +383,17 @@ let compile_function f e fpmax =
 
 
 let compile_fun (n:string) (i:int) = function
-  |Funct (argL, tmap, (_, eL)) ->
+  |Funct (argL, tmap, (_, eL)) -> (
   	let (_, env) = List.fold_right (fun (i, _) (n,t) -> (n + 16, Tmap.add i n t)) argL (16, Tmap.empty) in
 		let env2, fpcur2 = Tmap.fold (fun k _ (m, n) -> if Tmap.mem k env then (m,n) else (Tmap.add k (n-16) m, n-16)) tmap (env, 0) in
 		let (eL,o2) = List.fold_right (fun (_, e) (l, o1) -> let e,o2 = (alloc_expr env fpcur2 e) in (e::l, min o1 o2)) eL ([], fpcur2) in
   	let code = List.fold_left (fun c e -> c ++ compile_expr e ++ popq rbx ++ popq rax) nop eL in
+    label (n^"_"^string_of_int i)++
     pushq !%rbp ++ movq !%rsp !%rbp ++
     pushn (-o2) ++
     code ++
     movq !%rbp !%rsp ++ popq rbp ++
-    ret
+    ret)
   |StructBuilder eL ->
     let nType = assert false in
     let n = List.length eL in
@@ -492,6 +501,8 @@ let compile_program f ofile =
     ret ++
 
 		label exitLabel ++
+		deplq (lab ".Sprint_error") ++
+		call "printf" ++
 		movq !%r12 !%rsp ++
 		popq rbp ++
 		popq r12 ++ popq rbx ++
@@ -507,7 +518,8 @@ let compile_program f ofile =
 			 (label ".Sprint_string" ++ string "%s") ++
 			 (label ".Sprint_endline" ++ string "\n") ++
 			 (label ".Sprint_true" ++ string "true") ++
-			 (label ".Sprint_false" ++ string "false")
+			 (label ".Sprint_false" ++ string "false") ++
+			 (label ".Sprint_error" ++ string "type failure\n")
    }
  in
  let f = open_out ofile in
