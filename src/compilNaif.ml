@@ -236,7 +236,7 @@ let rec compile_expr = function
 		pushq (imm nTypeFloat) ++ pushq (lab ("$float_"^n))
 	| Chaine s ->
 		let n = string_of_int (Hashtbl.find sMap s) in
-		pushq (imm nTypeString) ++ pushq (lab ("$string_"^n))
+		pushq (imm nTypeString) ++ (if estMac then (fun x -> leaq x rax ++ pushq !%rax) else pushq) (lab ("string_"^n))
 	| True -> pushq (imm nTypeBool) ++ pushq (imm valTrue)
 	| False -> pushq (imm nTypeBool) ++ pushq (imm valFalse)
 	| Nothing -> pushq (imm nTypeNothing) ++ pushq (imm 0)
@@ -256,8 +256,8 @@ let rec compile_expr = function
 		let e = parcours expList in
 		if ident = "print" then
 			begin
-			e ++ (pushq (imm (List.length expList))) ++ (buildArb (List.length expList) (newFlagArb ()) funcArbr) ++
-			popn (16 * List.length expList) ++ (pushq !%rax) ++ pushq !%rbx
+			e ++ (movq (imm (List.length expList)) !%rsi) ++ call "print_0" ++
+			popn (16 * List.length expList) ++ (pushq (imm nTypeNothing)) ++ pushq !%rbx
 			end
 		else
 			begin
@@ -402,6 +402,7 @@ let compile_program f ofile =
  let (eL, i, smap, fmap) = alloc_fichier f in
  let code = List.fold_left (fun d e -> (if d!=nop then d ++ popn 16 else nop) ++ compile_expr e) nop eL in
  let codefun = Tmap.fold (fun k imap asm -> Imap.fold (fun i f asm2 -> asm2 ++ compile_fun k i f) imap asm) fmap nop in
+ let deplq = if estMac then (fun x -> leaq x rdi) else (fun x -> movq x !%rdi) in
  let p =
    { text =
 		globl "main" ++ label "main" ++
@@ -419,15 +420,15 @@ let compile_program f ofile =
 		label "print_0" ++ (* Fonction principale print *)
 		pushq !%rbp ++
 		movq !%rsp !%rbp ++
-		movq (ind ~ofs:(16) rbp) !%r13 ++ (* Compteur d'arguments /!\ un seul mot!! *)
+		movq !%rsi !%r13 ++ (* Compteur d'arguments /!\ un seul mot!! *)
 		label "print_loop" ++
 		cmpq (imm 0) !%r13 ++
 		je "print_exit" ++
 		movq !%r13 !%r9 ++
 		imulq (imm 2) !%r9 ++
 		 (* Nouvel index *)
-		movq (ind ~ofs:(8) ~index:r9 ~scale:8 rbp) !%rbx ++
-		movq (ind ~ofs:(16) ~index:r9 ~scale:8 rbp) !%rax ++
+		movq (ind  ~index:r9 ~scale:8 rbp) !%rbx ++
+		movq (ind ~ofs:(8) ~index:r9 ~scale:8 rbp) !%rax ++
 		call "print_value" ++
 		decq !%r13 ++
 		jmp "print_loop" ++
@@ -460,14 +461,14 @@ let compile_program f ofile =
 
 		label "print_int" ++
 		movq !%rdi !%rsi ++
-		movq (ilab ".Sprint_int") !%rdi ++
+		deplq (lab ".Sprint_int") ++
 		movq (imm 0) !%rax ++
 		call "printf" ++
     ret ++
 
 		label "print_float" ++
 		movq !%rdi !%rsi ++
-		movq (ilab ".Sprint_float") !%rdi ++
+		deplq (lab ".Sprint_float") ++
 		movq (imm 0) !%rax ++
 		call "printf" ++
     ret ++
@@ -481,10 +482,10 @@ let compile_program f ofile =
 		movq !%rdi !%rsi ++
 		cmpq (imm valFalse) !%rsi ++
 		je "print_false" ++
-		movq (ilab ".Sprint_true") !%rdi ++
+		deplq (lab ".Sprint_true") ++
 		jmp "print_end" ++
 		label "print_false" ++
-		movq (ilab ".Sprint_false") !%rdi ++
+		deplq (lab ".Sprint_false") ++
 		label "print_end" ++
 		movq (imm 0) !%rax ++
 		call "printf" ++

@@ -48,7 +48,7 @@ let handle () =
   (* Sorti dy try_with pour voir les erreurs jetées par la production de code *)
   let e = Parser.fichier Lexer.token lb in
   let fichierType = Typer.typerCompilateur e gVenv gFenv gSenv gAenv in
-  CompilNaif.compile_program fichierType (!Hyper.file ^ ".s");
+  CompilNaif.compile_program fichierType (((Filename.chop_suffix !Hyper.file ".jl")) ^ ".s");
 
   try
     let e = Parser.fichier Lexer.token lb

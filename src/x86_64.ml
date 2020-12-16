@@ -288,7 +288,7 @@ let sarw a b = ins "sarw %a, %a" a () b ()
 let sarl a b = ins "sarl %a, %a" a () b ()
 let sarq a b = ins "sarq %a, %a" a () b ()
 
-let jmp (z: label) = ins "jmp %s" z
+let jmp (z: label) = ins "jmp %a" mangle z
 let jmp_star o = ins "jmp *%a" o ()
 
 let call (z: label) = ins "call %a" mangle z
@@ -296,20 +296,20 @@ let call_star z = ins "call *%a" z ()
 let leave = ins "leave"
 let ret = ins "ret"
 
-let je (z: label) = ins "je %s" z
-let jz (z: label) = ins "jz %s" z
-let jne(z: label) = ins "jne %s" z
-let jnz(z: label) = ins "jnz %s" z
-let js (z: label) = ins "js %s" z
-let jns(z: label) = ins "jns %s" z
-let jg (z: label) = ins "jg %s" z
-let jge(z: label) = ins "jge %s" z
-let jl (z: label) = ins "jl %s" z
-let jle(z: label) = ins "jle %s" z
-let ja (z: label) = ins "ja %s" z
-let jae(z: label) = ins "jae %s" z
-let jb (z: label) = ins "jb %s" z
-let jbe(z: label) = ins "jbe %s" z
+let je (z: label) = ins "je %a" mangle z
+let jz (z: label) = ins "jz %a" mangle z
+let jne(z: label) = ins "jne %a" mangle z
+let jnz(z: label) = ins "jnz %a" mangle z
+let js (z: label) = ins "js %a" mangle z
+let jns(z: label) = ins "jns %a" mangle z
+let jg (z: label) = ins "jg %a" mangle z
+let jge(z: label) = ins "jge %a" mangle z
+let jl (z: label) = ins "jl %a" mangle z
+let jle(z: label) = ins "jle %a" mangle z
+let ja (z: label) = ins "ja %a" mangle z
+let jae(z: label) = ins "jae %a" mangle z
+let jb (z: label) = ins "jb %a" mangle z
+let jbe(z: label) = ins "jbe %a" mangle z
 
 let cmpb a b = ins "cmpb %a, %a" a () b ()
 let cmpw a b = ins "cmpw %a, %a" a () b ()
