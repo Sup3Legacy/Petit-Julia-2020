@@ -339,8 +339,8 @@ let rec compile_expr = function
 		let c1 = compile_bloc bloc in
 		let c2 = compile_else_ else_ in
 		let (label1, label2) = (getIf (), getIf ()) in
-		c ++ (popq rbx) ++ (popq rax) ++ (cmpq !%rax (imm nTypeBool)) ++ (jne exitLabel) ++
-		(cmpq !%rbx (imm 0)) ++ (jne label1) ++ c1 ++ (jmp label2) ++ (label label1) ++ c2 ++ (label label2)
+		c ++ (popq rbx) ++ (popq rax) ++ (cmpq (imm nTypeBool) !%rax) ++ (jne exitLabel) ++
+		(cmpq (imm valFalse) !%rbx) ++ (je label1) ++ c1 ++ (jmp label2) ++ (label label1) ++ c2 ++ (label label2)
 and compile_else_ = function
 	| End -> nop
 	| Else bloc -> compile_bloc bloc
