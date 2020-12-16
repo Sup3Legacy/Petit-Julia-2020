@@ -372,6 +372,7 @@ val comment : string -> [> ] asm
 (** {2 Données } *)
 
 val string : string -> data
+val double : float -> data
   (** une constante chaîne de caractères (terminée par 0) *)
 val dbyte : int list -> data
 val dword : int list -> data

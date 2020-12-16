@@ -22,9 +22,12 @@ let compteurFor = ref 0
 let compteurWhile = ref 0
 let compteurIf = ref 0
 let compteurFunc = ref 0
+
 let compteurString = ref 0
+let compteurFloat = ref 0
 
 let sMap = Hashtbl.create 8
+let fMap = Hashtbl.create 8
 
 let getFor () =
 	let temp = !compteurFor in
@@ -78,7 +81,15 @@ let rec calcArb s = function
 
 let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN.expression * int) = function
 	| EntierE i -> Entier i, offset
-	| FlottantE f -> Flottant f, offset
+	| FlottantE f ->
+		begin
+		let s = string_of_float f in
+		if not (Hashtbl.mem fMap s)
+		then
+			(Hashtbl.add fMap s !compteurFloat;
+			compteurFloat := !compteurFloat + 1);
+		Flottant f, offset
+		end
 	| ChaineE s ->
 		begin
 		if not (Hashtbl.mem sMap s)
@@ -220,7 +231,9 @@ let rec buildArb (p:int) (l:string):functArbr -> [`text] asm = function
 
 let rec compile_expr = function
 	| Entier i -> pushq (imm nTypeInt) ++ pushq (imm64 i)
-	| Flottant f -> pushq (imm nTypeFloat) ++ pushq (immD f) (* À changer *)
+	| Flottant f -> (*pushq (imm nTypeFloat) ++ pushq (immD f)*) (* À changer *)
+		let n = string_of_int (Hashtbl.find fMap (string_of_float f)) in
+		pushq (imm nTypeFloat) ++ pushq (lab ("$float_"^n))
 	| Chaine s ->
 		let n = string_of_int (Hashtbl.find sMap s) in
 		pushq (imm nTypeString) ++ pushq (lab ("$string_"^n))
@@ -486,9 +499,10 @@ let compile_program f ofile =
        codefun;
      data =
        Hashtbl.fold (fun x i l -> l ++ label ("string_"^string_of_int i) ++ string (Scanf.unescaped x)) sMap nop ++
+			 Hashtbl.fold (fun x i l -> l ++ label ("float_"^string_of_int i) ++ (double (float_of_string x))) fMap nop ++
 
        (label ".Sprint_int" ++ string "%d") ++
-			 (label ".Sprint_float" ++ string "%f") ++
+			 (label ".Sprint_float" ++ string "%e") ++
 			 (label ".Sprint_string" ++ string "%s") ++
 			 (label ".Sprint_endline" ++ string "\n") ++
 			 (label ".Sprint_true" ++ string "true") ++

@@ -89,6 +89,25 @@ let r13b = "%r13b"
 let r14b = "%r14b"
 let r15b = "%r15b"
 
+
+(* registres flottants *)
+let xmm0 = "%xmm0"
+let xmm1 = "%xmm1"
+let xmm2 = "%xmm2"
+let xmm3 = "%xmm3"
+let xmm4 = "%xmm4"
+let xmm5 = "%xmm5"
+let xmm6 = "%xmm6"
+let xmm7 = "%xmm7"
+let xmm8 = "%xmm8" (* de xmm8 à xmm15 : caller-saved *)
+let xmm9 = "%xmm9"
+let xmm10 = "%xmm10"
+let xmm11 = "%xmm11"
+let xmm12 = "%xmm12"
+let xmm13 = "%xmm13"
+let xmm14 = "%xmm14"
+let xmm15 = "%xmm15"
+
 type label = string
 
 type 'size operand = formatter -> unit -> unit
@@ -210,20 +229,20 @@ let addw a b = ins "addw %a, %a" a () b ()
 let addl a b = ins "addl %a, %a" a () b ()
 let addq a b = ins "addq %a, %a" a () b ()
 let addss a b = ins "adds %a, %a" a () b ()
-let addsd a b = ins "adds %a, %a" a () b ()
+let addsd a b = ins "adds %a, %a" a () b () (* Addition double précision *)
 
 let subb a b = ins "subb %a, %a" a () b ()
 let subw a b = ins "subw %a, %a" a () b ()
 let subl a b = ins "subl %a, %a" a () b ()
 let subq a b = ins "subq %a, %a" a () b ()
 let subss a b = ins "subss %a, %a" a () b ()
-let subsd a b = ins "subsd %a, %a" a () b ()
+let subsd a b = ins "subsd %a, %a" a () b () (* Soustraction double précision *)
 
 let imulw a b = ins "imulw %a, %a" a () b ()
 let imull a b = ins "imull %a, %a" a () b ()
 let imulq a b = ins "imulq %a, %a" a () b ()
 let mulss a b = ins "imulss %a, %a" a () b ()
-let mulsd a b = ins "imulsd %a, %a" a () b ()
+let mulsd a b = ins "imulsd %a, %a" a () b () (* multiplication double précision *)
 
 let idivq a = ins "idivq %a" a ()
 let divss a b = ins "divss %a, %a" a () b ()
@@ -329,6 +348,7 @@ let dint  l = ins ".int %a" pr_ilist l
 let dword l = ins ".word %a" pr_ilist l
 let dquad l = ins ".quad %a" pr_ilist l
 let string s = ins ".string %S" s
+let double d = ins ".double %f" d
 
 let address l = ins ".quad %a" pr_alist l
 let space n = ins ".space %d" n
