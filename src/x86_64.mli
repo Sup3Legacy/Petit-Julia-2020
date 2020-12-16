@@ -129,6 +129,24 @@ val r14b: [`B] register
 val r15b: [`B] register
   (** registres 8 bits *)
 
+val xmm0: [`Q] register
+val xmm1: [`Q] register
+val xmm2: [`Q] register
+val xmm3: [`Q] register
+val xmm4: [`Q] register
+val xmm5: [`Q] register
+val xmm6: [`Q] register
+val xmm7: [`Q] register
+val xmm8: [`Q] register
+val xmm9: [`Q] register
+val xmm10: [`Q] register
+val xmm11: [`Q] register
+val xmm12: [`Q] register
+val xmm13: [`Q] register
+val xmm14: [`Q] register
+val xmm15: [`Q] register
+
+
 (** {1 Opérandes } *)
 
 type 'size operand

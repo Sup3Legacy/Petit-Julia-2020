@@ -129,7 +129,7 @@ let ind ?(ofs=0) ?index ?(scale=1) r = fun fmt () -> match index with
 let abslab (l: label) = fun fmt () -> fprintf fmt "$%a" mangle l
 let rellab (l: label) = fun fmt () -> fprintf fmt "%a(%%rip)" mangle l
 let lab = if estMac then rellab else abslab
-let ilab (l: label) = fun fmt () -> fprintf fmt "$%a" mangle l
+let ilab (l: label) = fun fmt () -> fprintf fmt "(%a)" mangle l
 
 type 'a asm =
   | Nop

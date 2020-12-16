@@ -234,7 +234,7 @@ let rec compile_expr = function
 	| Entier i -> pushq (imm nTypeInt) ++ pushq (imm64 i)
 	| Flottant f -> (*pushq (imm nTypeFloat) ++ pushq (immD f)*) (* À changer *)
 		let n = string_of_int (Hashtbl.find fMap (string_of_float f)) in
-		pushq (imm nTypeFloat) ++ pushq (lab ("float_"^n))
+		pushq (imm nTypeFloat) ++ pushq (ilab ("float_"^n))
 	| Chaine s ->
 		let n = string_of_int (Hashtbl.find sMap s) in
 		pushq (imm nTypeString) ++ (if estMac then (fun x -> leaq x rax ++ pushq !%rax) else pushq) (lab ("string_"^n))
@@ -262,8 +262,8 @@ let rec compile_expr = function
 			end
 		else
 			begin
-				let flagfin = newFlagArb () in 
-				let flagdeb = newFlagArb () in 
+				let flagfin = newFlagArb () in
+				let flagdeb = newFlagArb () in
 				e ++ (buildArb (List.length expList) flagfin flagdeb funcArbr) ++
 				label flagfin ++
 				popn (16 * List.length expList) ++ (pushq !%rax) ++ pushq !%rbx
@@ -325,12 +325,12 @@ let rec compile_expr = function
 	  | Or -> (cmpq (imm nTypeBool) !%rax) ++ (jne exitLabel) ++ (cmpq (imm nTypeBool) !%rcx) ++ (jne exitLabel) ++
 	  							(orq !%rbx !%rdx) ++ (pushq (imm nTypeBool)) ++ (pushq !%rdx)
 		in ins1 ++ ins2 ++ depilation ++ operation
-	| Ident (Tag name) -> 
-		if estMac then 
+	| Ident (Tag name) ->
+		if estMac then
 			leaq (lab (name^"_type")) rax ++ pushq !%rax ++ leaq (lab (name^"_val")) rax ++ pushq !%rax
-		else 
+		else
 			pushq (lab (name^"_type")) ++ pushq (lab (name^"_val"))
-	| Ident (Dec offset) -> 
+	| Ident (Dec offset) ->
 		pushq (ind ~ofs:(offset+8) rbp) ++ pushq (ind ~ofs:offset rbp)
 	| Index (exp, ident, offset) ->
 		let numClasse = assert false in
@@ -476,10 +476,11 @@ let compile_program f ofile =
     ret ++
 
 		label "print_float" ++
-		movq !%rdi !%rsi ++
+		movq !%rdi !%xmm0 ++
 		deplq (lab ".Sprint_float") ++
-		movq (imm 0) !%rax ++
+		movq (imm 1) !%rax ++
 		call "printf" ++
+		movq (imm 0) !%rax ++
     ret ++
 
 		label "print_string" ++
@@ -514,7 +515,7 @@ let compile_program f ofile =
 			 Hashtbl.fold (fun x i l -> l ++ label ("float_"^string_of_int i) ++ (double (float_of_string x))) fMap nop ++
 
        (label ".Sprint_int" ++ string "%d") ++
-			 (label ".Sprint_float" ++ string "%e") ++
+			 (label ".Sprint_float" ++ string "%f") ++
 			 (label ".Sprint_string" ++ string "%s") ++
 			 (label ".Sprint_endline" ++ string "\n") ++
 			 (label ".Sprint_true" ++ string "true") ++
