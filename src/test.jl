@@ -1,1 +1,3 @@
-println(1 + 39 * 3, " abc ", 3 < 1);
+while 1 == 2
+    println(12, " abc ", 3 < 1);
+end;

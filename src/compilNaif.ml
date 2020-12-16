@@ -331,7 +331,7 @@ let rec compile_expr = function
 		let e = compile_expr exp in
 		let b = compile_bloc bloc in
 		let (label1, label2) = (getWhile (), getWhile ()) in
-		let comp = (label label1) ++ e ++ (popq rbx) ++ (popq rax) ++ (cmpq (imm (nTypeBool)) !%rax) ++ (jne exitLabel) ++ (cmpq !%rbx (imm valTrue)) ++ (jne label2) in
+		let comp = (label label1) ++ e ++ (popq rbx) ++ (popq rax) ++ (cmpq (imm (nTypeBool)) !%rax) ++ (jne exitLabel) ++ (cmpq (imm valTrue) !%rbx) ++ (jne label2) in
 		let corps = b ++ (jmp label1) ++ (label label2) in
 		comp ++ corps
 	| If (exp, bloc, else_) ->
