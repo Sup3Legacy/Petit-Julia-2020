@@ -45,11 +45,6 @@ let handle () =
   let c = open_in !(Hyper.file) in
   let lb = Lexing.from_channel c in
 
-  (* Sorti dy try_with pour voir les erreurs jetées par la production de code *)
-  let e = Parser.fichier Lexer.token lb in
-  let fichierType = Typer.typerCompilateur e gVenv gFenv gSenv gAenv in
-  CompilNaif.compile_program fichierType (((Filename.chop_suffix !Hyper.file ".jl")) ^ ".s");
-
   try
     let e = Parser.fichier Lexer.token lb
     in
@@ -59,7 +54,11 @@ let handle () =
       exit 0;
       end;
     let fichierType = Typer.typerCompilateur e gVenv gFenv gSenv gAenv in
-    let _ = CompilNaif.alloc_fichier fichierType in
+    if !type_only then begin
+      if !show_fName then print_endline !(Hyper.file); (* On peut switch entre afficher le nom (ie. compil réussie) et afficher l'arbre généré *)
+      exit 0;
+      end
+    else CompilNaif.compile_program fichierType (((Filename.chop_suffix !Hyper.file ".jl")) ^ ".s");
     if !affiche then print_endline (show_fichier e)
     else if !show_fName then print_endline !(Hyper.file);
     (* CompilNaif.compile_program fichierType (!Hyper.file ^ ".s"); *)
