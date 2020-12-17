@@ -66,14 +66,14 @@ let rec calcArb s = function
 	|[] -> Failure
 	|([],i,j)::tl -> begin
 		let (l, mini) = List.fold_left (fun (l, m) (_, i2, j2) -> if j2 < m then ([i2], j2) else if j2 > m then (l, m) else (i2::l, m)) ([i],j) tl in
-		match l with 
+		match l with
 			|[] -> assert false
 			|[i] -> Feuille (s, i)
 			|_ -> Failure
 		end
 	|l -> let tM1 = List.fold_left (fun t (l, i, j) -> match l with
 				|[] -> assert false
-				|hd::tl -> 
+				|hd::tl ->
 					let j = j + (if hd=Any then 1 else 0) in
 					if TypeMap.mem hd t then
 						let l1 = TypeMap.find hd t in TypeMap.add hd ((tl, i, j)::l1) t
@@ -90,6 +90,7 @@ let rec calcArb s = function
 let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN.expression * int) = function
 	| EntierE i -> Entier i, offset
 	| FlottantE f ->
+		(* Tout comme les strings, les immediats flottants doivent être mis dans .data *)
 		begin
 		let s = string_of_float f in
 		if not (Hashtbl.mem fMap s)
@@ -432,6 +433,13 @@ let compile_program f ofile =
 		popq rbp ++
 		popq r12 ++ popq rbx ++
 		movq (imm 0) !%rax ++ (* exit *)
+		ret ++
+
+		label "div" ++ (* Fonction de division entière *)
+		pushq !%rbp ++
+		movq !%rsp !%rbp ++
+
+		popq rbp ++
 		ret ++
 
 		label "print_0" ++ (* Fonction principale print *)
