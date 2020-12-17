@@ -296,7 +296,7 @@ let rec compile_expr = function
 							  (pushq (imm nTypeBool)) ++
 							  (cmpq !%rbx !%rdx) ++ (jge label1) ++ (pushq (imm valTrue)) ++
 							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valFalse)) ++ (label label2)
-	  | Gr -> (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
+	  | Gr -> (cmpq !%rax (imm nTypeInt)) ++ (jne exitLabel) ++
 							  (cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
 							  (pushq (imm nTypeBool)) ++
 							  (cmpq !%rbx !%rdx) ++ (jle label1) ++ (pushq (imm valTrue)) ++
