@@ -125,8 +125,10 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 		in
 		if ident = "print" then
 			Call (ident, Feuille ("print", 0), eL), offset
+		else if ident = "div" then 
+			Call (ident, Feuille ("div", 0), eL), offset
 		else
-			let f = Tmap.find ident !functionMap in
+			let f = try Tmap.find ident !functionMap with Not_found -> failwith ("not found "^ident) in
 			let arb:AstcompilN.functArbr = calcArb ident (ISet.fold (fun i l -> match Imap.find i f with
 					|StructBuilder l1 |Funct (l1, _, _)  -> (List.fold_right (fun (_, p) l2 -> p::l2) l1 [],i,0)::l) iSet [])
 			in Call (ident, arb, eL), offset
@@ -143,7 +145,8 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 			| IdentL (_, ident, false) -> Ident (Tag ident), offset
 			| IndexL ((_, e), nameS, nameC) ->
 				let (e, offset) = alloc_expr env offset e in
-				let i2 = assert false in
+				let map = fst (Smap.find nameS !structMap) in
+				let i2 = 16 * fst (Smap.find nameC map) in
 				Index (e, nameS, i2), offset
 		end
 	| LvalueAffectE (l, (_, e)) -> begin
@@ -153,7 +156,8 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 			| IdentL (_, ident, true) -> LvalueAffectV (Dec (Tmap.find ident env), e), offset
 			| IndexL ((_, e2), nameS, nameC) ->
 				let (e2, o2) = alloc_expr env offset e2 in
-				let i2 = assert false in
+				let map = fst (Smap.find nameS !structMap) in
+				let i2 = 16 * fst (Smap.find nameC map) in
 				LvalueAffectI (e2, nameS, i2, e), min o2 offset
 		end
 	| ReturnE (p, None) -> Ret (p, Nothing), offset (* À vérifier *)
@@ -214,7 +218,7 @@ let newFlagArb () =
 	"jmp"^string_of_int t
 
 let rec buildArb (p:int) (f:string) (l:string):functArbr -> [`text] asm = function
-	|Failure -> (print_string l;print_newline ();label l ++ jmp exitLabel)
+	|Failure -> (label l ++ jmp exitLabel)
 	|Feuille (s,i) -> label l ++ call (s^"_"^string_of_int i) ++ jmp f
 	|Appels tM ->
 		if TypeMap.cardinal tM == 1 then
@@ -265,6 +269,10 @@ let rec compile_expr = function
 			e ++ (movq (imm (List.length expList)) !%rsi) ++ call "print_0" ++
 			popn (16 * List.length expList) ++ (pushq (imm nTypeNothing)) ++ pushq !%rbx
 			end
+		else if ident = "div" then 
+			e ++ cmpq (imm nTypeInt) (ind ~ofs:8 rsp) ++ je exitLabel ++ 
+			cmpq (imm nTypeInt) (ind ~ofs:24 rsp) ++ je exitLabel ++
+			call "div"
 		else
 			begin
 				let flagfin = newFlagArb () in
@@ -437,6 +445,7 @@ let compile_program f ofile =
 		pushq !%rbp ++
 		movq !%rsp !%rbp ++
 
+		movq !%rsp !%rbp ++
 		popq rbp ++
 		ret ++
 
