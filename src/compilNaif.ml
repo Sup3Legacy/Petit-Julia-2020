@@ -270,10 +270,11 @@ let rec compile_expr = function
 			popn (16 * List.length expList) ++ (pushq (imm nTypeNothing)) ++ pushq !%rbx
 			end
 		else if ident = "div" then 
-			e ++ cmpq (imm nTypeInt) (ind ~ofs:8 rsp) ++ je exitLabel ++ 
-			cmpq (imm nTypeInt) (ind ~ofs:24 rsp) ++ je exitLabel ++
-			call "div" ++
-			popn 32 ++ (pushq (imm nTypeInt)) ++ pushq !%rax
+			e ++ popq rcx ++ popq rdx ++ popq rbx ++ popq rax ++ 
+					(cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
+	  				(cmpq (imm nTypeInt) !%rdx) ++ (jne exitLabel) ++
+	  				movq !%rbx !%rax ++ xorq !%rdx !%rdx ++
+	  				idivq !%rcx ++ pushq (imm nTypeInt) ++ pushq !%rdx
 		else
 			begin
 				let flagfin = newFlagArb () in
@@ -332,7 +333,10 @@ let rec compile_expr = function
 							    (cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
 							    (pushq (imm nTypeInt)) ++
 							    (imulq !%rdx !%rbx) ++ (pushq !%rbx)
-	  | Modulo -> failwith "Not implemented"
+	  | Modulo -> (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
+	  				(cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
+	  				movq !%rbx !%rax ++ movq !%rdx !%rcx ++ xorq !%rdx !%rdx ++
+	  				idivq !%rcx ++ pushq (imm nTypeInt) ++ pushq !%rdx
 	  | Exp -> failwith "Not implemented"
 	  | And -> (cmpq (imm nTypeBool) !%rax) ++ (jne exitLabel) ++ (cmpq (imm nTypeBool) !%rcx) ++ (jne exitLabel) ++
 	  							(andq !%rbx !%rdx) ++ (pushq (imm nTypeBool)) ++ (pushq !%rdx)
