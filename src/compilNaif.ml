@@ -64,15 +64,23 @@ type local_env = int Smap.t
 
 let rec calcArb s = function
 	|[] -> Failure
-	|([],i)::tl -> if List.length tl = 0 then Feuille (s,i) else Failure
-	|l -> let tM1 = List.fold_left (fun t (l,i) -> match l with
+	|([],i,j)::tl -> begin
+		let (l, mini) = List.fold_left (fun (l, m) (_, i2, j2) -> if j2 < m then ([i2], j2) else if j2 > m then (l, m) else (i2::l, m)) ([i],j) tl in
+		match l with 
+			|[] -> assert false
+			|[i] -> Feuille (s, i)
+			|_ -> Failure
+		end
+	|l -> let tM1 = List.fold_left (fun t (l, i, j) -> match l with
 				|[] -> assert false
-				|hd::tl -> if TypeMap.mem hd t then
-						let l1 = TypeMap.find hd t in TypeMap.add hd ((tl,i)::l1) t
-					else TypeMap.add hd [tl,i] t) TypeMap.empty l in
+				|hd::tl -> 
+					let j = j + (if hd=Any then 1 else 0) in
+					if TypeMap.mem hd t then
+						let l1 = TypeMap.find hd t in TypeMap.add hd ((tl, i, j)::l1) t
+					else TypeMap.add hd [tl,i, j] t) TypeMap.empty l in
 		let tM2 = if TypeMap.mem Any tM1 then
 				let l = TypeMap.find Any tM1 in
-				TypeMap.map (fun l2 -> l@l2) tM1
+				TypeMap.mapi (fun k l2 -> if k = Any then l2 else l@l2) tM1
 			else tM1
 		in
 		let tM3 = TypeMap.map (calcArb s) tM2 in
@@ -119,7 +127,7 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 		else
 			let f = Tmap.find ident !functionMap in
 			let arb:AstcompilN.functArbr = calcArb ident (ISet.fold (fun i l -> match Imap.find i f with
-					|StructBuilder l1 |Funct (l1, _, _)  -> (List.fold_right (fun (_, p) l2 -> p::l2) l1 [],i)::l) iSet [])
+					|StructBuilder l1 |Funct (l1, _, _)  -> (List.fold_right (fun (_, p) l2 -> p::l2) l1 [],i,0)::l) iSet [])
 			in Call (ident, arb, eL), offset
 		end
 	| NotE (_,e) -> let (e, o) = alloc_expr env offset e in Not e, o
