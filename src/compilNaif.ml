@@ -343,7 +343,7 @@ let rec compile_expr = function
 		(compile_expr exp) ++ (popq rbx) ++ (popq rax) ++ (cmpq !%rax (imm numClasse)) ++ (jne exitLabel) ++ (movq (ind ~ofs:(offset + 8) rbx) !%rax) ++ (movq (ind ~ofs:offset rbx) !%rbx)
 	| LvalueAffectV (Tag name, expr) ->
 		let code = compile_expr expr in
-		code ++ (popq rax) ++ movq (lab (name^"_val")) !%rax ++ (popq rbx) ++ movq (lab (name^"_type")) !%rbx ++ pushq !%rbx ++ pushq !%rax
+		code ++ (popq rax) ++ movq !%rax (univerlab (name^"_val")) ++ (popq rbx) ++ movq !%rbx (univerlab (name^"_type")) ++ pushq !%rbx ++ pushq !%rax
 	| LvalueAffectI (exp1, ident, entier, exp2) -> failwith "Not implemented"
 	| Ret (pjtype, exp) ->
 		compile_expr exp ++ (popq rbx) ++ (popq rax) ++

@@ -171,6 +171,8 @@ val ind: ?ofs:int -> ?index:'size1 register -> ?scale:int ->
 val lab: label -> [>] operand
   (** étiquette L  *)
 val ilab: label -> [`Q] operand
+
+val univerlab: label -> [`Q] operand
   (** étiquette immédiate $L *)
 
 (** {1 Instructions } *)

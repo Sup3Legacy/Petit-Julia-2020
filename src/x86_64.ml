@@ -130,6 +130,7 @@ let abslab (l: label) = fun fmt () -> fprintf fmt "$%a" mangle l
 let rellab (l: label) = fun fmt () -> fprintf fmt "%a(%%rip)" mangle l
 let lab = if estMac then rellab else abslab
 let ilab (l: label) = fun fmt () -> fprintf fmt "(%a)" mangle l
+let univerlab = if estMac then lab else ilab
 
 type 'a asm =
   | Nop
