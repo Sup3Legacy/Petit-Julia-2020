@@ -335,7 +335,7 @@ let rec compile_expr = function
 							    (imulq !%rdx !%rbx) ++ (pushq !%rbx)
 	  | Modulo -> (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
 	  				(cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
-	  				movq !%rbx !%rax ++ movq !%rdx !%rcx ++ xorq !%rdx !%rdx ++
+	  				movq !%rdx !%rax ++ movq !%rbx !%rcx ++ xorq !%rdx !%rdx ++
 	  				idivq !%rcx ++ pushq (imm nTypeInt) ++ pushq !%rdx
 	  | Exp -> failwith "Not implemented"
 	  | And -> (cmpq (imm nTypeBool) !%rax) ++ (jne exitLabel) ++ (cmpq (imm nTypeBool) !%rcx) ++ (jne exitLabel) ++
