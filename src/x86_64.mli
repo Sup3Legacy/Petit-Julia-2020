@@ -202,6 +202,8 @@ val movsd: [`Q] operand -> [`Q] register -> text
 val movss: [`L] operand -> [`L] register -> text
   (** deplacement de flottants *)
 
+val cmovs: [`Q] operand -> [`Q] register -> text
+
 val cvtss2sd: [`L] operand -> [`Q] register -> text
 val cvtsd2ss: [`Q] operand -> [`L] register -> text
 

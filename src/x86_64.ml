@@ -190,6 +190,8 @@ let movzwq a b = ins "movzwq %a, %s" a () b
 let movsd a b = ins "movsd %a, %s" a () b
 let movss a b = ins "movsd %a, %s" a () b
 
+let cmovs a b = ins "cmovs %a, %s" a () b
+
 let cvtss2sd a b = ins "movsd %a, %s" a () b
 let cvtsd2ss a b = ins "movsd %a, %s" a () b
 
