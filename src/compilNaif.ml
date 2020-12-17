@@ -341,9 +341,11 @@ let rec compile_expr = function
 	| Ident (Dec offset) ->
 		pushq (ind ~ofs:(offset+8) rbp) ++ pushq (ind ~ofs:offset rbp)
 	| Index (exp, ident, offset) ->
-		let numClasse = assert false in
+		let numClasse = numStruct ident in
 		(compile_expr exp) ++ (popq rbx) ++ (popq rax) ++ (cmpq !%rax (imm numClasse)) ++ (jne exitLabel) ++ (movq (ind ~ofs:(offset + 8) rbx) !%rax) ++ (movq (ind ~ofs:offset rbx) !%rbx)
-	| LvalueAffectV (label, expr) -> failwith "Not implemented"
+	| LvalueAffectV (Tag name, expr) -> 
+		let code = compile_expr expr in
+		code ++ (popq rax) ++ movq !%rax (lab (name^"_val")) ++ (popq rax) ++ movq !%rax (lab (name^"_type"))
 	| LvalueAffectI (exp1, ident, entier, exp2) -> failwith "Not implemented"
 	| Ret (pjtype, exp) ->
 		compile_expr exp ++ (popq rbx) ++ (popq rax) ++
