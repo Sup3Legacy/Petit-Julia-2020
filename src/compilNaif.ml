@@ -344,6 +344,8 @@ let rec compile_expr = function
 	| LvalueAffectV (Tag name, expr) ->
 		let code = compile_expr expr in
 		code ++ (popq rax) ++ movq !%rax (univerlab (name^"_val")) ++ (popq rbx) ++ movq !%rbx (univerlab (name^"_type")) ++ pushq !%rbx ++ pushq !%rax
+	| LvalueAffectV (Dec offset, expr) ->
+		failwith "Not implemented"
 	| LvalueAffectI (exp1, ident, entier, exp2) -> failwith "Not implemented"
 	| Ret (pjtype, exp) ->
 		compile_expr exp ++ (popq rbx) ++ (popq rax) ++
