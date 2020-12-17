@@ -335,10 +335,7 @@ let rec compile_expr = function
 	  							(orq !%rbx !%rdx) ++ (pushq (imm nTypeBool)) ++ (pushq !%rdx)
 		in ins1 ++ ins2 ++ depilation ++ operation
 	| Ident (Tag name) ->
-		if estMac then
-			leaq (lab (name^"_type")) rax ++ pushq !%rax ++ leaq (lab (name^"_val")) rax ++ pushq !%rax
-		else
-			pushq (lab (name^"_type")) ++ pushq (lab (name^"_val"))
+		pushq ((if estMac then lab else ilab) (name^"_type")) ++ pushq ((if estMac then lab else ilab) (name^"_val"))
 	| Ident (Dec offset) ->
 		pushq (ind ~ofs:(offset+8) rbp) ++ pushq (ind ~ofs:offset rbp)
 	| Index (exp, ident, offset) ->
@@ -346,7 +343,7 @@ let rec compile_expr = function
 		(compile_expr exp) ++ (popq rbx) ++ (popq rax) ++ (cmpq !%rax (imm numClasse)) ++ (jne exitLabel) ++ (movq (ind ~ofs:(offset + 8) rbx) !%rax) ++ (movq (ind ~ofs:offset rbx) !%rbx)
 	| LvalueAffectV (Tag name, expr) -> 
 		let code = compile_expr expr in
-		code ++ (popq rax) ++ movq !%rax (lab (name^"_val")) ++ (popq rax) ++ movq !%rax (lab (name^"_type"))
+		code ++ (popq rax) ++ movq !%rax (lab (name^"_val")) ++ (popq rbx) ++ movq !%rbx (lab (name^"_type")) ++ pushq !%rbx ++ pushq !%rax
 	| LvalueAffectI (exp1, ident, entier, exp2) -> failwith "Not implemented"
 	| Ret (pjtype, exp) ->
 		compile_expr exp ++ (popq rbx) ++ (popq rax) ++
@@ -531,7 +528,7 @@ let compile_program f ofile =
      data =
        Hashtbl.fold (fun x i l -> l ++ label ("string_"^string_of_int i) ++ string (Scanf.unescaped x)) sMap nop ++
 			 Hashtbl.fold (fun x i l -> l ++ label ("float_"^string_of_int i) ++ (double (float_of_string x))) fMap nop ++
-			 Tmap.fold (fun x i l -> l ++ label (x^"_type") ++ (dquad [int_of_type i])
+			 Tmap.fold (fun x i l -> l ++ label (x^"_type") ++ (dquad [nTypeUndef])
 			 														++ label (x^"_val") ++ (dquad [0])) smap nop ++
 
        (label ".Sprint_int" ++ string "%d") ++
