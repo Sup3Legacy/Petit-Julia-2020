@@ -125,7 +125,7 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 		in
 		if ident = "print" then
 			Call (ident, Feuille ("print", 0), eL), offset
-		else if ident = "div" then 
+		else if ident = "div" then
 			Call (ident, Feuille ("div", 0), eL), offset
 		else
 			let f = try Tmap.find ident !functionMap with Not_found -> failwith ("not found "^ident) in
@@ -269,12 +269,12 @@ let rec compile_expr = function
 			e ++ (movq (imm (List.length expList)) !%rsi) ++ call "print_0" ++
 			popn (16 * List.length expList) ++ (pushq (imm nTypeNothing)) ++ pushq !%rbx
 			end
-		else if ident = "div" then 
-			e ++ popq rcx ++ popq rdx ++ popq rbx ++ popq rax ++ 
+		else if ident = "div" then
+			e ++ popq rcx ++ popq rdx ++ popq rbx ++ popq rax ++
 					(cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
 	  				(cmpq (imm nTypeInt) !%rdx) ++ (jne exitLabel) ++
 	  				movq !%rbx !%rax ++ xorq !%rdx !%rdx ++
-	  				idivq !%rcx ++ pushq (imm nTypeInt) ++ pushq !%rdx
+	  				idivq !%rcx ++ pushq (imm nTypeInt) ++ pushq !%rax
 		else
 			begin
 				let flagfin = newFlagArb () in
