@@ -276,7 +276,7 @@ let rec compile_expr = function
 	| Not expr ->
 		compile_expr expr ++ (popq rbx) ++ (popq rax) ++
 		(cmpq (imm nTypeBool) !%rax) ++ (jne exitLabel) ++ (* Commande pour exit en cas d'erreur!*)
-		(pushq (imm nTypeBool)) ++ (notq !%rax) ++ (pushq !%rax)
+		(pushq (imm nTypeBool)) ++ (notq !%rbx) ++ (pushq !%rbx)
 	| Minus expr -> compile_expr (Binop (Minus, Entier (Int64.of_int 0), expr))
 	| Binop (op, e1, e2) ->
 		let ins1 = compile_expr e1 in
