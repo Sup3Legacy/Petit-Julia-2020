@@ -112,7 +112,7 @@ let handle () =
             Printf.printf "Lexing error : %s\n" m;
             exit 1
           end
-        | _ -> Printf.printf "Unkown error in file %s\n" !(Hyper.file);
+        | _ -> raise a;Printf.printf "Unkown error in file %s\n" !(Hyper.file);
       exit 1
     end
 ;;

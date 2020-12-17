@@ -272,7 +272,8 @@ let rec compile_expr = function
 		else if ident = "div" then 
 			e ++ cmpq (imm nTypeInt) (ind ~ofs:8 rsp) ++ je exitLabel ++ 
 			cmpq (imm nTypeInt) (ind ~ofs:24 rsp) ++ je exitLabel ++
-			call "div"
+			call "div" ++
+			popn 32 ++ (pushq (imm nTypeInt)) ++ pushq !%rax
 		else
 			begin
 				let flagfin = newFlagArb () in
@@ -442,11 +443,10 @@ let compile_program f ofile =
 		ret ++
 
 		label "div" ++ (* Fonction de division entière *)
-		pushq !%rbp ++
-		movq !%rsp !%rbp ++
-
-		movq !%rsp !%rbp ++
-		popq rbp ++
+        movq (ind ~ofs:8 rsp) !%rcx ++
+        movq (ind ~ofs:24 rsp) !%rax ++
+        xorq !%rdx !%rdx ++
+        idivq !%rax ++
 		ret ++
 
 		label "print_0" ++ (* Fonction principale print *)
