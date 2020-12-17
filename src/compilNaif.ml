@@ -419,7 +419,7 @@ let compile_fun (n:string) (i:int) = function
     ret
 
 let compile_program f ofile =
- let (eL, i, smap, fmap) = alloc_fichier f in
+ let (eL, i, smap, fmap) = alloc_fichier f in (* smap est le map des variables globales *)
  let code = List.fold_left (fun d e -> (if d!=nop then d ++ popn 16 else nop) ++ compile_expr e) nop eL in
  let codefun = Tmap.fold (fun k imap asm -> Imap.fold (fun i f asm2 -> asm2 ++ compile_fun k i f) imap asm) fmap nop in
  let deplq = if estMac then (fun x -> leaq x rdi) else (fun x -> movq x !%rdi) in
@@ -531,6 +531,8 @@ let compile_program f ofile =
      data =
        Hashtbl.fold (fun x i l -> l ++ label ("string_"^string_of_int i) ++ string (Scanf.unescaped x)) sMap nop ++
 			 Hashtbl.fold (fun x i l -> l ++ label ("float_"^string_of_int i) ++ (double (float_of_string x))) fMap nop ++
+			 Tmap.fold (fun x i l -> l ++ label (x^"_type") ++ (dquad [int_of_type i])
+			 														++ label (x^"_val") ++ (dquad [0])) smap nop ++
 
        (label ".Sprint_int" ++ string "%d") ++
 			 (label ".Sprint_float" ++ string "%f") ++
