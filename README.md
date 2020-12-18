@@ -6,7 +6,7 @@
 
 # 0] Prérequis
 
-Notre projet requiert l'installation, via `opam` de la bibliothèque `ppx_deriving`. + Core_kernel + Core + Yojson + cohttp-lwt-unix + cohttp-async
+Notre projet requiert l'installation, via `opam` de la bibliothèque `ppx_deriving`. + Core_kernel + Core + Yojson + cohttp-lwt-unix + cohttp-async + lwt_ssl
 
 De plus, l'utilisation optimale du **REPL** nécessite l'installation du **wrapper** `rlwrap`, disponible via un gestionnaire standard de packages Linux (disponible aussi sur mac).
 
