@@ -344,16 +344,17 @@ let rec compile_expr = function
 	  							(orq !%rbx !%rdx) ++ (pushq (imm nTypeBool)) ++ (pushq !%rdx)
 		in ins1 ++ ins2 ++ depilation ++ operation
 	| Ident (Tag name) ->
-		pushq ((if estMac then lab else ilab) (name^"_type")) ++ pushq ((if estMac then lab else ilab) (name^"_val"))
+		movq ((if estMac then lab else ilab) (name^"_type")) !%rax ++ movq ((if estMac then lab else ilab) (name^"_val")) !%rbx ++
+		pushq !%rax ++ pushq !%rbx
 	| Ident (Dec offset) ->
 		pushq (ind ~ofs:(offset+8) rbp) ++ pushq (ind ~ofs:offset rbp)
 	| Index (exp, ident, offset) ->
 		let numClasse = numStruct ident in
 		(compile_expr exp) ++ (popq rbx) ++ (popq rax) ++ (cmpq (imm numClasse) !%rax) ++ (jne exitLabel) ++
-		(movq (ind ~ofs:(offset) rbx) !%rax) ++ (movq (ind ~ofs:(offset + 8) rbx) !%rbx) ++ pushq !%rax ++ pushq !%rbx
+		(movq (ind ~ofs:(offset + 0) rbx) !%rax) ++ (movq (ind ~ofs:(offset + 8) rbx) !%rbx) ++ pushq !%rax ++ pushq !%rbx
 	| LvalueAffectV (Tag name, expr) ->
 		let code = compile_expr expr in
-		code ++ (popq rax) ++ movq !%rax (univerlab (name^"_val")) ++ (popq rbx) ++ movq !%rbx (univerlab (name^"_type")) ++ pushq !%rbx ++ pushq !%rax
+		code ++ (popq rbx) ++ (popq rax) ++ movq !%rbx (univerlab (name^"_val")) ++ movq !%rax (univerlab (name^"_type")) ++ pushq !%rax ++ pushq !%rbx
 	| LvalueAffectV (Dec offset, expr) ->
 		let code = compile_expr expr in
 		code ++ (popq rbx) ++ (popq rax) ++ (movq !%rax (ind ~ofs:(offset+8) rbp)) ++ (movq !%rbx (ind ~ofs:offset rbp)) ++ pushq !%rbx ++ pushq !%rax
@@ -365,9 +366,10 @@ let rec compile_expr = function
 		let (cle, (field_index, field_type)) = Tmap.find_first (fun cle -> let (num, _) = Tmap.find cle field_map in num = numero) field_map in
 		let comparaison = (popq r14) ++ (popq rax) ++ (cmpq (imm numeroBis) !%rax) ++ (jne exitLabel) in
 		let target_type = (popq rbx) ++ (popq rax) ++
-			(if field_type != Any then (cmpq (ind ~ofs:(16*entier + 0) r14) !%rax) else nop) ++(* vérification de type qu'on met dans le champ *)
-		 	(movq !%rbx (ind ~ofs:(16*entier + 8) r14)) in
-		code1 ++ comparaison ++ code2 ++ target_type
+			(if field_type != Any then (cmpq (ind ~ofs:(16*entier + 0) r14) !%rax) ++ (jne exitLabel) else nop) ++(* vérification de type qu'on met dans le champ *)
+			(movq !%rax (ind ~ofs:(16*entier + 0) r14)) ++
+			(movq !%rbx (ind ~ofs:(16*entier + 8) r14)) in
+		code1 ++ comparaison ++ code2 ++ target_type ++ pushq !%rax ++ pushq !%rbx
 	| Ret (pjtype, exp) ->
 		compile_expr exp ++ (popq rbx) ++ (popq rax) ++
 		(if pjtype = Any then nop else (cmpq (imm (int_of_type pjtype)) !%rax ++
