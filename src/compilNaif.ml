@@ -199,7 +199,11 @@ let alloc_fichier (eL, varMap, sEnv, fMap:fichierTyper):fichier =
 	(l, o, varMap, fMap)
 
 let pushn n =
-	subq (imm n) !%rsp
+	let c = ref nop in
+	for i = 1 to n do
+		c := !c ++ pushq (imm nTypeUndef) ++ pushq !%rax
+	done;
+	!c
 
 let compteurArbreAppel = ref 0
 
