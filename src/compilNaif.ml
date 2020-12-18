@@ -294,62 +294,71 @@ let rec compile_expr = function
 		let ins2 = compile_expr e2 in
 		let (label1, label2) = getIf (), getIf () in
 		let depilation = (popq rbx) ++ (popq rax) ++ (popq rdx) ++ (popq rcx) in
+		let deb = ins1 ++ ins2 ++ depilation in
 		let operation =
 		match op with
-		| Eq -> (cmpq !%rax !%rcx) ++ (jne exitLabel) ++ (pushq (imm nTypeBool)) ++
+		| Eq -> deb ++ (cmpq !%rax !%rcx) ++ (jne exitLabel) ++ (pushq (imm nTypeBool)) ++
 							 (cmpq !%rbx !%rdx) ++ (je label1) ++ (pushq (imm valFalse)) ++
 							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valTrue)) ++ (label label2)
-	  | Neq -> (cmpq !%rax !%rcx) ++ (jne exitLabel) ++ (pushq (imm nTypeBool)) ++
+	  | Neq -> deb ++ (cmpq !%rax !%rcx) ++ (jne exitLabel) ++ (pushq (imm nTypeBool)) ++
 							  (cmpq !%rbx !%rdx) ++ (je label1) ++ (pushq (imm valTrue)) ++
 							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valFalse)) ++ (label label2)
-	  | Lo -> (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
+	  | Lo -> deb ++ (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
 							  (cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
 							  (pushq (imm nTypeBool)) ++
 							  (cmpq !%rbx !%rdx) ++ (jge label1) ++ (pushq (imm valTrue)) ++
 							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valFalse)) ++ (label label2)
-	  | Gr -> (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
+	  | Gr -> deb ++ (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
 							  (cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
 							  (pushq (imm nTypeBool)) ++
 							  (cmpq !%rbx !%rdx) ++ (jle label1) ++ (pushq (imm valTrue)) ++
 							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valFalse)) ++ (label label2)
-	  | Leq -> (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
+	  | Leq -> deb ++ (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
 							   (cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
 							   (pushq (imm nTypeBool)) ++
 							   (cmpq !%rbx !%rdx) ++ (jg label1) ++ (pushq (imm valTrue)) ++
 							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valFalse)) ++ (label label2)
-	  | Geq -> (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
+	  | Geq -> deb ++ (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
 							   (cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
 							   (pushq (imm nTypeBool)) ++
 							   (cmpq !%rbx !%rdx) ++ (jl label1) ++ (pushq (imm valTrue)) ++
 							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valFalse)) ++ (label label2)
-	  | Plus -> (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
+	  | Plus -> deb ++ (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
 							    (cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
 							    (pushq (imm nTypeInt)) ++
 							    (addq !%rdx !%rbx) ++ (pushq !%rbx)
-	  | Minus -> (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
+	  | Minus -> deb ++ (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
 							    (cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
 							    (pushq (imm nTypeInt)) ++
 							    (subq !%rbx !%rdx) ++ (pushq !%rdx)
-	  | Times -> (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
+	  | Times -> deb ++ (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
 							    (cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
 							    (pushq (imm nTypeInt)) ++
 							    (imulq !%rdx !%rbx) ++ (pushq !%rbx)
-	  | Modulo -> (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
+	  | Modulo -> deb ++ (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
 	  				(cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
 	  				movq !%rdx !%rax ++ movq !%rbx !%rcx ++ xorq !%rdx !%rdx ++
 	  				(cmpq (imm 0) !%rax) ++ (movq (imm (-1)) !%r13) ++ (cmovs !%r13 rdx) ++
 	  				idivq !%rcx ++ pushq (imm nTypeInt) ++ pushq !%rdx
-	  | Exp -> failwith "Not implemented"
-	  | And -> (cmpq (imm nTypeBool) !%rax) ++ (jne exitLabel) ++ (cmpq (imm nTypeBool) !%rcx) ++ (jne exitLabel) ++
-	  							(andq !%rbx !%rdx) ++ (pushq (imm nTypeBool)) ++ (pushq !%rdx)
-	  | Or -> (cmpq (imm nTypeBool) !%rax) ++ (jne exitLabel) ++ (cmpq (imm nTypeBool) !%rcx) ++ (jne exitLabel) ++
-	  							(orq !%rbx !%rdx) ++ (pushq (imm nTypeBool)) ++ (pushq !%rdx)
-		in ins1 ++ ins2 ++ depilation ++ operation
+	  | Exp -> deb ++ failwith "Not implemented"
+	  | And -> ins1 ++ popq rbx ++ popq rax ++ (cmpq (imm nTypeBool) !%rax) ++ jne exitLabel ++
+	  				(cmpq (imm valTrue) !%rbx) ++ jne label1 ++
+	  				ins2 ++ popq rbx ++ popq rax ++ (cmpq (imm nTypeBool) !%rax) ++ jne exitLabel ++
+	  				pushq (imm nTypeBool) ++ pushq !%rbx ++ jmp  label2 ++ (label label1) ++ pushq (imm nTypeBool) ++ pushq (imm valFalse)
+	  				++ (label label2)
+	  | Or -> ins1 ++ popq rbx ++ popq rax ++ (cmpq (imm nTypeBool) !%rax) ++ jne exitLabel ++
+	  				(cmpq (imm valTrue) !%rbx) ++ je label1 ++
+	  				ins2 ++ popq rbx ++ popq rax ++ (cmpq (imm nTypeBool) !%rax) ++ jne exitLabel ++
+	  				pushq (imm nTypeBool) ++ pushq !%rbx ++ jmp  label2 ++ (label label1) ++ pushq (imm nTypeBool) ++ pushq (imm valTrue)
+	  				++ (label label2)
+		in operation
 	| Ident (Tag name) ->
-		movq ((if estMac then lab else ilab) (name^"_type")) !%rax ++ movq ((if estMac then lab else ilab) (name^"_val")) !%rbx ++
+		movq ((if estMac then lab else ilab) (name^"_type")) !%rax ++ cmpq (imm nTypeUndef) !%rax ++
+		je exitLabel ++ movq ((if estMac then lab else ilab) (name^"_val")) !%rbx ++
 		pushq !%rax ++ pushq !%rbx
 	| Ident (Dec offset) ->
-		pushq (ind ~ofs:(offset+8) rbp) ++ pushq (ind ~ofs:offset rbp)
+		movq (ind ~ofs:(offset+8) rbp) !%rax ++ cmpq (imm nTypeUndef) !%rax ++
+		je exitLabel ++ pushq !%rax ++ pushq (ind ~ofs:offset rbp)
 	| Index (exp, ident, offset) ->
 		let numClasse = numStruct ident in
 		(compile_expr exp) ++ (popq rbx) ++ (popq rax) ++ (cmpq (imm numClasse) !%rax) ++ (jne exitLabel) ++
