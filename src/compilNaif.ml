@@ -337,6 +337,7 @@ let rec compile_expr = function
 	  | Modulo -> (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
 	  				(cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
 	  				movq !%rdx !%rax ++ movq !%rbx !%rcx ++ xorq !%rdx !%rdx ++
+	  				(cmpq (imm 0) !%rax) ++ (movq (imm (-1)) !%r13) ++ (cmovs !%r13 rdx) ++
 	  				idivq !%rcx ++ pushq (imm nTypeInt) ++ pushq !%rdx
 	  | Exp -> failwith "Not implemented"
 	  | And -> (cmpq (imm nTypeBool) !%rax) ++ (jne exitLabel) ++ (cmpq (imm nTypeBool) !%rcx) ++ (jne exitLabel) ++
@@ -381,7 +382,7 @@ let rec compile_expr = function
 		let b = compile_bloc bloc in
 		let depile = (popq rdx) ++ (popq rcx) ++ (popq rbx) ++ (popq rax) in
 		let test_type = (cmpq (imm nTypeBool) !%rax) ++ (jne exitLabel) ++ (cmpq (imm nTypeBool) !%rbx) ++ (jne exitLabel) in
-		failwith "Problème : comment est-ce qu'on sauvegarde l'entier ainsi que les bornes? Variables globales?"
+		failwith "Problème : comment est-ce qu'on sauvegarde l'entier ainsi que les bornes? Variables globales?" ++ e1 ++ e2 ++ b ++ depile ++ test_type
 	| While (exp, debLoc, finLoc, bloc) ->
 		let e = compile_expr exp in
 		let b = compile_bloc bloc in
