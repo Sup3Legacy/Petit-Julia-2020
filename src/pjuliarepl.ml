@@ -97,7 +97,7 @@ while !continue do
   if startswith !instr "#cof" then begin print_string "Choisissez la survivaliste"; instr := "" end;
     (* NDLR : un de nous se présente aux élections du COF sur la liste "suvivaliste" :D *)
   if startswith !instr "#tux" then begin print_string Logo.tux; instr := "" end;
-  if startswith !instr "#update" then begin let a = PPkg.download_package  in a; instr := "" end;
+  if startswith !instr "#update" then begin PPkg.update (); instr := "" end;
   if startswith !instr "#install" then
     begin let n = String.length !instr in
     let a = PPkg.download_package (String.sub !instr 9 (n - 9)) in a;

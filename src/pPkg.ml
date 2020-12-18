@@ -16,6 +16,8 @@ module PackMap = Map.Make(String) (* pour les packages *)
 type dependencySet = DepSet.t
 type package = (string * string * string * string * dependencySet) PackMap.t
 
+exception Error404
+
 let packagesMap = (ref PackMap.empty : package ref);;
 
 let decompose_json pack = (* Décompose un champ de package en ses champs *)
@@ -54,21 +56,38 @@ let download name =
   Lwt_main.run download_procedure
 ;;
 
-let download_package file_name =
+let update () =
+  print_endline "Downloading index...";
+  let file =
+    try
+      download index_url
+    with _ -> failwith "Unable to download index..." in (* À améliorer *)
+  let oc = open_out "index.json" in
+  Printf.fprintf oc "%s" file;
+  close_out oc;
+  print_endline "Downloaded, Imma parse it";
+;;
+
+let download_package request_name =
   let index =
     try
-      Yojson.Basic.from_file file_name
-    with _ ->
-      begin
-        print_endline "Index isn't here. Downloading...";
-          let file = download index_url in
-          let oc = open_out "index.json" in
-          Printf.fprintf oc "%s" file;
-          close_out oc;
-          print_endline "Downloaded, Imma parse it";
-          Yojson.Basic.from_file "index.json"
-      end
+      Yojson.Basic.from_file "index.json"
+    with _ -> failwith "Unable to read/parse index... Maybe consider running #update command." (* À améliorer *)
   in
-  let map = get_packages_list index in
-  ()
+  get_packages_list index;
+  let (name, version, description, url, dependencies) =
+  try
+    PackMap.find request_name !packagesMap
+  with _ -> failwith "Unable to find requested package" (* À améliorer *)
+  in
+  try
+    begin
+      let file = download (url) in
+      if (String.sub file 0 3) = "404" then raise Error404;
+      let oc = open_out (name ^ ".jl") in
+      Printf.fprintf oc "%s" file;
+      close_out oc;
+      print_endline ("Downloaded package " ^ name)
+    end
+  with _ -> failwith "Failed downloading requested package"
 ;;
