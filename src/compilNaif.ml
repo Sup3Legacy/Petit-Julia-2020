@@ -204,7 +204,7 @@ let pushn n =
 let compteurArbreAppel = ref 0
 
 let int_of_type t = match t with
-  | Any -> assert false
+  | Any -> nTypeUndef
   | Nothing -> nTypeNothing
   | Int64 -> nTypeInt
   | Float64 -> nTypeFloat
@@ -349,7 +349,8 @@ let rec compile_expr = function
 		pushq (ind ~ofs:(offset+8) rbp) ++ pushq (ind ~ofs:offset rbp)
 	| Index (exp, ident, offset) ->
 		let numClasse = numStruct ident in
-		(compile_expr exp) ++ (popq rbx) ++ (popq rax) ++ (cmpq !%rax (imm numClasse)) ++ (jne exitLabel) ++ (movq (ind ~ofs:(offset + 8) rbx) !%rax) ++ (movq (ind ~ofs:offset rbx) !%rbx)
+		(compile_expr exp) ++ (popq rbx) ++ (popq rax) ++ (cmpq (imm numClasse) !%rax) ++ (jne exitLabel) ++
+		(movq (ind ~ofs:(offset) rbx) !%rax) ++ (movq (ind ~ofs:(offset + 8) rbx) !%rbx) ++ pushq !%rax ++ pushq !%rbx
 	| LvalueAffectV (Tag name, expr) ->
 		let code = compile_expr expr in
 		code ++ (popq rax) ++ movq !%rax (univerlab (name^"_val")) ++ (popq rbx) ++ movq !%rbx (univerlab (name^"_type")) ++ pushq !%rbx ++ pushq !%rax
@@ -363,7 +364,7 @@ let rec compile_expr = function
 		let (cle, (field_index, field_type)) = Tmap.find_first (fun cle -> let (_, num) = Tmap.find cle field_map in (int_of_type num) = numero) field_map in
 		let comparaison = (popq r14) ++ (popq rbx) ++ (cmpq (imm numero) !%rax) ++ (jne exitLabel) in
 		let target_type = (popq rbx) ++ (popq rax) ++
-			(if field_type != Any then (cmpq !%rax (ind ~ofs:(16*entier + 0) r14)) else nop) ++(* vérification de type qu'on met dans le champ *)
+			(if field_type != Any then (cmpq (ind ~ofs:(16*entier + 0) r14) !%rax) else nop) ++(* vérification de type qu'on met dans le champ *)
 		 	(movq !%rax (ind ~ofs:(16*entier + 8) r14)) in
 		code1 ++ comparaison ++ code2 ++ target_type
 	| Ret (pjtype, exp) ->
@@ -412,7 +413,7 @@ let compile_function f e fpmax =
 
 
 let compile_fun (n:string) (i:int) = function
-  |Funct (argL, tmap, (_, eL)) -> (
+  | Funct (argL, tmap, (_, eL)) -> (
   	let (_, env) = List.fold_right (fun (i, _) (n,t) -> (n + 16, Tmap.add i n t)) argL (16, Tmap.empty) in
 		let env2, fpcur2 = Tmap.fold (fun k _ (m, n) -> if Tmap.mem k env then (m,n) else (Tmap.add k (n-16) m, n-16)) tmap (env, 0) in
 		let (eL,o2) = List.fold_right (fun (_, e) (l, o1) -> let e,o2 = (alloc_expr env2 fpcur2 e) in (e::l, min o1 o2)) eL ([], fpcur2) in
@@ -423,17 +424,18 @@ let compile_fun (n:string) (i:int) = function
     code ++
     movq !%rbp !%rsp ++ popq rbp ++
     ret)
-  |StructBuilder eL ->
-    let nType = assert false in
-    let n = List.length eL in
+  | StructBuilder eL ->
+    let nType = numStruct n in
+    let longueur= List.length eL in
     let code = ref nop in
-    for i = 0 to -1 do
-      code := !code ++
-        movq (ind ~ofs:(8+i*16) rsp) (ind ~ofs:(16*(n-i-1)) rax) ++
-        movq (ind ~ofs:(16+i*16) rsp) (ind ~ofs:(16*(n-i-1)+8) rax)
+    for i = 0 to (longueur-1) do
+      code := !code ++ (* Penser à ajouter un check de type si le type du champ est != Any *)
+        movq (ind ~ofs:(16+i*16) rsp) !%r11 ++ movq !%r11 (ind ~ofs:(16*(longueur-i-1)) rax) ++
+        movq (ind ~ofs:(8+i*16) rsp) !%r11 ++ movq !%r11 (ind ~ofs:(16*(longueur-i-1)+8) rax)
     done;
-    movq (imm (16*n)) !%rdi ++ call "malloc" ++ !code ++
-    movq (!%rax) !%rbx ++ movq (imm nType) !%rax ++
+    label (n^"_0") ++
+		movq (imm (16*longueur)) !%rdi ++ call "malloc" ++ !code ++
+    movq !%rax !%rbx ++ movq (imm nType) !%rax ++
     ret
 
 let compile_program f ofile =
@@ -456,10 +458,10 @@ let compile_program f ofile =
 		ret ++
 
 		label "div" ++ (* Fonction de division entière *)
-        movq (ind ~ofs:8 rsp) !%rcx ++
-        movq (ind ~ofs:24 rsp) !%rax ++
-        xorq !%rdx !%rdx ++
-        idivq !%rax ++
+    movq (ind ~ofs:8 rsp) !%rcx ++
+    movq (ind ~ofs:24 rsp) !%rax ++
+    xorq !%rdx !%rdx ++
+    idivq !%rax ++
 		ret ++
 
 		label "print_0" ++ (* Fonction principale print *)
