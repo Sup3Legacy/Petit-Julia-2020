@@ -445,9 +445,9 @@ let testTypageF (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:argsEnv) (posN, str,
   then if Tmap.mem str fonctions
     then
       let imap = try Tmap.find str fonctions with Not_found -> assert false in
-      let imap2 = Imap.add (Imap.cardinal imap) (Funct (listP, varSet, (tb, bt))) imap in
+      let imap2 = Imap.add (Imap.cardinal imap) (Funct (listP, varSet, (tb, bt), pjT)) imap in
       Tmap.add str imap2 fonctions
-    else Tmap.add str (Imap.singleton 0 (Funct (listP, varSet, (tb, bt)))) fonctions
+    else Tmap.add str (Imap.singleton 0 (Funct (listP, varSet, (tb, bt), pjT))) fonctions
   else error ("last intruction not compatible "^typeName tb^"-"^typeName pjT) pb
 
 (* effectue le deuxième parcours *)

@@ -87,7 +87,7 @@ and blocTyper = pjtype * (expressionTyper list)
 module Imap = Map.Make(Int)
 
 type funct =
-	|Funct of ((ident * pjtype) list * pjtype Tmap.t * blocTyper)
+	|Funct of ((ident * pjtype) list * pjtype Tmap.t * blocTyper * pjtype)
 	|StructBuilder of ((ident * pjtype) list)
 and funcMap = funct Imap.t Tmap.t
 

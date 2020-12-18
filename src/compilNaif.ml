@@ -130,7 +130,7 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 		else
 			let f = try Tmap.find ident !functionMap with Not_found -> failwith ("not found "^ident) in
 			let arb:AstcompilN.functArbr = calcArb ident (ISet.fold (fun i l -> match Imap.find i f with
-					|StructBuilder l1 |Funct (l1, _, _)  -> (List.fold_right (fun (_, p) l2 -> p::l2) l1 [],i,0)::l) iSet [])
+					|StructBuilder l1 |Funct (l1, _, _, _)  -> (List.fold_right (fun (_, p) l2 -> p::l2) l1 [],i,0)::l) iSet [])
 			in Call (ident, arb, eL), offset
 		end
 	| NotE (_,e) -> let (e, o) = alloc_expr env offset e in Not e, o
@@ -427,7 +427,7 @@ let compile_function f e fpmax =
 
 
 let compile_fun (n:string) (i:int) = function
-  | Funct (argL, tmap, (_, eL)) -> (
+  | Funct (argL, tmap, (_, eL), rT) -> (
   	let (_, env) = List.fold_right (fun (i, _) (n,t) -> (n + 16, Tmap.add i n t)) argL (16, Tmap.empty) in
 		let env2, fpcur2 = Tmap.fold (fun k _ (m, n) -> if Tmap.mem k env then (m,n) else (Tmap.add k (n-16) m, n-16)) tmap (env, 0) in
 		let (eL,o2) = List.fold_right (fun (_, e) (l, o1) -> let e,o2 = (alloc_expr env2 fpcur2 e) in (e::l, min o1 o2)) eL ([], fpcur2) in
@@ -436,6 +436,7 @@ let compile_fun (n:string) (i:int) = function
     pushq !%rbp ++ movq !%rsp !%rbp ++
     pushn (-o2) ++
     code ++
+    (if rT = Any then nop else (cmpq (imm (int_of_type rT)) !%rax ++ jne exitLabel)) ++
     movq !%rbp !%rsp ++ popq rbp ++
     ret)
   | StructBuilder eL ->
