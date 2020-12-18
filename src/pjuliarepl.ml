@@ -97,6 +97,8 @@ while !continue do
   if startswith !instr "#cof" then begin print_string "Choisissez la survivaliste"; instr := "" end;
     (* NDLR : un de nous se présente aux élections du COF sur la liste "suvivaliste" :D *)
   if startswith !instr "#tux" then begin print_string Logo.tux; instr := "" end;
+  if startswith !instr "#update" then begin () end;
+  if startswith !isntr "#install" then begin () end;
   if startswith !instr "? " then
     begin
       let n = String.length !instr in
