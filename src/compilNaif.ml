@@ -274,6 +274,7 @@ let rec compile_expr = function
 					(cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
 	  				(cmpq (imm nTypeInt) !%rdx) ++ (jne exitLabel) ++
 	  				movq !%rbx !%rax ++ xorq !%rdx !%rdx ++ (cmpq (imm 0) !%rax) ++ (movq (imm (-1)) !%r13) ++ (cmovs !%r13 rdx) ++
+						(cmpq (imm 0) !%rcx) ++ (je exitLabel) ++
 	  				idivq !%rcx ++ pushq (imm nTypeInt) ++ pushq !%rax
 		else
 			begin
@@ -564,7 +565,7 @@ let compile_program f ofile =
 			 (label ".Sprint_endline" ++ string "\n") ++
 			 (label ".Sprint_true" ++ string "true") ++
 			 (label ".Sprint_false" ++ string "false") ++
-			 (label ".Sprint_error" ++ string "type failure\n")
+			 (label ".Sprint_error" ++ string "type or \"Division by zero\" failure\n")
    }
  in
  let f = open_out ofile in
