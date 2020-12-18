@@ -360,12 +360,13 @@ let rec compile_expr = function
 	| LvalueAffectI (exp1, ident, entier, exp2) ->
 		let code1 = compile_expr exp1 in
 		let code2 = compile_expr exp2 in
-		let (field_map, numero) = Tmap.find ident !structMap in (* numero est le code de type de la structure *)
-		let (cle, (field_index, field_type)) = Tmap.find_first (fun cle -> let (_, num) = Tmap.find cle field_map in (int_of_type num) = numero) field_map in
-		let comparaison = (popq r14) ++ (popq rbx) ++ (cmpq (imm numero) !%rax) ++ (jne exitLabel) in
+		let (field_map, numero) = Tmap.find ident !structMap in (* numero est le code de type de la structure - 5*)
+		let numeroBis = numero + 5 in
+		let (cle, (field_index, field_type)) = Tmap.find_first (fun cle -> let (num, _) = Tmap.find cle field_map in num = numero) field_map in
+		let comparaison = (popq r14) ++ (popq rax) ++ (cmpq (imm numeroBis) !%rax) ++ (jne exitLabel) in
 		let target_type = (popq rbx) ++ (popq rax) ++
 			(if field_type != Any then (cmpq (ind ~ofs:(16*entier + 0) r14) !%rax) else nop) ++(* vérification de type qu'on met dans le champ *)
-		 	(movq !%rax (ind ~ofs:(16*entier + 8) r14)) in
+		 	(movq !%rbx (ind ~ofs:(16*entier + 8) r14)) in
 		code1 ++ comparaison ++ code2 ++ target_type
 	| Ret (pjtype, exp) ->
 		compile_expr exp ++ (popq rbx) ++ (popq rax) ++
