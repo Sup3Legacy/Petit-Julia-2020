@@ -112,25 +112,15 @@ while !continue do
   try
     begin
       let lb =
-      if startswith !instr "#run "
-        then
-          begin
-            let n = String.length !instr in
-            let file = open_in (String.sub !instr 5 (n - 5)) in
-            file_name := String.sub !instr 5 (n - 5);
-            Lexing.from_channel file
-          end
-        else
-          begin
-            file_name := "Console_input";
-            Lexing.from_string !instr
-          end
+        begin
+          file_name := "Console_input";
+          Lexing.from_string !instr
+        end
       in
       try
         begin
-          let e = Parser.fichier Lexer.token lb in
+          let e = DepManager.get_parsed_file lb in
           let _ = Typer.typerRepl e gVenv gFenv gSenv gAenv in
-          (* print_endline (show_fichier e); *)
           Interp.interp_file e;
         end
       with a -> begin
@@ -180,7 +170,7 @@ while !continue do
               Printf.printf "Lexing error : %s\n" m
             end
           | _ when !flushed -> Printf.printf "Flushed";
-          | _ -> Printf.printf "Unkown error in file %s\n" !(file_name);
+          | a -> raise a
         end
     end
     with Sys_error s -> Printf.printf "%s" s;

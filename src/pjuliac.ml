@@ -44,9 +44,8 @@ let afficheL l =
 let handle () =
   let c = open_in !(Hyper.file) in
   let lb = Lexing.from_channel c in
-
   try
-    let e = Parser.fichier Lexer.token lb
+    let e = DepManager.get_parsed_file lb
     in
     if !parse_only then begin
       if !affiche then print_endline (show_fichier e)
