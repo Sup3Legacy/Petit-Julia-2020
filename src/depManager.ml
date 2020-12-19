@@ -40,8 +40,8 @@ let rec handle_dep decl_list =
             in ajout
           end) @ (handle_dep q))
   | Dexpr _ as t :: q -> t :: (handle_dep q)
-  | Dstruct _ :: q -> q
-  | Dfonction _ :: q -> q
+  | Dstruct _ as t :: q -> t :: q
+  | Dfonction _ as t :: q -> t :: q
   | [] -> []
 ;;
 
