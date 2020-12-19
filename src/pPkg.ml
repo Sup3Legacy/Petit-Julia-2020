@@ -70,9 +70,7 @@ let update () =
 
 let download_package request_name =
   let index =
-    try
-      Yojson.Basic.from_file "index.json"
-    with _ -> failwith "Unable to read/parse index... Maybe consider running #update command." (* À améliorer *)
+  Yojson.Basic.from_file "index.json"
   in
   get_packages_list index;
   let (name, version, description, url, dependencies) =

@@ -23,3 +23,5 @@ bin/*
 *.s
 
 src/test
+
+*.jl
