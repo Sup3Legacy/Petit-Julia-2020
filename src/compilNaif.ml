@@ -63,17 +63,17 @@ let numStruct ident = nTypeStruct + snd (Smap.find ident !structMap)
 type local_env = int Smap.t
 
 let rec calcArb s = function
-	|[] -> Failure
-	|([],i,j)::tl -> begin
+	| [] -> Failure
+	| ([],i,j)::tl -> begin
 		let (l, mini) = List.fold_left (fun (l, m) (_, i2, j2) -> if j2 < m then ([i2], j2) else if j2 > m then (l, m) else (i2::l, m)) ([i],j) tl in
 		match l with
-			|[] -> assert false
-			|[i] -> Feuille (s, i)
+			| [] -> assert false
+			| [i] -> Feuille (s, i)
 			|_ -> Failure
 		end
 	|l -> let tM1 = List.fold_left (fun t (l, i, j) -> match l with
-				|[] -> assert false
-				|hd::tl ->
+				| [] -> assert false
+				| hd::tl ->
 					let j = j + (if hd=Any then 1 else 0) in
 					if TypeMap.mem hd t then
 						let l1 = TypeMap.find hd t in TypeMap.add hd ((tl, i, j)::l1) t
@@ -182,11 +182,11 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 		let (els, o3) = alloc_else env offset els in
 		If (e, l, els), min o2 o3
 and alloc_else (env:local_env) (offset:int) = function
-	|EndI -> End, offset
-	|ElseI (_, eL) ->
+	| EndI -> End, offset
+	| ElseI (_, eL) ->
 		let (l, o) = List.fold_right (fun (_, e) (l, o1) -> let e,o2 = (alloc_expr env offset e) in (e::l, min o1 o2)) eL ([], offset)
 		in Else l, o
-	|ElseifI ((_, e), (_, eL), els) ->
+	| ElseifI ((_, e), (_, eL), els) ->
 		let (e, o1) = alloc_expr env offset e in
 		let (l, o2) = List.fold_right (fun (_, e) (l, o1) -> let e,o2 = (alloc_expr env offset e) in (e::l, min o1 o2)) eL ([], o1) in
 		let (els, o3) = alloc_else env offset els in
@@ -222,9 +222,9 @@ let newFlagArb () =
 	"jmp"^string_of_int t
 
 let rec buildArb (p:int) (f:string) (l:string):functArbr -> [`text] asm = function
-	|Failure -> (label l ++ jmp exitLabel)
-	|Feuille (s,i) -> label l ++ call (s^"_"^string_of_int i) ++ jmp f
-	|Appels tM ->
+	| Failure -> (label l ++ jmp exitLabel)
+	| Feuille (s,i) -> label l ++ call (s^"_"^string_of_int i) ++ jmp f
+	| Appels tM ->
 		if TypeMap.cardinal tM == 1 then
 			if TypeMap.mem Any tM then buildArb (p-1) f l (TypeMap.find Any tM)
 			else

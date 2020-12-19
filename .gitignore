@@ -25,3 +25,6 @@ bin/*
 src/test
 
 *.jl
+
+src/index.json
+src/*.jl
