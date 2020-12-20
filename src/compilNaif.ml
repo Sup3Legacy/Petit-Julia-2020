@@ -364,6 +364,9 @@ let rec compile_expr = function
 		movq (ind ~ofs:(offset+8) rbp) !%rax ++ cmpq (imm nTypeUndef) !%rax ++
 		je exitLabel ++ pushq !%rax ++ pushq (ind ~ofs:offset rbp)
 	| Index (exp, ident, offset) ->
+		print_string ident;
+		print_int offset;
+		print_newline ();
 		let numClasse = numStruct ident in
 		(compile_expr exp) ++ (popq rbx) ++ (popq rax) ++ (cmpq (imm numClasse) !%rax) ++ (jne exitLabel) ++
 		(movq (ind ~ofs:(offset + 0) rbx) !%rax) ++ (movq (ind ~ofs:(offset + 8) rbx) !%rbx) ++ pushq !%rax ++ pushq !%rbx
@@ -384,7 +387,7 @@ let rec compile_expr = function
 			(if field_type != Any then (cmpq (ind ~ofs:(16*entier + 0) r14) !%rax) ++ (jne exitLabel) else nop) ++(* vérification de type qu'on met dans le champ *)
 			(movq !%rax (ind ~ofs:(16*entier + 0) r14)) ++
 			(movq !%rbx (ind ~ofs:(16*entier + 8) r14)) in
-		code1 ++ comparaison ++ code2 ++ target_type ++ pushq !%rax ++ pushq !%rbx
+		code1 ++ code2 ++ comparaison ++ target_type ++ pushq !%rax ++ pushq !%rbx
 	| Ret (pjtype, exp) ->
 		compile_expr exp ++ (popq rbx) ++ (popq rax) ++
 		(if pjtype = Any then nop else (cmpq (imm (int_of_type pjtype)) !%rax ++
@@ -404,7 +407,7 @@ let rec compile_expr = function
 		jmp lFin ++
 		label lDeb ++
 		b ++
-		popq rax ++ popq rax ++
+		popn 16 ++
 		label lFin ++
 		popq rcx ++ popq rax ++
 		incq !%rax ++ cmpq !%rax !%rcx ++
@@ -420,14 +423,14 @@ let rec compile_expr = function
 		comp ++ corps ++ pushq (imm nTypeNothing) ++ pushq !%rax
 	| If (exp, bloc, else_) ->
 		let c = compile_expr exp in
-		let c1 = compile_bloc bloc ++ popn 16 in
+		let c1 = compile_bloc bloc ++ (if bloc = [] then pushq (imm nTypeNothing)++pushq !%rax else nop) in
 		let c2 = compile_else_ else_ in
 		let (label1, label2) = (getIf (), getIf ()) in
 		c ++ (popq rbx) ++ (popq rax) ++ (cmpq (imm nTypeBool) !%rax) ++ (jne exitLabel) ++
-		(cmpq (imm valFalse) !%rbx) ++ (je label1) ++ c1 ++ (jmp label2) ++ (label label1) ++ c2 ++ (label label2) ++ pushq (imm nTypeNothing) ++ pushq !%rax
+		(cmpq (imm valFalse) !%rbx) ++ (je label1) ++ c1 ++ (jmp label2) ++ (label label1) ++ c2 ++ (label label2)
 and compile_else_ = function
-	| End -> nop
-	| Else bloc -> compile_bloc bloc ++ popn 16
+	| End -> pushq (imm nTypeNothing) ++ pushq !%rax
+	| Else bloc -> compile_bloc bloc
 	| Elseif (exp, bloc, else_) -> compile_expr (If (exp, bloc, else_))
 and compile_bloc = function
 	| [] -> nop
@@ -463,10 +466,10 @@ let compile_fun (n:string) (i:int) = function
     let nType = numStruct n in
     let longueur= List.length eL in
     let code = ref nop in
-    for i = 0 to (longueur-1) do
+    for i = 1 to longueur do
       code := !code ++ (* Penser à ajouter un check de type si le type du champ est != Any *)
-        movq (ind ~ofs:(16+i*16) rsp) !%r11 ++ movq !%r11 (ind ~ofs:(16*(longueur-i-1)) rax) ++
-        movq (ind ~ofs:(8+i*16) rsp) !%r11 ++ movq !%r11 (ind ~ofs:(16*(longueur-i-1)+8) rax)
+        movq (ind ~ofs:(8+i*16) rsp) !%r11 ++ movq !%r11 (ind ~ofs:(16*(longueur-i)) rax) ++
+        movq (ind ~ofs:(i*16) rsp) !%r11 ++ movq !%r11 (ind ~ofs:(16*(longueur-i)+8) rax)
     done;
     label (n^"_"^string_of_int i) ++
     pushq !%rbp ++ movq !%rsp !%rbp ++
