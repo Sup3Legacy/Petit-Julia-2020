@@ -413,21 +413,21 @@ let rec compile_expr = function
 		pushq (imm nTypeNothing) ++ pushq !%rax
 	| While (exp, debLoc, finLoc, bloc) ->
 		let e = compile_expr exp in
-		let b = compile_bloc bloc in
+		let b = compile_bloc bloc ++ (if bloc = [] then nop else popn 16) in
 		let (label1, label2) = (getWhile (), getWhile ()) in
 		let comp = (label label1) ++ e ++ (popq rbx) ++ (popq rax) ++ (cmpq (imm (nTypeBool)) !%rax) ++ (jne exitLabel) ++ (cmpq (imm valTrue) !%rbx) ++ (jne label2) in
 		let corps = b ++ (jmp label1) ++ (label label2) in
-		comp ++ corps
+		comp ++ corps ++ pushq (imm nTypeNothing) ++ pushq !%rax
 	| If (exp, bloc, else_) ->
 		let c = compile_expr exp in
-		let c1 = compile_bloc bloc in
+		let c1 = compile_bloc bloc ++ popn 16 in
 		let c2 = compile_else_ else_ in
 		let (label1, label2) = (getIf (), getIf ()) in
 		c ++ (popq rbx) ++ (popq rax) ++ (cmpq (imm nTypeBool) !%rax) ++ (jne exitLabel) ++
-		(cmpq (imm valFalse) !%rbx) ++ (je label1) ++ c1 ++ (jmp label2) ++ (label label1) ++ c2 ++ (label label2)
+		(cmpq (imm valFalse) !%rbx) ++ (je label1) ++ c1 ++ (jmp label2) ++ (label label1) ++ c2 ++ (label label2) ++ pushq (imm nTypeNothing) ++ pushq !%rax
 and compile_else_ = function
 	| End -> nop
-	| Else bloc -> compile_bloc bloc
+	| Else bloc -> compile_bloc bloc ++ popn 16
 	| Elseif (exp, bloc, else_) -> compile_expr (If (exp, bloc, else_))
 and compile_bloc = function
 	| [] -> nop
