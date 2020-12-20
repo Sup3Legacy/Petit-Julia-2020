@@ -200,7 +200,7 @@ let alloc_fichier (eL, varMap, sEnv, fMap:fichierTyper):fichier =
 
 let pushn n =
 	let c = ref nop in
-	for i = 1 to n do
+	for i = 1 to n/16 do
 		c := !c ++ pushq (imm nTypeUndef) ++ pushq !%rax
 	done;
 	!c
@@ -390,12 +390,26 @@ let rec compile_expr = function
 		(if pjtype = Any then nop else (cmpq (imm (int_of_type pjtype)) !%rax ++
 		jne exitLabel)) ++ movq !%rbp !%rsp ++ popq rbp ++ ret
 	| For (posC, posFLoc, exp1, exp2, bloc) ->
+		let lDeb = getFor () in
+		let lFin = getFor () in
 		let e1 = compile_expr exp1 in
 		let e2 = compile_expr exp2 in
 		let b = compile_bloc bloc in
-		let depile = (popq rdx) ++ (popq rcx) ++ (popq rbx) ++ (popq rax) in
-		let test_type = (cmpq (imm nTypeBool) !%rax) ++ (jne exitLabel) ++ (cmpq (imm nTypeBool) !%rbx) ++ (jne exitLabel) in
-		failwith "Problème : comment est-ce qu'on sauvegarde l'entier ainsi que les bornes? Variables globales?" ++ e1 ++ e2 ++ b ++ depile ++ test_type
+		e1 ++ e2 ++ movq (imm nTypeInt) (ind ~ofs:posC rbp) ++
+		(popq rdx) ++ (popq rcx) ++ (popq rbx) ++ (popq rax) ++
+		cmpq (imm nTypeInt) !%rcx ++ jne exitLabel ++
+		cmpq (imm nTypeInt) !%rax ++ jne exitLabel ++
+		pushq !%rdx ++ pushq !%rbx ++
+		jmp lFin ++
+		label lDeb ++
+		b ++
+		popq rax ++ popq rax ++
+		label lFin ++
+		popq rcx ++ popq rax ++
+		incq !%rax ++ cmpq !%rax !%rcx ++
+		pushq !%rax ++ pushq !%rcx ++ (movq !%rax (ind ~ofs:(posC+8) rbp)) ++
+		jg lDeb ++
+		pushq (imm nTypeNothing) ++ pushq !%rax
 	| While (exp, debLoc, finLoc, bloc) ->
 		let e = compile_expr exp in
 		let b = compile_bloc bloc in
@@ -416,7 +430,8 @@ and compile_else_ = function
 	| Elseif (exp, bloc, else_) -> compile_expr (If (exp, bloc, else_))
 and compile_bloc = function
 	| [] -> nop
-	| t :: q -> (compile_expr t) ++ (compile_bloc q)
+	| [t] -> compile_expr t
+	| t :: q -> (compile_expr t) ++ popn 16 ++ (compile_bloc q)
 
 
 let compile_function f e fpmax =
