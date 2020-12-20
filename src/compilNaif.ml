@@ -76,10 +76,10 @@ let rec calcArb s = function
 				| hd::tl ->
 					let j = j + (if hd=Any then 1 else 0) in
 					if TypeMap.mem hd t then
-						let l1 = TypeMap.find hd t in TypeMap.add hd ((tl, i, j)::l1) t
+						let l1 = try TypeMap.find hd t with Not_found -> failwith "not found 1" in TypeMap.add hd ((tl, i, j)::l1) t
 					else TypeMap.add hd [tl,i, j] t) TypeMap.empty l in
 		let tM2 = if TypeMap.mem Any tM1 then
-				let l = TypeMap.find Any tM1 in
+				let l = try TypeMap.find Any tM1 with Not_found -> failwith "not found 2" in
 				TypeMap.mapi (fun k l2 -> if k = Any then l2 else l@l2) tM1
 			else tM1
 		in
@@ -141,7 +141,7 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 		Binop (o, e1, e2), min o1 o2
 	| LvalueE l -> begin
 		match l with
-			| IdentL (_, ident, true) -> Ident (Dec (Tmap.find ident env)), offset
+			| IdentL (_, ident, true) -> Ident (Dec (try Tmap.find ident env with Not_found -> failwith ("not found 3 :"^ident))), offset
 			| IdentL (_, ident, false) -> Ident (Tag ident), offset
 			| IndexL ((_, e), nameS, nameC) ->
 				let (e, offset) = alloc_expr env offset e in
@@ -168,13 +168,13 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 		let (e1, o1) = alloc_expr env offset e1 in
 		let (e2, o2) = alloc_expr env offset e2 in
 		let (env2, fpcur2) = Tmap.fold (fun k _ (m, n) -> if k!= i then (Tmap.add k (n-16) m, n-16) else (m, n)) tmap (env, offset - 16) in
-		let env = Tmap.add i offset env2 in
+		let env = Tmap.add i (offset-16) (if Tmap.mem i env2  then Tmap.remove i env2 else env2) in
 		let (l,o3) = List.fold_right (fun (_, e) (l, o1) -> let e,o2 = (alloc_expr env fpcur2 e) in (e::l, min o1 o2)) eL ([], min fpcur2 (min o1 o2)) in
-		For (offset, fpcur2, e1, e2, l), o3
+		For (offset-16, fpcur2, e1, e2, l), o3
 	| WhileE ((_, e), tmap, (_, eL)) ->
 		let (e, o1) = alloc_expr env offset e in
 		let env2, fpcur2 = Tmap.fold (fun k _ (m, n) -> (Tmap.add k (n-16) m, n-16)) tmap (env, offset) in
-		let (l,o2) = List.fold_right (fun (_, e) (l, o1) -> let e,o2 = (alloc_expr env fpcur2 e) in (e::l, min o1 o2)) eL ([], min fpcur2 o1) in
+		let (l,o2) = List.fold_right (fun (_, e) (l, o1) -> let e,o2 = (alloc_expr env2 fpcur2 e) in (e::l, min o1 o2)) eL ([], min fpcur2 o1) in
 		While (e, offset, fpcur2, l), o2
 	| IfE ((_, e), (_, eL), els) ->
 		let (e, o1) = alloc_expr env offset e in
@@ -301,9 +301,9 @@ let rec compile_expr = function
 		let deb = ins1 ++ ins2 ++ depilation in
 		let operation =
 		match op with
-		| Eq -> deb ++ (cmpq !%rax !%rcx) ++ (jne exitLabel) ++ (pushq (imm nTypeBool)) ++
-							 (cmpq !%rbx !%rdx) ++ (je label1) ++ (pushq (imm valFalse)) ++
-							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valTrue)) ++ (label label2)
+		| Eq -> deb ++ (cmpq !%rax !%rcx) ++ (jne label1) ++ (pushq (imm nTypeBool)) ++
+							 (cmpq !%rbx !%rdx) ++ (jne label1) ++ (pushq (imm valTrue)) ++
+							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valFalse)) ++ (label label2)
 	  | Neq -> deb ++ (cmpq !%rax !%rcx) ++ (jne exitLabel) ++ (pushq (imm nTypeBool)) ++
 							  (cmpq !%rbx !%rdx) ++ (je label1) ++ (pushq (imm valTrue)) ++
 							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valFalse)) ++ (label label2)
@@ -395,11 +395,12 @@ let rec compile_expr = function
 		let e1 = compile_expr exp1 in
 		let e2 = compile_expr exp2 in
 		let b = compile_bloc bloc in
-		e1 ++ e2 ++ movq (imm nTypeInt) (ind ~ofs:posC rbp) ++
+		e1 ++ e2 ++ movq (imm nTypeInt) (ind ~ofs:(posC+8) rbp) ++
 		(popq rdx) ++ (popq rcx) ++ (popq rbx) ++ (popq rax) ++
 		cmpq (imm nTypeInt) !%rcx ++ jne exitLabel ++
 		cmpq (imm nTypeInt) !%rax ++ jne exitLabel ++
-		pushq !%rdx ++ pushq !%rbx ++
+		decq !%rbx ++
+		pushq !%rbx ++ pushq !%rdx ++
 		jmp lFin ++
 		label lDeb ++
 		b ++
@@ -407,8 +408,8 @@ let rec compile_expr = function
 		label lFin ++
 		popq rcx ++ popq rax ++
 		incq !%rax ++ cmpq !%rax !%rcx ++
-		pushq !%rax ++ pushq !%rcx ++ (movq !%rax (ind ~ofs:(posC+8) rbp)) ++
-		jg lDeb ++
+		pushq !%rax ++ pushq !%rcx ++ (movq !%rax (ind ~ofs:posC rbp)) ++
+		jge lDeb ++
 		pushq (imm nTypeNothing) ++ pushq !%rax
 	| While (exp, debLoc, finLoc, bloc) ->
 		let e = compile_expr exp in
@@ -467,13 +468,17 @@ let compile_fun (n:string) (i:int) = function
         movq (ind ~ofs:(16+i*16) rsp) !%r11 ++ movq !%r11 (ind ~ofs:(16*(longueur-i-1)) rax) ++
         movq (ind ~ofs:(8+i*16) rsp) !%r11 ++ movq !%r11 (ind ~ofs:(16*(longueur-i-1)+8) rax)
     done;
-    label (n^"_0") ++
+    label (n^"_"^string_of_int i) ++
+    pushq !%rbp ++ movq !%rsp !%rbp ++
 		movq (imm (16*longueur)) !%rdi ++ call "malloc" ++ !code ++
     movq !%rax !%rbx ++ movq (imm nType) !%rax ++
+    movq !%rbp !%rsp ++ popq rbp ++
     ret
 
 let compile_program f ofile =
  let (eL, i, smap, fmap) = alloc_fichier f in (* smap est le map des variables globales *)
+ print_int i;
+ print_newline ();
  let code = List.fold_left (fun d e -> (if d!=nop then d ++ popn 16 else nop) ++ compile_expr e) nop eL in
  let codefun = Tmap.fold (fun k imap asm -> Imap.fold (fun i f asm2 -> asm2 ++ compile_fun k i f) imap asm) fmap nop in
  let deplq = if estMac then (fun x -> leaq x rdi) else (fun x -> movq x !%rdi) in
@@ -483,7 +488,7 @@ let compile_program f ofile =
 		pushq !%rbx ++ pushq !%r12 ++
 		pushq !%rbp ++ movq !%rsp !%r12 ++
 		movq !%rsp !%rbp ++
-		pushn i ++
+		pushn (-i) ++
 		code ++
 		movq !%rbp !%rsp ++
 		popq rbp ++
@@ -586,9 +591,10 @@ let compile_program f ofile =
      data =
        Hashtbl.fold (fun x i l -> l ++ label ("string_"^string_of_int i) ++ string (Scanf.unescaped x)) sMap nop ++
 			 Hashtbl.fold (fun x i l -> l ++ label ("float_"^string_of_int i) ++ (double (float_of_string x))) fMap nop ++
-			 Tmap.fold (fun x i l -> l ++ label (x^"_type") ++ (dquad [nTypeUndef])
-			 														++ label (x^"_val") ++ (dquad [0])) smap nop ++
-
+			 Tmap.fold (fun x i l -> if x<> "nothing" then l ++ label (x^"_type") ++ (dquad [nTypeUndef])
+			 														++ label (x^"_val") ++ (dquad [0]) else l) smap nop ++
+		(label "nothing_type" ++ (dquad [nTypeNothing])) ++ 
+		(label "nothing_val" ++ (dquad [0])) ++ 
        (label ".Sprint_int" ++ string "%d") ++
 			 (label ".Sprint_float" ++ string "%f") ++
 			 (label ".Sprint_string" ++ string "%s") ++
