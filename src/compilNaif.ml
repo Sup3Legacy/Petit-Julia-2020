@@ -201,7 +201,7 @@ let alloc_fichier (eL, varMap, sEnv, fMap:fichierTyper):fichier =
 let pushn n =
 	let c = ref nop in
 	for i = 1 to n/16 do
-		c := !c ++ pushq (imm nTypeUndef) ++ pushq !%rax
+		c := !c ++ pushq (imm nTypeUndef) ++ pushq !%rax (* Pas plutôt !%rbx? *)
 	done;
 	!c
 
@@ -301,12 +301,12 @@ let rec compile_expr = function
 		let deb = ins1 ++ ins2 ++ depilation in
 		let operation =
 		match op with
-		| Eq -> deb ++ (cmpq !%rax !%rcx) ++ (jne label1) ++ (pushq (imm nTypeBool)) ++
+		| Eq -> deb ++ (pushq (imm nTypeBool)) ++ (cmpq !%rax !%rcx) ++ (jne label1) ++
 							 (cmpq !%rbx !%rdx) ++ (jne label1) ++ (pushq (imm valTrue)) ++
 							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valFalse)) ++ (label label2)
-	  | Neq -> deb ++ (cmpq !%rax !%rcx) ++ (jne exitLabel) ++ (pushq (imm nTypeBool)) ++
-							  (cmpq !%rbx !%rdx) ++ (je label1) ++ (pushq (imm valTrue)) ++
-							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valFalse)) ++ (label label2)
+	  | Neq -> deb ++ (pushq (imm nTypeBool)) ++ (cmpq !%rax !%rcx) ++ (jne label1) ++
+							  (cmpq !%rbx !%rdx) ++ (jne label1) ++ (pushq (imm valFalse)) ++
+							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valTrue)) ++ (label label2)
 	  | Lo -> deb ++ (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
 							  (cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
 							  (pushq (imm nTypeBool)) ++
@@ -344,7 +344,16 @@ let rec compile_expr = function
 	  				movq !%rdx !%rax ++ movq !%rbx !%rcx ++ xorq !%rdx !%rdx ++
 	  				(cmpq (imm 0) !%rax) ++ (movq (imm (-1)) !%r13) ++ (cmovs !%r13 rdx) ++
 	  				idivq !%rcx ++ pushq (imm nTypeInt) ++ pushq !%rdx
-	  | Exp -> deb ++ failwith "Not implemented"
+	  | Exp -> deb ++ (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
+	  				(cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
+						(movq !%rdx !%rax) ++ (movq !%rbx !%rbx) ++ (movq (imm 1) !%rcx) ++
+						(label label1) ++
+						(cmpq (imm 0) !%rbx) ++ (je label2) ++
+						(decq !%rbx) ++ (imulq !%rax !%rcx) ++
+						(jmp label1) ++
+						(label label2) ++
+						(movq (imm nTypeInt) !%rax) ++ (movq !%rcx !%rbx) ++
+						(pushq !%rax) ++ (pushq !%rbx)
 	  | And -> ins1 ++ popq rbx ++ popq rax ++ (cmpq (imm nTypeBool) !%rax) ++ jne exitLabel ++
 	  				(cmpq (imm valTrue) !%rbx) ++ jne label1 ++
 	  				ins2 ++ popq rbx ++ popq rax ++ (cmpq (imm nTypeBool) !%rax) ++ jne exitLabel ++
@@ -377,16 +386,16 @@ let rec compile_expr = function
 		let code = compile_expr expr in
 		code ++ (popq rbx) ++ (popq rax) ++ (movq !%rax (ind ~ofs:(offset+8) rbp)) ++ (movq !%rbx (ind ~ofs:offset rbp)) ++ pushq !%rbx ++ pushq !%rax
 	| LvalueAffectI (exp1, ident, entier, exp2) ->
-		let code1 = compile_expr exp1 in
-		let code2 = compile_expr exp2 in
+		let code1 = compile_expr exp2 in (* J'ai changé code1 et code2 :D *)
+		let code2 = compile_expr exp1 in
 		let (field_map, numero) = Tmap.find ident !structMap in (* numero est le code de type de la structure - 5*)
 		let numeroBis = numero + nTypeStruct in
 		let (cle, (field_index, field_type)) = Tmap.find_first (fun cle -> let (num, _) = Tmap.find cle field_map in num = numero) field_map in
 		let comparaison = (popq r14) ++ (popq rax) ++ (cmpq (imm numeroBis) !%rax) ++ (jne exitLabel) in
 		let target_type = (popq rbx) ++ (popq rax) ++
-			(if field_type != Any then (cmpq (ind ~ofs:(16*entier + 0) r14) !%rax) ++ (jne exitLabel) else nop) ++(* vérification de type qu'on met dans le champ *)
-			(movq !%rax (ind ~ofs:(16*entier + 0) r14)) ++
-			(movq !%rbx (ind ~ofs:(16*entier + 8) r14)) in
+			(if field_type != Any then (cmpq (ind ~ofs:(entier + 0) r14) !%rax) ++ (jne exitLabel) else nop) ++(* vérification de type qu'on met dans le champ *)
+			(movq !%rax (ind ~ofs:(entier + 0) r14)) ++
+			(movq !%rbx (ind ~ofs:(entier + 8) r14)) in
 		code1 ++ code2 ++ comparaison ++ target_type ++ pushq !%rax ++ pushq !%rbx
 	| Ret (pjtype, exp) ->
 		compile_expr exp ++ (popq rbx) ++ (popq rax) ++
@@ -596,9 +605,9 @@ let compile_program f ofile =
 			 Hashtbl.fold (fun x i l -> l ++ label ("float_"^string_of_int i) ++ (double (float_of_string x))) fMap nop ++
 			 Tmap.fold (fun x i l -> if x<> "nothing" then l ++ label (x^"_type") ++ (dquad [nTypeUndef])
 			 														++ label (x^"_val") ++ (dquad [0]) else l) smap nop ++
-		(label "nothing_type" ++ (dquad [nTypeNothing])) ++ 
-		(label "nothing_val" ++ (dquad [0])) ++ 
-       (label ".Sprint_int" ++ string "%d") ++
+		(label "nothing_type" ++ (dquad [nTypeNothing])) ++
+		(label "nothing_val" ++ (dquad [0])) ++
+       (label ".Sprint_int" ++ string "%zd") ++
 			 (label ".Sprint_float" ++ string "%f") ++
 			 (label ".Sprint_string" ++ string "%s") ++
 			 (label ".Sprint_endline" ++ string "\n") ++
