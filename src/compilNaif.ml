@@ -244,7 +244,7 @@ let rec buildArb (p:int) (f:string) (l:string):functArbr -> [`text] asm = functi
 
 
 let rec compile_expr = function
-	| Entier i -> pushq (imm nTypeInt) ++ pushq (imm64 i)
+	| Entier i -> pushq (imm nTypeInt) ++ movq (imm64 i) !%rax ++ pushq !%rax
 	| Flottant f -> (*pushq (imm nTypeFloat) ++ pushq (immD f)*) (* À changer *)
 		let n = string_of_int (Hashtbl.find fMap (string_of_float f)) in
 		pushq (imm nTypeFloat) ++ pushq ((if estMac then lab else ilab) ("float_"^n))
@@ -422,17 +422,18 @@ let rec compile_expr = function
 		incq !%rax ++ cmpq !%rax !%rcx ++
 		pushq !%rax ++ pushq !%rcx ++ (movq !%rax (ind ~ofs:posC rbp)) ++
 		jge lDeb ++
+		popn 16 ++
 		pushq (imm nTypeNothing) ++ pushq !%rax
 	| While (exp, debLoc, finLoc, bloc) ->
 		let e = compile_expr exp in
-		let b = compile_bloc bloc ++ (if bloc = [] then nop else popn 16) in
+		let b = compile_bloc bloc in
 		let (label1, label2) = (getWhile (), getWhile ()) in
 		let comp = (label label1) ++ e ++ (popq rbx) ++ (popq rax) ++ (cmpq (imm (nTypeBool)) !%rax) ++ (jne exitLabel) ++ (cmpq (imm valTrue) !%rbx) ++ (jne label2) in
-		let corps = b ++ (jmp label1) ++ (label label2) in
+		let corps = b ++ popn 16 ++ (jmp label1) ++ (label label2) in
 		comp ++ corps ++ pushq (imm nTypeNothing) ++ pushq !%rax
 	| If (exp, bloc, else_) ->
 		let c = compile_expr exp in
-		let c1 = compile_bloc bloc ++ (if bloc = [] then pushq (imm nTypeNothing)++pushq !%rax else nop) in
+		let c1 = compile_bloc bloc in
 		let c2 = compile_else_ else_ in
 		let (label1, label2) = (getIf (), getIf ()) in
 		c ++ (popq rbx) ++ (popq rax) ++ (cmpq (imm nTypeBool) !%rax) ++ (jne exitLabel) ++
@@ -442,7 +443,7 @@ and compile_else_ = function
 	| Else bloc -> compile_bloc bloc
 	| Elseif (exp, bloc, else_) -> compile_expr (If (exp, bloc, else_))
 and compile_bloc = function
-	| [] -> nop
+	| [] -> pushq (imm nTypeNothing) ++ pushq !%rax
 	| [t] -> compile_expr t
 	| t :: q -> (compile_expr t) ++ popn 16 ++ (compile_bloc q)
 
