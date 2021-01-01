@@ -76,7 +76,7 @@ let download_package request_name =
   let (name, version, description, url, dependencies) =
   try
     PackMap.find request_name !packagesMap
-  with _ -> failwith ("Unable to find requested package" ^ request_name) (* À améliorer *)
+  with _ -> failwith ("Unable to find requested package " ^ request_name) (* À améliorer *)
   in
   try
     begin

@@ -6,6 +6,7 @@ let affiche = ref false;;
 let parse_only = ref false;;
 let type_only = ref false;;
 let show_fName = ref false;;
+let analytics = ref false;;
 
 let gVenv = ref (Tmap.singleton "nothing" (false,Nothing))
 let gFenv = ref (Tmap.singleton "div" [0, [Int64; Int64], Int64])
@@ -62,6 +63,11 @@ let handle () =
     if !affiche then print_endline (show_fichier e)
     else if !show_fName then print_endline !(Hyper.file);
     (* CompilNaif.compile_program fichierType (!Hyper.file ^ ".s"); *)
+    if !analytics then 
+      begin
+        let (cFor, cWhile, cIf, cFunc, cString, cFloat, cCall, cMalloc) = CompilNaif.get_analytics () in
+        Printf.printf "Compilation yielded : %d for labels, %d while labels, %d if labels, %d function labels, %d string constants, %d FP constants, %d function calls and %d malloc calls\n" cFor cWhile cIf cFunc cString cFloat cCall cMalloc;
+      end;
     exit 0;
   with a -> begin
       let b = Lexing.lexeme_start_p lb in
@@ -130,7 +136,8 @@ let main () =
     ("-print-abstrac", Arg.Set affiche, "print of the abstract");
     ("--parse-only", Arg.Set parse_only, "Stop after parsing");
     ("--type-only", Arg.Set type_only, "Stop after typing");
-    ("-show-file-name", Arg.Set show_fName, "Print the name of the file to compile")
+    ("-show-file-name", Arg.Set show_fName, "Print the name of the file to compile");
+    ("-analytics", Arg.Set analytics, "Prints some basic analytics after compilation")
     ] in
     Arg.parse speclist set_filename "file to process.";
     handle ();

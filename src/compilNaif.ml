@@ -26,6 +26,10 @@ let compteurFunc = ref 0
 let compteurString = ref 0
 let compteurFloat = ref 0
 
+(* These are for analytics *)
+let compteurCall = ref 10
+let compteurMalloc = ref 0
+
 let sMap = Hashtbl.create 8
 let fMap = Hashtbl.create 8
 
@@ -117,6 +121,7 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 				(offset, [])
 		in Bloc eL, offset
 	| CallE ((ident, iSet:(string * ISet.t)), eL) -> begin
+		compteurCall := !compteurCall + 1;
 		let (offset, eL) =
 			List.fold_right
 				(fun (_, e) (o1, l) -> let (e1, o2) = alloc_expr env offset e in (min o1 o2, e1::l))
@@ -223,7 +228,8 @@ let newFlagArb () =
 
 let rec buildArb (p:int) (f:string) (l:string):functArbr -> [`text] asm = function
 	| Failure -> (label l ++ jmp exitLabel)
-	| Feuille (s,i) -> label l ++ call (s^"_"^string_of_int i) ++ jmp f
+	| Feuille (s,i) -> compteurCall := !compteurCall + 1;
+		label l ++ call (s^"_"^string_of_int i) ++ jmp f
 	| Appels tM ->
 		if TypeMap.cardinal tM == 1 then
 			if TypeMap.mem Any tM then buildArb (p-1) f l (TypeMap.find Any tM)
@@ -259,6 +265,7 @@ let rec compile_expr = function
 	| EntierParG (entier, bloc) -> compile_expr (Binop (Times, Entier entier, Bloc bloc))
 	| ParDIdent (exp, label) -> compile_expr (Binop (Times, exp, Ident label))*)
 	| Call (ident, funcArbr, expList) ->
+		compteurCall := !compteurCall + 1;
 		let rec parcours liste =
 			match liste with
 			| [] -> nop
@@ -472,7 +479,9 @@ let compile_fun (n:string) (i:int) = function
     (if rT = Any then nop else (cmpq (imm (int_of_type rT)) !%rax ++ jne exitLabel)) ++
     movq !%rbp !%rsp ++ popq rbp ++
     ret)
-  | StructBuilder eL ->
+	| StructBuilder eL ->
+		compteurMalloc := !compteurMalloc + 1;
+		compteurCall := !compteurCall + 1;
     let nType = numStruct n in
     let longueur= List.length eL in
     let code = ref nop in
@@ -622,6 +631,10 @@ let compile_program f ofile =
  X86_64.print_program fmt p;
  Format.fprintf fmt "@?";
  close_out f
+;;
+
+let get_analytics () =
+	(!compteurFor, !compteurWhile, !compteurIf, !compteurFunc, !compteurString, !compteurFloat, !compteurCall, !compteurMalloc)
 
 
 (*
