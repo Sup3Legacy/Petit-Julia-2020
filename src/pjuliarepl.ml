@@ -85,13 +85,23 @@ let flush () =
 
 print_string Logo.logo2;;
 
+let read_input () =
+  let res = ref "" in
+  let last = ref (read_line ()) in
+  while !last <> "" do
+    res := !res ^ (!last ^ "\n");
+    last := read_line ();
+  done;
+  !res
+;;
+
 while !continue do
   (* boucle principale *)
   flushed := false;
   print_newline();
   print_newline();
   print_string !prompt;
-  instr := read_line();
+  instr := read_input();
   if startswith !instr "#exit" then exit 0;
   if startswith !instr "#flush" then flush ();
   if startswith !instr "#cof" then begin print_string "Choisissez la survivaliste"; instr := "" end;

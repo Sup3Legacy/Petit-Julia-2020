@@ -1,5 +1,6 @@
 open Ast
 open Astype
+open Ollvm_test
 
 let affiche = ref false;;
 let parse_only = ref false;;
@@ -111,7 +112,7 @@ let handle () =
             Printf.printf "Lexing error : %s\n" m;
             exit 1
           end
-        | _ -> raise a;Printf.printf "Unkown error in file %s\n" !(Hyper.file);
+        | _ -> Printf.printf "Unkown error in file %s\n" !(Hyper.file); ignore (raise a);
       exit 1
     end
 ;;
@@ -132,9 +133,6 @@ let main () =
     ("-show-file-name", Arg.Set show_fName, "Print the name of the file to compile")
     ] in
     Arg.parse speclist set_filename "file to process.";
-    let file = open_out "out.s" in
-    Printf.fprintf file "%s\n" "hahaha";
-    close_out file;
     handle ();
   end
 ;;
