@@ -76,7 +76,7 @@ let download_package request_name =
   let (name, version, description, url, dependencies) =
   try
     PackMap.find request_name !packagesMap
-  with _ -> failwith "Unable to find requested package" (* À améliorer *)
+  with _ -> failwith ("Unable to find requested package" ^ request_name) (* À améliorer *)
   in
   try
     begin
@@ -85,7 +85,24 @@ let download_package request_name =
       let oc = open_out (name ^ ".jl") in
       Printf.fprintf oc "%s" file;
       close_out oc;
-      print_endline ("Downloaded package " ^ name)
+      print_endline ("Succesfully downloaded package " ^ name)
     end
   with _ -> failwith "Failed downloading requested package"
 ;;
+
+let remove_package name =
+  let index =
+  Yojson.Basic.from_file "index.json"
+  in
+  get_packages_list index;
+  let (name, version, description, url, dependencies) =
+   try
+    PackMap.find name !packagesMap
+  with _ -> failwith ("Requested package not found : " ^ name ^ ". Are you trying to try and abuse pPkg by removing non-package files?!") (* À améliorer *)
+in
+try
+  begin
+    Sys.remove (name ^ ".jl");
+    print_endline ("Succesfully removed package " ^ name)
+  end
+with _ -> failwith "Failed removing requested package"

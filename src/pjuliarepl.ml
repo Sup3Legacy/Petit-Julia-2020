@@ -110,8 +110,13 @@ while !continue do
   if startswith !instr "#update" then begin PPkg.update (); instr := "" end;
   if startswith !instr "#install" then
     begin let n = String.length !instr in
-    let a = PPkg.download_package (String.sub !instr 9 (n - 9)) in a;
+    let a = PPkg.download_package (String.sub !instr 9 (n - 10)) in a;
     instr := "" end;
+  if startswith !instr "#remove" then 
+    begin 
+    let n = String.length !instr in
+    PPkg.remove_package (String.sub !instr 8 (n - 9))
+    end;
   if startswith !instr "? " then
     begin
       let n = String.length !instr in

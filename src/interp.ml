@@ -210,7 +210,7 @@ let construct code fI sI =
 let rec print_function l acc =
   (* fonction générique print *)
   match l with
-  | [] -> Printf.printf "%s" acc; Vnothing
+  | [] -> Printf.printf "%s" (Scanf.unescaped acc); Vnothing
   | t :: q -> print_function q (acc ^ (print_value [] t))
 ;;
 
