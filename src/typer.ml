@@ -38,7 +38,7 @@ let error (msg:string) (p:Ast.position) = raise (Ast.Typing_Error_Msg_Pos (msg,p
 let exists (t:Astype.pjtype) (env:structEnv):bool = match t with
   | Any | Nothing | Int64 | Float64 | Bool | String -> true
   | S s -> Tmap.mem s env
-  | Array s -> exists s env
+  | Array -> true
 
 (* teste si le champ existe *)
 let argExists (t:string) (env:argsEnv) = Tmap.mem t env
@@ -51,7 +51,7 @@ let typeName (t:Astype.pjtype):string = match t with
   | Bool -> "Bool"
   | String -> "String"
   | S s -> "Struct \""^s^"\""
-  | Array s -> (typeName s) ^ " array"
+  | Array -> "Array"
   | Any -> "Any"
 
 (* teste la correction d'une déclaration de structure et la rajoute aux différents environnements *)
@@ -164,7 +164,7 @@ let rec parcoursExpr (isLoc:bool) (vE:varEnv) (fE:funcEnv) (aE:argsEnv) (sE:stru
     if Tmap.mem str vE then parcoursExpr isLoc vE fE aE sE e
   else error ("undefined variable name "^str) p
   | Eapplication (pStr, str, eL) ->
-      if Tmap.mem str sE || Tmap.mem str fE || str = "print" || str = "println"
+      if Tmap.mem str sE || Tmap.mem str fE || str = "print" || str = "println" || str = "_getelement" || str = "_setelement" || str = "newarray"
       then List.fold_left (fun ve (p, e) -> parcoursExpr isLoc ve fE aE sE e) vE eL
       else error ("undefined function 1 "^str) pStr
   | Enot (_, e) | Eminus (_, e) -> parcoursExpr isLoc vE fE aE sE e
@@ -271,10 +271,10 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
       |_,_ -> error (Logo.booom) pI
     end
   | Eapplication (pName, ident, eL) -> begin
-    if ident = "print" || ident = "println"
-    then
-      (Nothing, CallE ((ident, ISet.singleton 0), List.fold_right (fun (_, e) l -> testTypageE isLoc vE fE sE aE rT b e::l) eL []))
-    else
+      match ident with 
+      | "print" | "println" -> (Nothing, CallE ((ident, ISet.singleton 0), List.fold_right (fun (_, e) l -> testTypageE isLoc vE fE sE aE rT b e::l) eL []))
+      | "newarray" | "_getelement" | "_setelement" -> (Any, CallE ((ident, ISet.singleton 0), List.fold_right (fun (_, e) l -> testTypageE isLoc vE fE sE aE rT b e::l) eL []))
+      | _ ->
       if Tmap.mem ident fE then
         let l = try Tmap.find ident fE with Not_found -> assert false in
         let rec calcTyp l = match l with

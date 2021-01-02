@@ -130,11 +130,9 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 				eL
 				(offset, [])
 		in
-		if ident = "print" then
-			Call (ident, Feuille ("print", 0), eL), offset
-		else if ident = "div" then
-			Call (ident, Feuille ("div", 0), eL), offset
-		else
+		match ident with 
+		| "print" | "div" | "_getelement" | "_setelement" | "newarray" -> Call (ident, Feuille (ident, 0), eL), offset
+		| _ ->
 			let f = try Tmap.find ident !functionMap with Not_found -> failwith ("not found "^ident) in
 			let arb:AstcompilN.functArbr = calcArb ident (ISet.fold (fun i l -> match Imap.find i f with
 					|StructBuilder l1 |Funct (l1, _, _, _)  -> (List.fold_right (fun (_, p) l2 -> p::l2) l1 [],i,0)::l) iSet [])
@@ -220,7 +218,8 @@ let int_of_type t = match t with
   | Int64 -> nTypeInt
   | Float64 -> nTypeFloat
   | Bool -> nTypeBool
-  | String -> nTypeString
+	| String -> nTypeString
+	| Array -> nTypeArray
   | S s -> numStruct s
 
 let newFlagArb () =
@@ -237,11 +236,15 @@ let rec buildArb (p:int) (f:string) (l:string):functArbr -> [`text] asm = functi
 			if TypeMap.mem Any tM then buildArb (p-1) f l (TypeMap.find Any tM)
 			else
 				let (t,arb) = TypeMap.choose tM in
-				label l ++ cmpq (imm (int_of_type t)) (ind ~ofs:(16*p - 8) rsp) ++ jne exitLabel ++ buildArb (p-1) f (newFlagArb ()) arb
+				if (int_of_type t = nTypeArray) then 
+					label l ++ cmpq (imm (int_of_type t)) (ind ~ofs:(16*p - 8) rsp) ++ jg exitLabel ++ buildArb (p-1) f (newFlagArb ()) arb
+				else label l ++ cmpq (imm (int_of_type t)) (ind ~ofs:(16*p - 8) rsp) ++ jne exitLabel ++ buildArb (p-1) f (newFlagArb ()) arb
 		else
 			let (c1,l1) = TypeMap.fold (fun k a (c,l) -> if k=Any then (c,l)
 								else let dir = newFlagArb () in
-								(c ++ cmpq (imm (int_of_type k)) (ind ~ofs:(16*p - 8) rsp) ++ je dir, (dir,a)::l)
+								if (int_of_type k) = nTypeArray then 
+									(c ++ cmpq (imm (int_of_type k)) (ind ~ofs:(16*p - 8) rsp) ++ jge dir, (dir,a)::l)
+								else (c ++ cmpq (imm (int_of_type k)) (ind ~ofs:(16*p - 8) rsp) ++ je dir, (dir,a)::l)
 							) tM (label l, []) in
 			let c = if TypeMap.mem Any tM then
 					buildArb (p-1) f (newFlagArb ()) (TypeMap.find Any tM)
@@ -527,7 +530,7 @@ let compile_program f ofile =
     idivq !%rax ++
 		ret ++
 
-		label "newarray" ++
+		label "newarray_0" ++
 		popq rdx ++ popq rcx ++ (* valeur d'initialisation *)
 		popq rbx ++ popq rax ++ (* longueur de l'array *)
 		cmpq (imm nTypeInt) !%rax ++ jne (label exitLabel) ++ (* on vérifie que l'indice est bien entier *)
@@ -543,7 +546,7 @@ let compile_program f ofile =
 		ret ++
 
 
-		label "_getelement" ++
+		label "_getelement_0" ++
 		popq rdx ++ popq rcx ++ (* type et valeur de l'indice *)
 		popq rbx ++ popq rax ++ (* type et valeur du pointeur vers le début *)
 		comp (nTypeArray) !%rax ++ jg exitLabel ++ (* On vérifie que c'est bien un array *)
@@ -555,7 +558,7 @@ let compile_program f ofile =
 		pushq !%rax ++ push !%rbx ++ (* On empile le résultat *)
 		ret ++
 
-		label "_setelement" ++
+		label "_setelement_0" ++
 		popq r13 ++ popq r12 ++ (* type et valeur à insérer*)
 		popq rdx ++ popq rcx ++ (* type et valeur de l'indice *)
 		popq rbx ++ popq rax ++ (* type et valeur de la donnée (array, a priori) à affecter *)

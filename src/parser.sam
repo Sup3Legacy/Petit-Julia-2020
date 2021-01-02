@@ -59,7 +59,6 @@
 
 %token <string> DOCSTRING
 
-%nonassoc CROCHETG
 %nonassoc RETURN
 %right AFFECT
 %left OR
@@ -73,7 +72,7 @@
 %nonassoc unary_minus
 %right EXP
 %left DOT
-
+%left CROcHETG
 
 %start fichier
 
@@ -138,6 +137,7 @@ fonction<Ast.declaration>:
         | (p, "String") -> String, p
         | (p, "Any") -> Any, p
         | (p, "Nothing") -> Nothing, p
+        | (p, "Array") -> Array, p
         | (p, s) -> S s, p
       in
       Dfonction (p1,ig, parameters, p2, typ, (p,eL), "")
@@ -312,11 +312,8 @@ expr_wMin_<Ast.expression>:
   | p1 = CROCHETG arr = separated_list_COMMA_expr p2 = CROCHETD {
     Hyper2.build_array arr
     }
-  | e1 = expr p1 = CROCHETG e2 = expr p2 = CROCHETD AFFECT e3 = expr {
+  | e1 = expr p1 = CURLYG e2 = expr p2 = CURLYD AFFECT e3 = expr {
     (posVide, Eapplication (posVide, "_setelement"n [e1; e2; e3]))
-  }
-  | e1 = expr p1 = CROCHETG e2 = expr p2 = CROCHETD {
-    (posVide, Eapplication (posVide, "_getelement", [e1; e2]))
   }
 ;
 
@@ -377,9 +374,6 @@ expr_w_Ret<Ast.expression>:
   | p1 = CROCHETG arr = separated_list_COMMA_expr p2 = CROCHETD {
     Hyper2.build_array arr
     }
-  | e1 = expr p1 = CROCHETG e2 = expr p2 = CROCHETD {
-    (posVide, Eapplication (posVide, "_getelement", [e1; e2]))
-  }
 ;
 
 expr<Ast.expression>:
@@ -440,9 +434,6 @@ expr<Ast.expression>:
   | p1 = CROCHETG arr = separated_list_COMMA_expr p2 = CROCHETD {
     Hyper2.build_array arr
     }
-  | e1 = expr p1 = CROCHETG e2 = expr p2 = CROCHETD {
-    (posVide, Eapplication (posVide, "_getelement", [e1; e2]))
-  }
 ;
 
 whileExp<Ast.expression>:
@@ -459,6 +450,9 @@ lvalue<Ast.position * Ast.lvalue>:
   | e = expr DOT pi = IDENT {
     let (p,i) = pi in
     Hyper2.fusionPos (fst e) p, Lindex (e, p, (i : ident))}
+  | e1 = expr p1 = CROCHETG e2 = expr p2 = CROCHETD {
+    (posVide, Eapplication (posVide, "_getelement", [e1; e2]))
+  }
 ;
 
 lvalue_wMin_<Ast.position * Ast.lvalue>:
@@ -466,6 +460,9 @@ lvalue_wMin_<Ast.position * Ast.lvalue>:
   | e = expr_wMin_ DOT pi = IDENT {
     let (p,i) = pi in
     Hyper2.fusionPos (fst e) p, Lindex (e, p, (i : ident))}
+  | e1 = expr_wMin_ p1 = CROCHETG e2 = expr p2 = CROCHETD {
+    (posVide, Eapplication (posVide, "_getelement", [e1; e2]))
+  }
 ;
 
 else_exp<Ast.position * Ast.else_>:

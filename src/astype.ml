@@ -33,7 +33,7 @@ type pjtype = (* types de petitjulia *)
   | Float64
   | Bool
 	| String
-	| Array of pjtype
+	| Array
   | S of string
 [@@deriving show]
 ;;
