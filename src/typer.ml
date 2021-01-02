@@ -38,6 +38,7 @@ let error (msg:string) (p:Ast.position) = raise (Ast.Typing_Error_Msg_Pos (msg,p
 let exists (t:Astype.pjtype) (env:structEnv):bool = match t with
   | Any | Nothing | Int64 | Float64 | Bool | String -> true
   | S s -> Tmap.mem s env
+  | Array s -> exists s env
 
 (* teste si le champ existe *)
 let argExists (t:string) (env:argsEnv) = Tmap.mem t env
@@ -50,6 +51,7 @@ let typeName (t:Astype.pjtype):string = match t with
   | Bool -> "Bool"
   | String -> "String"
   | S s -> "Struct \""^s^"\""
+  | Array s -> (typeName s) ^ " array"
   | Any -> "Any"
 
 (* teste la correction d'une déclaration de structure et la rajoute aux différents environnements *)
@@ -127,6 +129,8 @@ let rec chercheDefE (isLoc:bool) (vS:Tset.t) = function
     end
   | ElvalueAffect (_, Lident (_, str), (_, e)) -> chercheDefE isLoc (Tset.add str vS) e
   | ElvalueAffect (_, Lindex ((_, e1), _, _), (_, e2)) ->
+    chercheDefE isLoc (chercheDefE isLoc vS e1) e2
+  | Elvalue (_, Larrayindex (e1, _, e2)) -> 
     chercheDefE isLoc (chercheDefE isLoc vS e1) e2
   | Ereturn (_, None) -> vS
   | Ereturn (_, Some (_, e)) -> chercheDefE isLoc vS e

@@ -527,30 +527,31 @@ let compile_program f ofile =
     idivq !%rax ++
 		ret ++
 
-		label "_newarray" ++
+		label "newarray" ++
 		popq rdx ++ popq rcx ++ (* valeur d'initialisation *)
 		popq rbx ++ popq rax ++ (* longueur de l'array *)
 		cmpq (imm nTypeInt) !%rax ++ jne (label exitLabel) ++ (* on vérifie que l'indice est bien entier *)
-		addq (imm 1) !%rbx ++ movq !%rbx !%rax ++ imulq (imm 16) !%rax ++ (* On ajouter à la taille les 2 mots : type/taille *)
+		addq (imm 1) !%rbx ++ movq !%rbx !%rax ++ imulq (imm 8) !%rax ++ (* On ajouter à la taille les 2 mots : type/taille *)
 		movq !%rax !%rdi ++ 
 		call "malloc" ++ (* /!\ pas d'initialisation pour l'instant *)
 		(* L'adresse du début de l'array est en %rax *)
-		movq !%rbx (ind ~ofs:0 rax) ++ (* On stocke la taille *)
-		movq !%rcx (ind ~ofs:8 rax) ++
-		pushq (imm nTypeArray) ++ pushq !%rax ++ (* on empile le type et le pointeur vers le array *)
-		movq !%rax !%rbx ++ movq (imm nTypeArray) !%rax ++ (* Et on met ça sur %rax-%rbx *)
+		movq !%rcx (ind ~ofs:0 rax) ++ (* On stocke le type *)
+		movq !%rbx (ind ~ofs:8 rax) ++ (* On stocke la taille *)
+		addq (imm nTypeArray) !%rcx ++ (* On calcule le nouveau type (ajout de nTypeArray) *)
+		pushq !%rcx ++ pushq !%rax ++ (* on empile le type et le pointeur vers le array *)
+		movq !%rax !%rbx ++ movq !%rcx !%rax ++ (* Et on met ça sur %rax-%rbx *)
 		ret ++
 
 
 		label "_getelement" ++
 		popq rdx ++ popq rcx ++ (* type et valeur de l'indice *)
 		popq rbx ++ popq rax ++ (* type et valeur du pointeur vers le début *)
-		comp (nTypeArray) !%rax ++ jne exitLabel ++ (* On vérifie que c'est bien un array *)
+		comp (nTypeArray) !%rax ++ jg exitLabel ++ (* On vérifie que c'est bien un array *)
 		cmpq (nTypeInt) !%rcx ++ jne exitLabel ++ (* On vérifie que l'indice est bien un entier *)
 		cmpq (ind ~ofs:8 rbx) !%rdx ++ jle exitLabel ++ (* On compare qu'on reste dans les bornes de l'array ;) *) (* TODO vérifier que c'est bon *)
-		imulq (imm 2) !%rbx ++
-		movq (ind ~ofs:16 ~index:rdx ~scale:8 rbx) !%rax ++ (* Acquisition du type *)
-		movq (ind ~ofs:24 ~index:rdx ~scale:8 rbx) !%rbx ++ (* Acquisition de la valeur *)
+		imulq (imm 1) !%rbx ++
+		movq (ind ~ofs:0 rbx) !%rax ++ (* Acquisition du type *)
+		movq (ind ~ofs:16 ~index:rdx ~scale:8 rbx) !%rbx ++ (* Acquisition de la valeur *)
 		pushq !%rax ++ push !%rbx ++ (* On empile le résultat *)
 		ret ++
 
@@ -558,13 +559,12 @@ let compile_program f ofile =
 		popq r13 ++ popq r12 ++ (* type et valeur à insérer*)
 		popq rdx ++ popq rcx ++ (* type et valeur de l'indice *)
 		popq rbx ++ popq rax ++ (* type et valeur de la donnée (array, a priori) à affecter *)
-		comp (nTypeArray) !%rax ++ jne exitLabel ++ (* On vérifie que c'est bien un array *)
+		comp (nTypeArray) !%rax ++ jg exitLabel ++ (* On vérifie que c'est bien un array *)
 		cmpq (nTypeInt) !%rcx ++ jne exitLabel ++ (* On vérifie que l'indice est bien un entier *)
 		cmpq (ind ~ofs:0 rbx) !%r12 ++ jne exitLabel ++ (* On vérifie que la valeur insérée a le même type que le reste *)
 		cmpq (ind ~ofs:8 rbx) !%rdx ++ jle exitLabel ++ (* On compare qu'on reste dans les bornes de l'array ;) *)
-		imulq (imm 2) !%rbx ++
-		movq !%r12 (ind ~ofs:16 ~index:rdx ~scale:8 rbx) ++ (* Insertion du type *)
-		movq !%r13 (ind ~ofs:24 ~index:rdx ~scale:8 rbx) ++ (* Insertion de la valeur *)
+		imulq (imm 1) !%rbx ++
+		movq !%r13 (ind ~ofs:16 ~index:rdx ~scale:8 rbx) ++ (* Insertion de la valeur *)
 		ret ++
 
 		label "print_0" ++ (* Fonction principale print *)

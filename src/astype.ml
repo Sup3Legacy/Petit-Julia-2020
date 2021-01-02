@@ -32,7 +32,8 @@ type pjtype = (* types de petitjulia *)
   | Int64
   | Float64
   | Bool
-  | String
+	| String
+	| Array of pjtype
   | S of string
 [@@deriving show]
 ;;
@@ -60,6 +61,7 @@ and exprTyper =
 	| ChaineE of string
 	| TrueE
 	| FalseE
+	| ArrayE of expressionTyper list
 (*	| EntierIdentE of Int64.t * pjtype * ident * bool
 	| EntierParGE of Int64.t * blocTyper*)
 	| BlocE of blocTyper

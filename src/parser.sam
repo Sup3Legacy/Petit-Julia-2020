@@ -60,7 +60,6 @@
 %token <string> DOCSTRING
 
 %nonassoc CROCHETG
-%nonassoc CROCHETD
 %nonassoc RETURN
 %right AFFECT
 %left OR
@@ -313,8 +312,11 @@ expr_wMin_<Ast.expression>:
   | p1 = CROCHETG arr = separated_list_COMMA_expr p2 = CROCHETD {
     Hyper2.build_array arr
     }
+  | e1 = expr p1 = CROCHETG e2 = expr p2 = CROCHETD AFFECT e3 = expr {
+    (posVide, Eapplication (posVide, "_setelement"n [e1; e2; e3]))
+  }
   | e1 = expr p1 = CROCHETG e2 = expr p2 = CROCHETD {
-    Larrayindex (e1, p1, e2)
+    (posVide, Eapplication (posVide, "_getelement", [e1; e2]))
   }
 ;
 
@@ -376,7 +378,7 @@ expr_w_Ret<Ast.expression>:
     Hyper2.build_array arr
     }
   | e1 = expr p1 = CROCHETG e2 = expr p2 = CROCHETD {
-    Larrayindex (e1, p1, e2)
+    (posVide, Eapplication (posVide, "_getelement", [e1; e2]))
   }
 ;
 
@@ -439,7 +441,7 @@ expr<Ast.expression>:
     Hyper2.build_array arr
     }
   | e1 = expr p1 = CROCHETG e2 = expr p2 = CROCHETD {
-    Larrayindex (e1, p1, e2)
+    (posVide, Eapplication (posVide, "_getelement", [e1; e2]))
   }
 ;
 

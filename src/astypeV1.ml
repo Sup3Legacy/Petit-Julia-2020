@@ -14,6 +14,7 @@ type pjtype = (* types de petitjulia *)
   | Bool
   | String
   | S of string
+  | Array of pjtype
 [@@deriving show]
 ;;
 
