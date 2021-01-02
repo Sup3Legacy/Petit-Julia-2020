@@ -35,7 +35,7 @@ let afficheL l =
     |"CROCHETD" -> "]"
     |"SEMICOLON"|"expr_bloc2"|"bloc_END"|"bloc1bis" -> ";"
     |"COMMA"|"separated_list_C_P"|"separated_list_C_E"-> ","
-    |_ -> print_string ("\n"^s^"\n");assert false
+    |_ -> ""
   in
   let rec aux (l:string list) = match l with
   |[] -> Sset.empty

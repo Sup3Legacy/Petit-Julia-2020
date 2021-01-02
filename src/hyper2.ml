@@ -10,10 +10,10 @@ let rec build_array arr =
   let head, tail = 
     (match arr with
       | t :: q -> t, q
-      | [] -> (posVide, Efalse), [])
+      | [] -> (posVide, Etrue), [])
   in
-  let creation = posVide, ElvalueAffect (posVide, Lident (posVide, "_temp_array"), (posVide, Eapplication(posVide, "_newarray", [(posVide, Eentier (Int64.of_int l)); head]))) in (* Code pour créer l'array temporaire *)
-  (posVide, Ebloc1 (posVide, creation :: (List.mapi (fun indice x -> posVide, Eapplication (posVide, "_setelement", [(posVide, Echaine "_temp_array"); (posVide, Eentier (Int64.of_int indice)); x])) tail) @ [(posVide, Elvalue (Lident (posVide, "_temp_array")))] ))
+  let creation = posVide, ElvalueAffect (posVide, Lident (posVide, "_temp_array"), (posVide, Eapplication(posVide, "newarray", [(posVide, Eentier (Int64.of_int l)); head]))) in (* Code pour créer l'array temporaire *)
+  (posVide, Ebloc1 (posVide, creation :: (List.mapi (fun indice x -> posVide, Eapplication (posVide, "_setelement", [(posVide, Elvalue (Lident (posVide, "_temp_array"))); (posVide, Eentier (Int64.of_int (indice))); x])) arr) @ [(posVide, Elvalue (Lident (posVide, "_temp_array")))] ))
 ;;
   
 

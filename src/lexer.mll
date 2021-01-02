@@ -64,6 +64,8 @@ rule tokens = parse
           else raise (Ast.Lexing_Error_Msg_Pos ("Overflowing integer", Hyper.position lexbuf))
     }
   | (ident as s)"(" {Hyper.enterPar (); Hyper.disableEnd (); [IDENT_PARG (Hyper.position lexbuf,s)]}
+  | (ident as s)"[" {Hyper.disableEnd (); [IDENT_CROCHETG (Hyper.position lexbuf, s)]}
+  | ')''[' {Hyper.leavePar (); Hyper.disableEnd (); [PARD_CROCHETG (Hyper.position lexbuf)]}
   | ")" (ident as s) {
     if s = "true" || s = "false"
     then raise (Ast.Lexing_Error_Msg_Pos ("Illegal variable name "^s, Hyper.position lexbuf))

@@ -50,6 +50,8 @@
 %token <Ast.position*string> IDENT_PARG
 %token <Ast.position*Int64.t> ENTIER_PARG
 %token <Ast.position*string> PARD_IDENT
+%token <Ast.position*string> IDENT_CROCHETG
+%token <Ast.position> PARD_CROCHETG
 
 %token TYPE
 
@@ -73,6 +75,7 @@
 %right EXP
 %left DOT
 %left CROCHETG
+%left CROCHETD
 
 %start fichier
 
@@ -425,7 +428,11 @@ expr<Ast.expression>:
   | p1 = CROCHETG arr = separated_list_COMMA_expr p2 = CROCHETD {
     Hyper2.build_array arr
     }
-  | e1 = expr p1 = CROCHETG e2 = expr p2 = CROCHETD {
+  | pe1 = IDENT_CROCHETG e2 = expr p2 = CROCHETD {
+    let (p1, s) = pe1 in
+    (Hyper2.posVide, Eapplication (Hyper2.posVide, "_getelement", [p1, Elvalue (Lident (p1, s)); e2]))
+  }
+  | p1 = PARG e1 = expr p2 = PARD_CROCHETG e2 = expr p3 = CROCHETD {
     (Hyper2.posVide, Eapplication (Hyper2.posVide, "_getelement", [e1; e2]))
   }
 ;
