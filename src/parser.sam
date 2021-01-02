@@ -432,6 +432,10 @@ expr<Ast.expression>:
     let (p1, s) = pe1 in
     (Hyper2.posVide, Eapplication (Hyper2.posVide, "_getelement", [p1, Elvalue (Lident (p1, s)); e2]))
   }
+  | pe1 = IDENT_CROCHETG e2 = expr p2 = CROCHETD AFFECT e3 = expr {
+    let (p1, s) = pe1 in
+    (Hyper2.posVide, Eapplication (Hyper2.posVide, "_setelement", [p1, Elvalue (Lident (p1, s)); e2; e3]))
+  }
   | p1 = PARG e1 = expr p2 = PARD_CROCHETG e2 = expr p3 = CROCHETD {
     (Hyper2.posVide, Eapplication (Hyper2.posVide, "_getelement", [e1; e2]))
   }
