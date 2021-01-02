@@ -72,7 +72,7 @@
 %nonassoc unary_minus
 %right EXP
 %left DOT
-%left CROcHETG
+%left CROCHETG
 
 %start fichier
 
@@ -309,12 +309,6 @@ expr_wMin_<Ast.expression>:
       let (p2, el) = pel in
 	    Hyper2.fusionPos p1 p2, Eif (e, b, el)
     }
-  | p1 = CROCHETG arr = separated_list_COMMA_expr p2 = CROCHETD {
-    Hyper2.build_array arr
-    }
-  | e1 = expr p1 = CURLYG e2 = expr p2 = CURLYD AFFECT e3 = expr {
-    (posVide, Eapplication (posVide, "_setelement"n [e1; e2; e3]))
-  }
 ;
 
 expr_w_Ret<Ast.expression>:
@@ -370,9 +364,6 @@ expr_w_Ret<Ast.expression>:
   		let (e,b) = eb in
       let (p2, el) = pel in
       Hyper2.fusionPos p1 p2, Eif (e, b, el)
-    }
-  | p1 = CROCHETG arr = separated_list_COMMA_expr p2 = CROCHETD {
-    Hyper2.build_array arr
     }
 ;
 
@@ -431,9 +422,6 @@ expr<Ast.expression>:
       let (p2, el) = pel in
       Hyper2.fusionPos p1 p2, Eif (e, b, el)
     }
-  | p1 = CROCHETG arr = separated_list_COMMA_expr p2 = CROCHETD {
-    Hyper2.build_array arr
-    }
 ;
 
 whileExp<Ast.expression>:
@@ -450,9 +438,6 @@ lvalue<Ast.position * Ast.lvalue>:
   | e = expr DOT pi = IDENT {
     let (p,i) = pi in
     Hyper2.fusionPos (fst e) p, Lindex (e, p, (i : ident))}
-  | e1 = expr p1 = CROCHETG e2 = expr p2 = CROCHETD {
-    (posVide, Eapplication (posVide, "_getelement", [e1; e2]))
-  }
 ;
 
 lvalue_wMin_<Ast.position * Ast.lvalue>:
@@ -461,7 +446,7 @@ lvalue_wMin_<Ast.position * Ast.lvalue>:
     let (p,i) = pi in
     Hyper2.fusionPos (fst e) p, Lindex (e, p, (i : ident))}
   | e1 = expr_wMin_ p1 = CROCHETG e2 = expr p2 = CROCHETD {
-    (posVide, Eapplication (posVide, "_getelement", [e1; e2]))
+    (Hyper2.posVide, Eapplication (Hyper2.posVide, "_getelement", [e1; e2]))
   }
 ;
 

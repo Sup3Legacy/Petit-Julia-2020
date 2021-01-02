@@ -130,8 +130,6 @@ let rec chercheDefE (isLoc:bool) (vS:Tset.t) = function
   | ElvalueAffect (_, Lident (_, str), (_, e)) -> chercheDefE isLoc (Tset.add str vS) e
   | ElvalueAffect (_, Lindex ((_, e1), _, _), (_, e2)) ->
     chercheDefE isLoc (chercheDefE isLoc vS e1) e2
-  | Elvalue (_, Larrayindex (e1, _, e2)) -> 
-    chercheDefE isLoc (chercheDefE isLoc vS e1) e2
   | Ereturn (_, None) -> vS
   | Ereturn (_, Some (_, e)) -> chercheDefE isLoc vS e
   | Efor (_, (_, e1), (_, e2), (_, eL)) ->

@@ -262,6 +262,9 @@ let rec interp_expression e vI fI sI =
         | [Vint n1; Vint n2] -> Vint (Int64.div n1 n2)
         | _ -> interp_error "Wrong arguments for div"
       end
+    | "newarray" -> failwith "newarray not implemented"
+    | "_getelement" -> failwith "_getelement not implemented"
+    | "_setelement" -> failwith "_setelement not implemented"
     | _ ->
       begin
         if Imap.mem i !fI then (* Essaye d'appliquer une fonction *)
