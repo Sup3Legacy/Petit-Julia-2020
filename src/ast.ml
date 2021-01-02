@@ -44,6 +44,7 @@ and expr =
   | Echaine of ident
   | Etrue
   | Efalse
+  | Earray of expression array
   | EentierIdent of position * Int64.t * ident
   | EentierParG of position * Int64.t * bloc
   | Ebloc1 of bloc
@@ -62,6 +63,7 @@ and expr =
 and lvalue =
   | Lident of position * ident
   | Lindex of expression * position * ident
+  | Larrayindex of expression * position * expression
 [@@deriving show]
 and else_ =
   | Iend

@@ -16,6 +16,7 @@
 }
 
 let chiffre = ['0'-'9']
+let lettre = ['a'-'z']|['A'-'Z']
 let alpha = ['a'-'z']|['A'-'Z']|'_'
 
 let ident = (alpha)(alpha | chiffre)*
@@ -123,6 +124,8 @@ rule tokens = parse
   }
   | "[" {Hyper.disableEnd (); [CROCHETG (Hyper.position lexbuf)]}
   | "]" {Hyper.enableEnd (); [CROCHETD (Hyper.position lexbuf)]}
+  | "{" {Hyper.disableEnd (); [CURLYG (Hyper.position lexbuf)]}
+  | "}" {Hyper.enableEnd (); [CURLYD (Hyper.position lexbuf)]}
   | "#" {comment lexbuf}
   | ":" {Hyper.disableEnd ();[COLON (Hyper.position lexbuf)]}
   | ";" {Hyper.disableEnd ();[SEMICOLON (Hyper.position lexbuf)]}

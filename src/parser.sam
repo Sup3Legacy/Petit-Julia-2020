@@ -14,6 +14,8 @@
 %token <Ast.position> PARD
 %token <Ast.position> CROCHETG
 %token <Ast.position> CROCHETD
+%token <Ast.position> CURLYG
+%token <Ast.position> CURLYD
 %token <Ast.position> AFFECT
 %token <Ast.position> OR
 %token <Ast.position> AND
@@ -57,6 +59,8 @@
 
 %token <string> DOCSTRING
 
+%nonassoc CROCHETG
+%nonassoc CROCHETD
 %nonassoc RETURN
 %right AFFECT
 %left OR
@@ -306,9 +310,12 @@ expr_wMin_<Ast.expression>:
       let (p2, el) = pel in
 	    Hyper2.fusionPos p1 p2, Eif (e, b, el)
     }
-  | p1 = CROCHETG liste = separated_list_COMMA_expr p2 = CROCHETD {
-    Hyper2.build_liste liste
+  | p1 = CROCHETG arr = separated_list_COMMA_expr p2 = CROCHETD {
+    Hyper2.build_array arr
     }
+  | e1 = expr p1 = CROCHETG e2 = expr p2 = CROCHETD {
+    Larrayindex (e1, p1, e2)
+  }
 ;
 
 expr_w_Ret<Ast.expression>:
@@ -365,9 +372,12 @@ expr_w_Ret<Ast.expression>:
       let (p2, el) = pel in
       Hyper2.fusionPos p1 p2, Eif (e, b, el)
     }
-  | p1 = CROCHETG liste = separated_list_COMMA_expr p2 = CROCHETD {
-    Hyper2.build_liste liste
+  | p1 = CROCHETG arr = separated_list_COMMA_expr p2 = CROCHETD {
+    Hyper2.build_array arr
     }
+  | e1 = expr p1 = CROCHETG e2 = expr p2 = CROCHETD {
+    Larrayindex (e1, p1, e2)
+  }
 ;
 
 expr<Ast.expression>:
@@ -425,9 +435,12 @@ expr<Ast.expression>:
       let (p2, el) = pel in
       Hyper2.fusionPos p1 p2, Eif (e, b, el)
     }
-  | p1 = CROCHETG liste = separated_list_COMMA_expr p2 = CROCHETD {
-    Hyper2.build_liste liste
+  | p1 = CROCHETG arr = separated_list_COMMA_expr p2 = CROCHETD {
+    Hyper2.build_array arr
     }
+  | e1 = expr p1 = CROCHETG e2 = expr p2 = CROCHETD {
+    Larrayindex (e1, p1, e2)
+  }
 ;
 
 whileExp<Ast.expression>:

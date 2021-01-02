@@ -30,6 +30,6 @@
 (executables
   (names pjuliac pjuliarepl)
   (preprocess (pps ppx_deriving.show ppx_deriving.ord))
-  (libraries unix lwt core_kernel yojson cohttp cohttp-lwt-unix lwt_ssl ollvm)
+  (libraries unix lwt core_kernel yojson cohttp cohttp-lwt-unix lwt_ssl )
   (flags ())
 )

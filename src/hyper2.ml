@@ -5,7 +5,15 @@ let fusionPos p1 p2 =
 
 let posVide:Ast.position = {ldeb = -1; cdeb = -1; lfin = -1; cfin = -1}
 
-let rec build_liste liste =
-  match liste with
-  | [] -> (posVide, Eapplication(posVide, "List", [(posVide, Elvalue (Lident (posVide, "nothing"))); (posVide, Elvalue (Lident (posVide, "nothing")))]))
-  | t :: q -> posVide, Eapplication(posVide, "List", [t; build_liste q])
+let rec build_array arr =
+  let l = List.length arr in
+  let head, tail = 
+    (match array with
+      | t :: q -> t, q
+      | [] -> (posVide, Efalse), [])
+  in
+  let creation = posVide, ElvalueAffect (posVide, Lident (posVide, "_temp_array"), (posVide, Eapplication(posVide, "_newarray", [(posVide, Econst (Int64.of_int l)); head]))) in (* Code pour créer l'array temporaire *)
+  (posVide, Ebloc1 (posVide, creation :: (List.iteri (fun (indice, x) -> posVide, Ecall (posVide, "_setelement", [(posVide, Echaine "_temp_array"); (posVide, Eentier (Int64.of_int i)); x]))) @ [(posVide, Elvalue (Lident (posVide, "_temp_array")))] ))
+;;
+  
+
