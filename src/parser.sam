@@ -422,6 +422,12 @@ expr<Ast.expression>:
       let (p2, el) = pel in
       Hyper2.fusionPos p1 p2, Eif (e, b, el)
     }
+  | p1 = CROCHETG arr = separated_list_COMMA_expr p2 = CROCHETD {
+    Hyper2.build_array arr
+    }
+  | e1 = expr p1 = CROCHETG e2 = expr p2 = CROCHETD {
+    (Hyper2.posVide, Eapplication (Hyper2.posVide, "_getelement", [e1; e2]))
+  }
 ;
 
 whileExp<Ast.expression>:
@@ -445,9 +451,6 @@ lvalue_wMin_<Ast.position * Ast.lvalue>:
   | e = expr_wMin_ DOT pi = IDENT {
     let (p,i) = pi in
     Hyper2.fusionPos (fst e) p, Lindex (e, p, (i : ident))}
-  | e1 = expr_wMin_ p1 = CROCHETG e2 = expr p2 = CROCHETD {
-    (Hyper2.posVide, Eapplication (Hyper2.posVide, "_getelement", [e1; e2]))
-  }
 ;
 
 else_exp<Ast.position * Ast.else_>:
