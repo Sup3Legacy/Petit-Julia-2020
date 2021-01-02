@@ -28,6 +28,8 @@ let compteurFunc = ref 0
 let compteurString = ref 0
 let compteurFloat = ref 0
 
+let compteurNewArray = ref 0
+
 (* These are for analytics *)
 let compteurCall = ref 10
 let compteurMalloc = ref 0
@@ -55,6 +57,11 @@ let getFunc () =
 	compteurFunc := !compteurFunc + 1;
 	("func_" ^ (string_of_int temp))
 ;;
+let getNewArray () =
+	let temp = !compteurNewArray in
+	compteurNewArray := !compteurNewArray + 1;
+	temp
+;; 
 
 
 let exitLabel = "exit"
@@ -291,21 +298,29 @@ let rec compile_expr = function
 	  				movq !%rbx !%rax ++ xorq !%rdx !%rdx ++ (cmpq (imm 0) !%rax) ++ (movq (imm (-1)) !%r13) ++ (cmovs !%r13 rdx) ++
 						(cmpq (imm 0) !%rcx) ++ (je exitLabel) ++
 						idivq !%rcx ++ pushq (imm nTypeInt) ++ pushq !%rax
-		| "newarray" -> assert ((List.length expList) = 2);
+		| "newarray" -> assert ((List.length expList) = 2); let i1, i2 = getNewArray (), getNewArray () in
 			e ++ 
 			popq rdx ++ popq rcx ++ (* valeur d'initialisation *)
 			popq rbx ++ popq rax ++ (* longueur de l'array *)
-			movq !%rbx !%r9 ++ (* On sauvearder la taille*)
+			movq !%rbx !%r9 ++ (* On sauvearde la taille*)
 			cmpq (imm nTypeInt) !%rax ++ jne exitLabel ++ (* on vérifie que l'indice est bien entier *)
 			addq (imm 2) !%rbx ++ imulq (imm 8) !%rbx ++ (* On ajouter à la taille les 2 mots : type/taille *)
 			movq !%rbx !%rdi ++ movq (imm 0) !%rax ++ 
-			pushq !%rcx ++ pushq !%rbx ++ pushq !%r9 ++ pushq !%r9 ++ 
+			pushq !%rcx ++ pushq !%rbx ++ pushq !%r9 ++ pushq !%rdx ++ 
 			call "malloc" ++ (* /!\ pas d'initialisation pour l'instant *)
-			popq r9 ++ popq r9 ++ popq rbx ++ popq rcx ++
+			popq rdx ++ popq r9 ++ popq rbx ++ popq rcx ++
 			(* L'adresse du début de l'array est en %rax *)
 			addq (imm nTypeArray) !%rcx ++ (* On calcule le nouveau type (ajout de nTypeArray) *)
 			movq !%rcx (ind ~ofs:0 rax) ++ (* On stocke le type *)
 			movq !%r9 (ind ~ofs:8 rax) ++ (* On stocke la taille *)
+
+			(* Initialisation des champs*)
+			label ("init_" ^ (string_of_int i1)) ++ 
+			cmpq (imm 0) !%r9 ++ je ("init_" ^ (string_of_int i2)) ++ decq !%r9 ++ 
+			movq !%rdx (ind ~ofs:16 ~scale:8 ~index:r9 rax) ++
+			jmp ("init_" ^ (string_of_int i1)) ++
+			label ("init_" ^ (string_of_int i2)) ++
+
 			movq !%rax !%rbx ++ movq !%rcx !%rax ++ (* Et on met ça sur %rax-%rbx *)
 			pushq !%rax ++ pushq !%rbx
 		| "_getelement" ->assert ((List.length expList) = 2);

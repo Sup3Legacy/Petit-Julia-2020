@@ -164,6 +164,7 @@ fonction<Ast.declaration>:
         | (p, "String") -> String, p
         | (p, "Any") -> Any, p
         | (p, "Nothing") -> Nothing, p
+        | (p, "Array") -> Array, p
         | (p, s) -> S s, p
       in
       Dfonction (p1,ig, parameters, p2, typ, (Hyper2.fusionPos (fst e) p, e::eL), "")
@@ -187,6 +188,7 @@ fonction<Ast.declaration>:
         | (p, "String") -> String, p
         | (p, "Any") -> Any, p
         | (p, "Nothing") -> Nothing, p
+        | (p, "Array") -> Array, p
         | (p, s) -> S s, p
       in
       Dfonction (p1,ig, parameters, p2, typ, (p,eL), doc)
@@ -210,6 +212,7 @@ fonction<Ast.declaration>:
         | (p, "String") -> String, p
         | (p, "Any") -> Any, p
         | (p, "Nothing") -> Nothing, p
+        | (p, "Array") -> Array, p
         | (p, s) -> S s, p
       in
       Dfonction (p1,ig, parameters, p2, typ, (Hyper2.fusionPos (fst e) p, e::eL), doc)
@@ -237,6 +240,7 @@ param<Ast.param>:
         | (p, "String") -> String, p
         | (p, "Any") -> Any, p
         | (p, "Nothing") -> Nothing, p
+        | (p, "Array") -> Array, p
         | (p, s) -> S s, p
       in
       Param (p1, i, p2, typ)
@@ -428,13 +432,16 @@ expr<Ast.expression>:
   | p1 = CROCHETG arr = separated_list_COMMA_expr p2 = CROCHETD {
     Hyper2.build_array arr
     }
+  | pe1 = IDENT_CROCHETG e2 = expr p2 = CROCHETD AFFECT e3 = expr {
+    let (p1, s) = pe1 in
+    (Hyper2.posVide, Eapplication (Hyper2.posVide, "_setelement", [p1, Elvalue (Lident (p1, s)); e2; e3]))
+  }
   | pe1 = IDENT_CROCHETG e2 = expr p2 = CROCHETD {
     let (p1, s) = pe1 in
     (Hyper2.posVide, Eapplication (Hyper2.posVide, "_getelement", [p1, Elvalue (Lident (p1, s)); e2]))
   }
-  | pe1 = IDENT_CROCHETG e2 = expr p2 = CROCHETD AFFECT e3 = expr {
-    let (p1, s) = pe1 in
-    (Hyper2.posVide, Eapplication (Hyper2.posVide, "_setelement", [p1, Elvalue (Lident (p1, s)); e2; e3]))
+  | p1 = PARG e1 = expr p2 = PARD_CROCHETG e2 = expr p3 = CROCHETD AFFECT e3 = expr{
+    (Hyper2.posVide, Eapplication (Hyper2.posVide, "_setelement", [e1; e2; e3]))
   }
   | p1 = PARG e1 = expr p2 = PARD_CROCHETG e2 = expr p3 = CROCHETD {
     (Hyper2.posVide, Eapplication (Hyper2.posVide, "_getelement", [e1; e2]))
