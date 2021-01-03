@@ -138,7 +138,7 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 				(offset, [])
 		in
 		match ident with 
-		| "print" | "div" | "_getelement" | "_setelement" | "newarray" -> Call (ident, Feuille (ident, 0), eL), offset
+		| "print" | "div" | "_getelement" | "_setelement" | "newarray" | "length" -> Call (ident, Feuille (ident, 0), eL), offset
 		| _ ->
 			let f = try Tmap.find ident !functionMap with Not_found -> failwith ("not found "^ident) in
 			let arb:AstcompilN.functArbr = calcArb ident (ISet.fold (fun i l -> match Imap.find i f with
@@ -291,6 +291,11 @@ let rec compile_expr = function
 		| "print" ->
 			e ++ (movq (imm (List.length expList)) !%rsi) ++ call "print_0" ++
 			popn (16 * List.length expList) ++ (pushq (imm nTypeNothing)) ++ pushq !%rbx
+		| "length" -> assert ((List.length expList) = 1);
+			e ++ 
+			popq rbx ++ popq rax ++
+			movq (ind ~ofs:8 rbx) !%rax ++
+			pushq (imm nTypeInt) ++ pushq !%rax
 		| "div" ->
 			e ++ popq rcx ++ popq rdx ++ popq rbx ++ popq rax ++
 					(cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
