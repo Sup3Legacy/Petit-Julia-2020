@@ -244,7 +244,7 @@ let rec buildArb (p:int) (f:string) (l:string):functArbr -> [`text] asm = functi
 			else
 				let (t,arb) = TypeMap.choose tM in
 				if (int_of_type t = nTypeArray) then 
-					label l ++ cmpq (imm (int_of_type t)) (ind ~ofs:(16*p - 8) rsp) ++ jg exitLabel ++ buildArb (p-1) f (newFlagArb ()) arb
+					label l ++ cmpq (imm (int_of_type t)) (ind ~ofs:(16*p - 8) rsp) ++ jl exitLabel ++ buildArb (p-1) f (newFlagArb ()) arb
 				else label l ++ cmpq (imm (int_of_type t)) (ind ~ofs:(16*p - 8) rsp) ++ jne exitLabel ++ buildArb (p-1) f (newFlagArb ()) arb
 		else
 			let (c1,l1) = TypeMap.fold (fun k a (c,l) -> if k=Any then (c,l)

@@ -100,6 +100,7 @@ rule tokens = parse
   | "+" {Hyper.disableEnd (); [PLUS (Hyper.position lexbuf)]}
   | "-" {Hyper.disableEnd (); [MINUS (Hyper.position lexbuf)]}
   | "=" {Hyper.disableEnd (); [AFFECT (Hyper.position lexbuf)]}
+  | ":=" {Hyper.disableEnd (); [AFFECTARRAY (Hyper.position lexbuf)]}
   | "||" {Hyper.disableEnd (); [OR (Hyper.position lexbuf)]}
   | "&&" {Hyper.disableEnd (); [AND (Hyper.position lexbuf)]}
   | "==" {Hyper.disableEnd (); [EQ (Hyper.position lexbuf)]}

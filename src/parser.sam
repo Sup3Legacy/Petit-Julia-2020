@@ -17,6 +17,7 @@
 %token <Ast.position> CURLYG
 %token <Ast.position> CURLYD
 %token <Ast.position> AFFECT
+%token <Ast.position> AFFECTARRAY
 %token <Ast.position> OR
 %token <Ast.position> AND
 %token <Ast.position> EQ
@@ -409,11 +410,6 @@ expr<Ast.expression>:
       Hyper2.fusionPos p1 p2, Eapplication (p1, "print", l @ [(p1,Echaine "\\n")])
     else Hyper2.fusionPos p1 p2, Eapplication (p1, i, l)}
   | p = NOT e = expr {Hyper2.fusionPos p (fst e), Enot e}
-  | pl = expr AFFECT e = expr {
-  		match pl with
-  			|p, Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, e)
-  			| _ -> raise Ast.Parsing_Error
-  		}
   | pl = lvalue {let (p,l) = pl in (p, Elvalue l)}
   | p1 = MINUS e = expr %prec unary_minus {Hyper2.fusionPos p1 (fst e), Eminus e}
   | p1 = RETURN e = expr {Hyper2.fusionPos p1 (fst e), Ereturn (p1, Some e)}
@@ -432,7 +428,7 @@ expr<Ast.expression>:
   | p1 = CROCHETG arr = separated_list_COMMA_expr p2 = CROCHETD {
     Hyper2.build_array arr
     }
-  | pe1 = IDENT_CROCHETG e2 = expr p2 = CROCHETD AFFECT e3 = expr {
+  | pe1 = IDENT_CROCHETG e2 = expr p2 = CROCHETD AFFECTARRAY e3 = expr {
     let (p1, s) = pe1 in
     (Hyper2.posVide, Eapplication (Hyper2.posVide, "_setelement", [p1, Elvalue (Lident (p1, s)); e2; e3]))
   }
@@ -440,12 +436,17 @@ expr<Ast.expression>:
     let (p1, s) = pe1 in
     (Hyper2.posVide, Eapplication (Hyper2.posVide, "_getelement", [p1, Elvalue (Lident (p1, s)); e2]))
   }
-  | p1 = PARG e1 = expr p2 = PARD_CROCHETG e2 = expr p3 = CROCHETD AFFECT e3 = expr{
+  | p1 = PARG e1 = expr p2 = PARD_CROCHETG e2 = expr p3 = CROCHETD AFFECTARRAY e3 = expr{
     (Hyper2.posVide, Eapplication (Hyper2.posVide, "_setelement", [e1; e2; e3]))
   }
   | p1 = PARG e1 = expr p2 = PARD_CROCHETG e2 = expr p3 = CROCHETD {
     (Hyper2.posVide, Eapplication (Hyper2.posVide, "_getelement", [e1; e2]))
   }
+  | pl = expr AFFECT e = expr {
+  		match pl with
+  			|p, Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, e)
+  			| _ -> raise Ast.Parsing_Error
+  		}
 ;
 
 whileExp<Ast.expression>:
