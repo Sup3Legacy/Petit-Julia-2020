@@ -19,7 +19,8 @@ let chiffre = ['0'-'9']
 let lettre = ['a'-'z']|['A'-'Z']
 let alpha = ['a'-'z']|['A'-'Z']|'_'
 
-let ident = (alpha)(alpha | chiffre)*
+let ident_sub = (alpha)(alpha | chiffre)*
+let ident = ident_sub(("::"ident_sub)*)
 let nombre = chiffre+
 
 let flottant = (chiffre+'.' | '.'chiffre+ | chiffre+'.'chiffre+)(('e'|'E')('-'|'+')?chiffre+)?
@@ -54,7 +55,7 @@ rule tokens = parse
           else raise (Ast.Lexing_Error_Msg_Pos ("Overflowing integer", Hyper.position lexbuf))
       }
   | (nombre as nb)(ident as s) {Hyper.enableEnd ();
-      try [ENTIER_IDENT (Hyper.position lexbuf, Int64.of_string nb, s)]
+      try [ENTIER_IDENT (Hyper.position lexbuf, Int64.of_string nb, Hyper.treat_ident s)]
       with _ -> raise (Ast.Lexing_Error_Msg_Pos ("Overflowing integer", Hyper.position lexbuf))
     }
   | '-'(nombre as nb)(ident as s) {Hyper.enableEnd ();
@@ -63,8 +64,8 @@ rule tokens = parse
           then [ENTIER_IDENT (Hyper.position lexbuf, Int64.of_string ("-"^nb), s)]
           else raise (Ast.Lexing_Error_Msg_Pos ("Overflowing integer", Hyper.position lexbuf))
     }
-  | (ident as s)"(" {Hyper.enterPar (); Hyper.disableEnd (); [IDENT_PARG (Hyper.position lexbuf,s)]}
-  | (ident as s)"[" {Hyper.disableEnd (); [IDENT_CROCHETG (Hyper.position lexbuf, s)]}
+  | (ident as s)"(" {Hyper.enterPar (); Hyper.disableEnd (); [IDENT_PARG (Hyper.position lexbuf, Hyper.treat_ident s)]}
+  | (ident as s)"[" {Hyper.disableEnd (); [IDENT_CROCHETG (Hyper.position lexbuf, Hyper.treat_ident s)]}
   | ")[" {Hyper.leavePar (); Hyper.disableEnd (); [PARD_CROCHETG (Hyper.position lexbuf)]}
   | ")" (ident as s) {
     if s = "true" || s = "false"
@@ -72,7 +73,7 @@ rule tokens = parse
     else
       if Hyper.leavePar () then raise (Ast.Lexing_Error_Msg_Pos ("unoppened parenthesis", Hyper.position lexbuf));
     Hyper.enableEnd ();
-    [PARD_IDENT (Hyper.position lexbuf,s)]
+    [PARD_IDENT (Hyper.position lexbuf, Hyper.treat_ident s)]
   }
   | ident as s {
         let word = Hashtbl.find_opt Hyper.keywords s in
@@ -93,7 +94,7 @@ rule tokens = parse
           end
         | None -> begin
           Hyper.enableEnd ();
-          [IDENT (Hyper.position lexbuf,s)]
+          [IDENT (Hyper.position lexbuf, Hyper.treat_ident s)]
           end
     }
   | "," {Hyper.disableEnd (); [COMMA (Hyper.position lexbuf)]}

@@ -99,3 +99,7 @@ let rajoutePosition tk lb =
     | _ -> failwith "Unknown keyword"
 
 let file = ref "test.jl"
+
+let treat_ident ident =
+  String.concat (String.make 1 '_' )(String.split_on_char ':' ident)
+;;
