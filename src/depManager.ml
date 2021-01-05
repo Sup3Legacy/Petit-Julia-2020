@@ -16,7 +16,7 @@ let get_package identifiant =
 
 let add_prefix_ident ident name =
   match ident with 
-  | "println" | "print" | "newarray" | "_setelement" | "_getelement" | "div" | "length" -> ident
+  | "println" | "print" | "newarray" | "_setelement" | "_getelement" | "div" | "array_length" -> ident
   | _ -> name ^ ident
 ;;
 
@@ -106,7 +106,7 @@ let rec handle_dep decl_list =
                   currentPackages := Import_packages_set.add pack_name !currentPackages;
                   print_endline ("Successfully imported package : " ^ pack_name);
                   let n = String.length pack_name in
-                  add_prefix a ((String.sub pack_name 0 (n -  3)) ^ "__")
+                  add_prefix a ((String.sub pack_name 0 (n -  3)) ^ "~")
                 end
               with _ ->
                 begin

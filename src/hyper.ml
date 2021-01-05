@@ -101,5 +101,5 @@ let rajoutePosition tk lb =
 let file = ref "test.jl"
 
 let treat_ident ident =
-  String.concat (String.make 1 '_' )(String.split_on_char ':' ident)
+  String.concat (String.make 1 '_' )(String.split_on_char '~' ident)
 ;;
