@@ -2,6 +2,7 @@
   open Ast
   open Astype
   open Hyper2
+  let file_name = ref ""
 
 %}
 
@@ -234,6 +235,7 @@ param<Ast.param>:
   | pi = IDENT pb = typage
     {
       let (p1,i) = pi in
+      
       let typ,p2 = match pb with
         | (p, "Float64") -> Float64, p
         | (p, "Int64") -> Int64, p
@@ -248,8 +250,18 @@ param<Ast.param>:
     }
   | pi = IDENT
     {
-      let (p1,i) = pi in
-      Param (p1, i, p1, Any)
+      let (p1, i_) = pi in
+      let (id, type_colle) = Hyper2.separate_string i_ !file_name in
+      match type_colle with 
+      | None -> Param (p1, id, p1, Any)
+      | Some "Float64" -> Param (p1, id, p1, Float64)
+      | Some "Int64" -> Param (p1, id, p1, Int64)
+      | Some "Bool" -> Param (p1, id, p1, Bool)
+      | Some "String" -> Param (p1, id, p1, String)
+      | Some "Any" -> Param (p1, id, p1, Any)
+      | Some "Nothing" -> Param (p1, id, p1, Nothing)
+      | Some "Array" -> Param (p1, id, p1, Array)
+      | Some s -> Param (p1, id, p1, S s)
     }
 ;
 

@@ -63,6 +63,10 @@ let getNewArray () =
 	temp
 ;; 
 
+let rectify_character str =
+	String.concat "__" (List.filter (fun x -> x <> "") (String.split_on_char ':' str))
+;;
+
 
 let exitLabel = "exit"
 
@@ -235,24 +239,24 @@ let newFlagArb () =
 	"jmp"^string_of_int t
 
 let rec buildArb (p:int) (f:string) (l:string):functArbr -> [`text] asm = function
-	| Failure -> (label l ++ jmp exitLabel)
+	| Failure -> (label (rectify_character l) ++ jmp exitLabel)
 	| Feuille (s,i) -> compteurCall := !compteurCall + 1;
-		label l ++ call (s^"_"^string_of_int i) ++ jmp f
+		label (rectify_character l) ++ call ((rectify_character s)^"_"^string_of_int i) ++ jmp f
 	| Appels tM ->
 		if TypeMap.cardinal tM == 1 then
 			if TypeMap.mem Any tM then buildArb (p-1) f l (TypeMap.find Any tM)
 			else
 				let (t,arb) = TypeMap.choose tM in
 				if (int_of_type t = nTypeArray) then 
-					label l ++ cmpq (imm (int_of_type t)) (ind ~ofs:(16*p - 8) rsp) ++ jl exitLabel ++ buildArb (p-1) f (newFlagArb ()) arb
-				else label l ++ cmpq (imm (int_of_type t)) (ind ~ofs:(16*p - 8) rsp) ++ jne exitLabel ++ buildArb (p-1) f (newFlagArb ()) arb
+					label (rectify_character l) ++ cmpq (imm (int_of_type t)) (ind ~ofs:(16*p - 8) rsp) ++ jl exitLabel ++ buildArb (p-1) f (newFlagArb ()) arb
+				else label (rectify_character l) ++ cmpq (imm (int_of_type t)) (ind ~ofs:(16*p - 8) rsp) ++ jne exitLabel ++ buildArb (p-1) f (newFlagArb ()) arb
 		else
 			let (c1,l1) = TypeMap.fold (fun k a (c,l) -> if k=Any then (c,l)
 								else let dir = newFlagArb () in
 								if (int_of_type k) = nTypeArray then 
 									(c ++ cmpq (imm (int_of_type k)) (ind ~ofs:(16*p - 8) rsp) ++ jge dir, (dir,a)::l)
 								else (c ++ cmpq (imm (int_of_type k)) (ind ~ofs:(16*p - 8) rsp) ++ je dir, (dir,a)::l)
-							) tM (label l, []) in
+							) tM (label (rectify_character l), []) in
 			let c = if TypeMap.mem Any tM then
 					buildArb (p-1) f (newFlagArb ()) (TypeMap.find Any tM)
 				else
@@ -444,8 +448,8 @@ let rec compile_expr = function
 	  				++ (label label2)
 		in operation
 	| Ident (Tag name) ->
-		movq ((if estMac then lab else ilab) (name^"_type")) !%rax ++ cmpq (imm nTypeUndef) !%rax ++
-		je exitLabel ++ movq ((if estMac then lab else ilab) (name^"_val")) !%rbx ++
+		movq ((if estMac then lab else ilab) ((rectify_character name)^"_type")) !%rax ++ cmpq (imm nTypeUndef) !%rax ++
+		je exitLabel ++ movq ((if estMac then lab else ilab) ((rectify_character name)^"_val")) !%rbx ++
 		pushq !%rax ++ pushq !%rbx
 	| Ident (Dec offset) ->
 		movq (ind ~ofs:(offset+8) rbp) !%rax ++ cmpq (imm nTypeUndef) !%rax ++
@@ -459,7 +463,7 @@ let rec compile_expr = function
 		(movq (ind ~ofs:(offset + 0) rbx) !%rax) ++ (movq (ind ~ofs:(offset + 8) rbx) !%rbx) ++ pushq !%rax ++ pushq !%rbx
 	| LvalueAffectV (Tag name, expr) ->
 		let code = compile_expr expr in
-		code ++ (popq rbx) ++ (popq rax) ++ movq !%rbx (univerlab (name^"_val")) ++ movq !%rax (univerlab (name^"_type")) ++ pushq !%rax ++ pushq !%rbx
+		code ++ (popq rbx) ++ (popq rax) ++ movq !%rbx (univerlab ((rectify_character name)^"_val")) ++ movq !%rax (univerlab ((rectify_character name)^"_type")) ++ pushq !%rax ++ pushq !%rbx
 	| LvalueAffectV (Dec offset, expr) ->
 		let code = compile_expr expr in
 		code ++ (popq rbx) ++ (popq rax) ++ (movq !%rax (ind ~ofs:(offset+8) rbp)) ++ (movq !%rbx (ind ~ofs:offset rbp)) ++ pushq !%rbx ++ pushq !%rax
@@ -528,7 +532,7 @@ and compile_bloc = function
 
 let compile_function f e fpmax =
 	let code =
-		label f ++
+		label (rectify_character f) ++
 		pushq !%rbp ++
 		movq !%rsp !%rbp ++ pushn fpmax ++
 		compile_expr e ++ popq rax ++
@@ -543,7 +547,7 @@ let compile_fun (n:string) (i:int) = function
 		let env2, fpcur2 = Tmap.fold (fun k _ (m, n) -> if Tmap.mem k env then (m,n) else (Tmap.add k (n-16) m, n-16)) tmap (env, 0) in
 		let (eL,o2) = List.fold_right (fun (_, e) (l, o1) -> let e,o2 = (alloc_expr env2 fpcur2 e) in (e::l, min o1 o2)) eL ([], fpcur2) in
   	let code = List.fold_left (fun c e -> c ++ compile_expr e ++ popq rbx ++ popq rax) nop eL in
-    label (n^"_"^string_of_int i)++
+    label ((rectify_character n)^"_"^string_of_int i)++
     pushq !%rbp ++ movq !%rsp !%rbp ++
     pushn (-o2) ++
     code ++
@@ -561,7 +565,7 @@ let compile_fun (n:string) (i:int) = function
         movq (ind ~ofs:(8+i*16) rsp) !%r11 ++ movq !%r11 (ind ~ofs:(16*(longueur-i)) rax) ++
         movq (ind ~ofs:(i*16) rsp) !%r11 ++ movq !%r11 (ind ~ofs:(16*(longueur-i)+8) rax)
     done;
-    label (n^"_"^string_of_int i) ++
+    label ((rectify_character n)^"_"^string_of_int i) ++
     pushq !%rbp ++ movq !%rsp !%rbp ++
 		movq (imm (16*longueur)) !%rdi ++ call "malloc" ++ !code ++
     movq !%rax !%rbx ++ movq (imm nType) !%rax ++
@@ -685,8 +689,8 @@ let compile_program f ofile =
      data =
        Hashtbl.fold (fun x i l -> l ++ label ("string_"^string_of_int i) ++ string (Scanf.unescaped x)) sMap nop ++
 			 Hashtbl.fold (fun x i l -> l ++ label ("float_"^string_of_int i) ++ (double (float_of_string x))) fMap nop ++
-			 Tmap.fold (fun x i l -> if x<> "nothing" then l ++ label (x^"_type") ++ (dquad [nTypeUndef])
-			 														++ label (x^"_val") ++ (dquad [0]) else l) smap nop ++
+			 Tmap.fold (fun x i l -> if x<> "nothing" then l ++ label ((rectify_character x)^"_type") ++ (dquad [nTypeUndef])
+			 														++ label ((rectify_character x)^"_val") ++ (dquad [0]) else l) smap nop ++
 		(label "nothing_type" ++ (dquad [nTypeNothing])) ++
 		(label "nothing_val" ++ (dquad [0])) ++
        (label ".Sprint_int" ++ string "%zd") ++

@@ -72,6 +72,11 @@ let leavePar () =
   !parDepth < 0
 ;;
 
+let inFunction = ref false;;
+let inStruct = ref false;;
+let inPar = ref false;; (* peu importe la profondeur *)  
+let justGotComma = ref false;;
+
 let position lb =
   let deb = Lexing.lexeme_start_p lb in
   let fin = Lexing.lexeme_end_p lb in

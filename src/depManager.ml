@@ -63,8 +63,10 @@ and add_prefix_bloc b name =
 
 let add_prefix_param param name =
   match param with
-  | Param (pos1, id, pos2, type_) ->
-    Param (pos1, add_prefix_ident id name, pos2, type_)
+  | Param (pos1, id, pos2, S id_) ->
+    Param (pos1, add_prefix_ident id name, pos2, S (add_prefix_ident id_ name))
+    | Param (pos1, id, pos2, type_) ->
+      Param (pos1, add_prefix_ident id name, pos2, type_)
 ;;
 
 let add_prefix_fonction fonc name =
@@ -106,7 +108,7 @@ let rec handle_dep decl_list =
                   currentPackages := Import_packages_set.add pack_name !currentPackages;
                   print_endline ("Successfully imported package : " ^ pack_name);
                   let n = String.length pack_name in
-                  add_prefix a ((String.sub pack_name 0 (n -  3)) ^ "~")
+                  add_prefix a ((String.sub pack_name 0 (n -  3)) ^ "::")
                 end
               with _ ->
                 begin

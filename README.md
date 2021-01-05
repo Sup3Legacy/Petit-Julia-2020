@@ -4,9 +4,11 @@
 ### Constantin Gierczak--Galle & Samuel Vivien
 ### Cours de compilation, Jean-Christophe Filliâtre & Basile Clément, ENS Ulm, 2020
 
+## Les parties I] à VI] inclues n'ont pas été modifiées entre les deux rendus.
+
 # 0] Prérequis
 
-Notre projet requiert l'installation, via `opam` de la bibliothèque `ppx_deriving`. + Core_kernel + Core + Yojson + cohttp-lwt-unix + cohttp-async + lwt_ssl
+Notre projet requiert l'installation, via `opam` des bibliothèques `ppx_deriving`, `Core_kernel`, `Core`, `Yojson`, `cohttp-lwt-unix` et `cohttp-async`. Le packet `lwt_ssl` doit aussi être installé via le gestionnaire de paquets de son choix.
 
 De plus, l'utilisation optimale du **REPL** nécessite l'installation du **wrapper** `rlwrap`, disponible via un gestionnaire standard de packages Linux (disponible aussi sur mac).
 
@@ -193,7 +195,9 @@ Cependant, nous considérons nécessaire de continuer à travailler sur **Samenh
 
 Pour la deuxième partie du projet, nous projetons d'ajouter aussi à PetitJulia™ le support des **flottants** sur 64 bits ainsi que des **listes** (probablement tout simplement via des structures cachées derrière du sucre syntaxique); si nous en avons le temps!
 
-# VII] Annexes
+# VII] 
+
+# VIII] Annexes
 
 ## A] Drapeaux de pjuliac
 

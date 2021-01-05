@@ -20,7 +20,7 @@ let lettre = ['a'-'z']|['A'-'Z']
 let alpha = ['a'-'z']|['A'-'Z']|'_'
 
 let ident_sub = (alpha)(alpha | chiffre)*
-let ident = ident_sub(("~"ident_sub)*)
+let ident = ident_sub(("::"ident_sub)*)
 let nombre = chiffre+
 
 let flottant = (chiffre+'.' | '.'chiffre+ | chiffre+'.'chiffre+)(('e'|'E')('-'|'+')?chiffre+)?

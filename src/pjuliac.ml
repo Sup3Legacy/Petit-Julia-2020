@@ -46,6 +46,7 @@ let afficheL l =
 let handle () =
   let c = open_in !(Hyper.file) in
   let lb = Lexing.from_channel c in
+  Parser.file_name := !(Hyper.file);
   try
     let e = DepManager.get_parsed_file lb
     in

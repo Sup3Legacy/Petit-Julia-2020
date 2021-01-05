@@ -23,5 +23,18 @@ let rec build_array arr =
   let creation = posVide, ElvalueAffect (posVide, Lident (posVide, name), (posVide, Eapplication(posVide, "newarray", [(posVide, Eentier (Int64.of_int l)); head]))) in (* Code pour créer l'array temporaire *)
   (posVide, Ebloc1 (posVide, creation :: (List.mapi (fun indice x -> posVide, Eapplication (posVide, "_setelement", [(posVide, Elvalue (Lident (posVide, name))); (posVide, Eentier (Int64.of_int (indice))); x])) arr) @ [(posVide, Elvalue (Lident (posVide, name)))] ))
 ;;
+
+let separate_string str file_name =
+  let termList = List.filter (fun x -> x <> "") (String.split_on_char ':' str) in (* identifiant coupé aux :: *)
+  match termList with
+  | [_] -> (str, None) (* Il n'y a pas de "::", tout est bon *)
+  | t :: [q]->  
+    if t = file_name then (t ^ ("::" ^ q), None)
+    else
+      (t, Some q)
+  | t :: q :: n ->
+    if t = file_name then (t ^ ("::" ^ q), Some (String.concat "::" n))
+    else
+      (t, Some (String.concat "::" (q :: n)))
   
 
