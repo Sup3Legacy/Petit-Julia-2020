@@ -359,6 +359,8 @@ let space n = ins ".space %d" n
 let pushq a = ins "pushq %a" a ()
 let popq r = ins "popq %s" r
 
+let rdtsc () = ins "rdtsc"
+
 type program = {
   text : [ `text ] asm;
   data : [ `data ] asm;
