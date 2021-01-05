@@ -142,7 +142,7 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 				(offset, [])
 		in
 		match ident with 
-		| "print" | "div" | "_getelement" | "_setelement" | "newarray" | "array_length" -> Call (ident, Feuille (ident, 0), eL), offset
+		| "print" | "div" | "_getelement" | "_setelement" | "newarray" | "array_length" | "input_int" -> Call (ident, Feuille (ident, 0), eL), offset
 		| _ ->
 			let f = try Tmap.find ident !functionMap with Not_found -> failwith ("not found "^ident) in
 			let arb:AstcompilN.functArbr = calcArb ident (ISet.fold (fun i l -> match Imap.find i f with
@@ -300,6 +300,17 @@ let rec compile_expr = function
 			popq rbx ++ popq rax ++
 			movq (ind ~ofs:8 rbx) !%rax ++
 			pushq (imm nTypeInt) ++ pushq !%rax
+		| "input_int" -> 
+			let deplq = if estMac then (fun x -> leaq x rdi) else (fun x -> movq x !%rdi) in
+			let deplqrsi = if estMac then (fun x -> leaq x rsi) else (fun x -> movq x !%rsi) in
+			e ++ 
+			deplq (lab ".Sprint_int") ++
+			deplqrsi (lab ".Sscan_int") ++
+			movq (imm 0) !%rax ++
+			call "scanf" ++ 
+			movq ((if estMac then lab else ilab) (".Sscan_int")) !%rbx ++
+			movq (imm nTypeInt) !%rax ++
+			pushq !%rax ++ pushq !%rbx
 		| "div" ->
 			e ++ popq rcx ++ popq rdx ++ popq rbx ++ popq rax ++
 					(cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
@@ -599,7 +610,7 @@ let compile_program f ofile =
     movq (ind ~ofs:24 rsp) !%rax ++
     xorq !%rdx !%rdx ++
     idivq !%rax ++
-		ret ++		
+		ret ++
 
 		label "print_0" ++ (* Fonction principale print *)
 		pushq !%rbp ++
@@ -699,7 +710,8 @@ let compile_program f ofile =
 			 (label ".Sprint_endline" ++ string "\n") ++
 			 (label ".Sprint_true" ++ string "true") ++
 			 (label ".Sprint_false" ++ string "false") ++
-			 (label ".Sprint_error" ++ string "type or \"Division by zero\" failure\n")
+			 (label ".Sprint_error" ++ string "type or \"Division by zero\" failure\n") ++
+			 (label ".Sscan_int" ++ (dquad [0]))
    }
  in
  let f = open_out ofile in
