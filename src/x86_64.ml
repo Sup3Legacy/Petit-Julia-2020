@@ -188,24 +188,24 @@ let movzwl a b = ins "movzwl %a, %s" a () b
 let movzwq a b = ins "movzwq %a, %s" a () b
 
 let movsd a b = ins "movsd %a, %s" a () b
-let movss a b = ins "movsd %a, %s" a () b
+let movss a b = ins "movss %a, %s" a () b
 
 let cmovs a b = ins "cmovs %a, %s" a () b
 
-let cvtss2sd a b = ins "movsd %a, %s" a () b
-let cvtsd2ss a b = ins "movsd %a, %s" a () b
+let cvtss2sd a b = ins "cvtss2sd %a, %s" a () b
+let cvtsd2ss a b = ins "cvtsd2ss %a, %s" a () b
 
   (** conversion from integer to float/double *)
-let cvtsi2sd a b = ins "movsd %a, %s" a () b
-let cvtsi2ss a b = ins "movsd %a, %s" a () b
-let cvtsi2sdq a b = ins "movsd %a, %s" a () b
-let cvtsi2ssq a b = ins "movsd %a, %s" a () b
+let cvtsi2sd a b = ins "cvtsi2sd %a, %s" a () b
+let cvtsi2ss a b = ins "cvtsi2ss %a, %s" a () b
+let cvtsi2sdq a b = ins "cvtsi2sdq %a, %s" a () b
+let cvtsi2ssq a b = ins "cvtsi2sdq %a, %s" a () b
 
   (** conversion from float/integer to integer *)
-let cvttss2si a b = ins "movsd %a, %s" a () b
-let cvttsd2si a b = ins "movsd %a, %s" a () b
-let cvttss2siq a b = ins "movsd %a, %s" a () b
-let cvttsd2siq a b = ins "movsd %a, %s" a () b
+let cvttss2si a b = ins "cvttss2si %a, %s" a () b
+let cvttsd2si a b = ins "cvttsd2si %a, %s" a () b
+let cvttss2siq a b = ins "cvttss2siq %a, %s" a () b
+let cvttsd2siq a b = ins "cvttsd2siq %a, %s" a () b
 
 let leab op r = ins "leab %a, %s" op () r
 let leaw op r = ins "leaw %a, %s" op () r
@@ -231,8 +231,8 @@ let addb a b = ins "addb %a, %a" a () b ()
 let addw a b = ins "addw %a, %a" a () b ()
 let addl a b = ins "addl %a, %a" a () b ()
 let addq a b = ins "addq %a, %a" a () b ()
-let addss a b = ins "adds %a, %a" a () b ()
-let addsd a b = ins "adds %a, %a" a () b () (* Addition double précision *)
+let addss a b = ins "addss %a, %a" a () b ()
+let addsd a b = ins "addsd %a, %a" a () b () (* Addition double précision *)
 
 let subb a b = ins "subb %a, %a" a () b ()
 let subw a b = ins "subw %a, %a" a () b ()
@@ -244,8 +244,8 @@ let subsd a b = ins "subsd %a, %a" a () b () (* Soustraction double précision *
 let imulw a b = ins "imulw %a, %a" a () b ()
 let imull a b = ins "imull %a, %a" a () b ()
 let imulq a b = ins "imulq %a, %a" a () b ()
-let mulss a b = ins "imulss %a, %a" a () b ()
-let mulsd a b = ins "imulsd %a, %a" a () b () (* multiplication double précision *)
+let mulss a b = ins "mulss %a, %a" a () b ()
+let mulsd a b = ins "mulsd %a, %a" a () b () (* multiplication double précision *)
 
 let idivq a = ins "idivq %a" a ()
 let divss a b = ins "divss %a, %a" a () b ()
@@ -318,8 +318,8 @@ let cmpb a b = ins "cmpb %a, %a" a () b ()
 let cmpw a b = ins "cmpw %a, %a" a () b ()
 let cmpl a b = ins "cmpl %a, %a" a () b ()
 let cmpq a b = ins "cmpq %a, %a" a () b ()
-let ucomiss a b = ins "cmpq %a, %a" a () b ()
-let ucomisd a b = ins "cmpq %a, %a" a () b ()
+let ucomiss a b = ins "ucomiss %a, %a" a () b ()
+let ucomisd a b = ins "ucomisd %a, %a" a () b ()
 
 let testb a b = ins "testb %a, %a" a () b ()
 let testw a b = ins "testw %a, %a" a () b ()

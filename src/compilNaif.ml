@@ -316,13 +316,15 @@ let rec compile_expr = function
 			movq ((if estMac then lab else ilab) (".Sscan_int")) !%rbx ++
 			movq (imm nTypeInt) !%rax ++
 			pushq !%rax ++ pushq !%rbx
-		| "div" ->
-			e ++ popq rcx ++ popq rdx ++ popq rbx ++ popq rax ++
-					(cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
-	  				(cmpq (imm nTypeInt) !%rdx) ++ (jne exitLabel) ++
-	  				movq !%rbx !%rax ++ xorq !%rdx !%rdx ++ (cmpq (imm 0) !%rax) ++ (movq (imm (-1)) !%r13) ++ (cmovs !%r13 rdx) ++
-						(cmpq (imm 0) !%rcx) ++ (je exitLabel) ++
-						idivq !%rcx ++ pushq (imm nTypeInt) ++ pushq !%rax
+		| "div" ->	let (label1, label2, label3, labelEnd) = getIf (), getIf (), getIf (), getIf () in
+			e ++ (cmpq (imm nTypeFloat) (ind ~ofs:24 rsp)) ++ je label1 ++
+	  		(cmpq (imm nTypeInt) (ind ~ofs:24 rsp)) ++ jne exitLabel ++
+				(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label2 ++ call "divII" ++ jmp labelEnd ++
+				(label label2) ++ (cmpq (imm nTypeFloat) (ind ~ofs:8 rsp)) ++ jne exitLabel ++ call "divIF" ++ jmp labelEnd ++
+ 	  		(label label1) ++
+				(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label3 ++ call "divFI" ++ jmp labelEnd ++
+				(label label3) ++ (cmpq (imm nTypeFloat) (ind ~ofs:8 rsp)) ++ jne exitLabel ++ call "divFF" ++ jmp labelEnd ++
+ 	  		(label labelEnd) ++ addq (imm 32) !%rsp ++ pushq !%rax ++ pushq !%rbx
 		| "newarray" -> assert ((List.length expList) = 2); let i1, i2 = getNewArray (), getNewArray () in
 			e ++ 
 			popq rdx ++ popq rcx ++ (* valeur d'initialisation *)
@@ -395,18 +397,33 @@ let rec compile_expr = function
 							   (pushq (imm nTypeBool)) ++
 							   (cmpq !%rbx !%rdx) ++ (jl label1) ++ (pushq (imm valTrue)) ++
 							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valFalse)) ++ (label label2)
-	  | Plus -> deb ++ (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
-							    (cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
-							    (pushq (imm nTypeInt)) ++
-							    (addq !%rdx !%rbx) ++ (pushq !%rbx)
-	  | Minus -> deb ++ (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
-							    (cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
-							    (pushq (imm nTypeInt)) ++
-							    (subq !%rbx !%rdx) ++ (pushq !%rdx)
-	  | Times -> deb ++ (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
-							    (cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
-							    (pushq (imm nTypeInt)) ++
-							    (imulq !%rdx !%rbx) ++ (pushq !%rbx)
+	  | Plus -> let (label3, labelEnd) = getIf (), getIf () in
+			ins1 ++ ins2 ++ (cmpq (imm nTypeFloat) (ind ~ofs:24 rsp)) ++ je label1 ++
+	  		(cmpq (imm nTypeInt) (ind ~ofs:24 rsp)) ++ jne exitLabel ++
+				(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label2 ++ call "addII" ++ jmp labelEnd ++
+				(label label2) ++ (cmpq (imm nTypeFloat) (ind ~ofs:8 rsp)) ++ jne exitLabel ++ call "addIF" ++ jmp labelEnd ++
+ 	  		(label label1) ++
+				(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label3 ++ call "addFI" ++ jmp labelEnd ++
+				(label label3) ++ (cmpq (imm nTypeFloat) (ind ~ofs:8 rsp)) ++ jne exitLabel ++ call "addFF" ++ jmp labelEnd ++
+ 	  		(label labelEnd) ++ addq (imm 32) !%rsp ++ pushq !%rax ++ pushq !%rbx
+	  | Minus -> let (label3, labelEnd) = getIf (), getIf () in
+			ins1 ++ ins2 ++ (cmpq (imm nTypeFloat) (ind ~ofs:24 rsp)) ++ je label1 ++
+	  		(cmpq (imm nTypeInt) (ind ~ofs:24 rsp)) ++ jne exitLabel ++
+				(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label2 ++ call "minII" ++ jmp labelEnd ++
+				(label label2) ++ (cmpq (imm nTypeFloat) (ind ~ofs:8 rsp)) ++ jne exitLabel ++ call "minIF" ++ jmp labelEnd ++
+ 	  		(label label1) ++
+				(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label3 ++ call "minFI" ++ jmp labelEnd ++
+				(label label3) ++ (cmpq (imm nTypeFloat) (ind ~ofs:8 rsp)) ++ jne exitLabel ++ call "minFF" ++ jmp labelEnd ++
+ 	  		(label labelEnd) ++ addq (imm 32) !%rsp ++ pushq !%rax ++ pushq !%rbx
+	  | Times -> let (label3, labelEnd) = getIf (), getIf () in
+			ins1 ++ ins2 ++ (cmpq (imm nTypeFloat) (ind ~ofs:24 rsp)) ++ je label1 ++
+	  		(cmpq (imm nTypeInt) (ind ~ofs:24 rsp)) ++ jne exitLabel ++
+				(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label2 ++ call "mulII" ++ jmp labelEnd ++
+				(label label2) ++ (cmpq (imm nTypeFloat) (ind ~ofs:8 rsp)) ++ jne exitLabel ++ call "mulIF" ++ jmp labelEnd ++
+ 	  		(label label1) ++
+				(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label3 ++ call "mulFI" ++ jmp labelEnd ++
+				(label label3) ++ (cmpq (imm nTypeFloat) (ind ~ofs:8 rsp)) ++ jne exitLabel ++ call "mulFF" ++ jmp labelEnd ++
+ 	  		(label labelEnd) ++ addq (imm 32) !%rsp ++ pushq !%rax ++ pushq !%rbx
 	  | Modulo -> deb ++ (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
 	  				(cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
 	  				movq !%rdx !%rax ++ movq !%rbx !%rcx ++ xorq !%rdx !%rdx ++
@@ -604,8 +621,8 @@ let compile_fun (n:string) (i:int) = function
 
 let compile_program f ofile =
  let (eL, i, smap, fmap) = alloc_fichier f in (* smap est le map des variables globales *)
- print_int i;
- print_newline ();
+(* print_int i;
+ print_newline ();*)
  let code = List.fold_left (fun d e -> (if d!=nop then d ++ popn 16 else nop) ++ compile_expr e) nop eL in
  let codefun = Tmap.fold (fun k imap asm -> Imap.fold (fun i f asm2 -> asm2 ++ compile_fun k i f) imap asm) fmap nop in
  let deplq = if estMac then (fun x -> leaq x rdi) else (fun x -> movq x !%rdi) in
@@ -624,11 +641,156 @@ let compile_program f ofile =
 		movq (imm 0) !%rax ++ (* exit *)
 		ret ++
 
-		label "div" ++ (* Fonction de division entière *)
+		(*label "div" ++ (* Fonction de division entière *)
     movq (ind ~ofs:8 rsp) !%rcx ++
     movq (ind ~ofs:24 rsp) !%rax ++
     xorq !%rdx !%rdx ++
     idivq !%rax ++
+		ret ++*)
+		label "addII" ++
+		movq (ind ~ofs:8 rsp) !%rbx ++
+		movq (ind ~ofs:24 rsp) !%rax ++
+		addq !%rax !%rbx ++
+		movq (imm nTypeInt) !%rax ++
+		ret ++
+		label "addFI" ++
+		movq (ind ~ofs:8 rsp) !%rbx ++
+		movq (ind ~ofs:24 rsp) !%xmm0 ++
+		cvtsi2sdq !%rax xmm1 ++
+		addsd !%xmm1 !%xmm0 ++
+		movq (imm nTypeFloat) !%rax ++
+		movq !%xmm0 !%rbx ++
+		ret ++
+		label "addIF" ++
+		movq (ind ~ofs:8 rsp) !%xmm0 ++
+		movq (ind ~ofs:24 rsp) !%rbx ++
+		cvtsi2sdq !%rbx xmm1 ++
+		addsd !%xmm1 !%xmm0 ++
+		movq (imm nTypeFloat) !%rax ++
+		movq !%xmm0 !%rbx ++
+		ret ++
+		label "addFF" ++
+		movq (ind ~ofs:8 rsp) !%xmm0 ++
+		movq (ind ~ofs:24 rsp) !%xmm1 ++
+		addsd !%xmm1 !%xmm0 ++
+		movq (imm nTypeFloat) !%rax ++
+		movq !%xmm0 !%rbx ++
+		ret ++
+
+		label "mulII" ++
+		movq (ind ~ofs:8 rsp) !%rbx ++
+		movq (ind ~ofs:24 rsp) !%rax ++
+		imulq !%rax !%rbx ++
+		movq (imm nTypeInt) !%rax ++
+		ret ++
+		label "mulFI" ++
+		movq (ind ~ofs:8 rsp) !%rbx ++
+		movq (ind ~ofs:24 rsp) !%xmm0 ++
+		cvtsi2sdq !%rax xmm1 ++
+		mulsd !%xmm1 !%xmm0 ++
+		movq (imm nTypeFloat) !%rax ++
+		movq !%xmm0 !%rbx ++
+		ret ++
+		label "mulIF" ++
+		movq (ind ~ofs:8 rsp) !%xmm0 ++
+		movq (ind ~ofs:24 rsp) !%rbx ++
+		cvtsi2sdq !%rbx xmm1 ++
+		mulsd !%xmm1 !%xmm0 ++
+		movq (imm nTypeFloat) !%rax ++
+		movq !%xmm0 !%rbx ++
+		ret ++
+		label "mulFF" ++
+		movq (ind ~ofs:8 rsp) !%xmm0 ++
+		movq (ind ~ofs:24 rsp) !%xmm1 ++
+		mulsd !%xmm1 !%xmm0 ++
+		movq (imm nTypeFloat) !%rax ++
+		movq !%xmm0 !%rbx ++
+		ret ++
+
+		label "minII" ++
+		movq (ind ~ofs:8 rsp) !%rax ++
+		movq (ind ~ofs:24 rsp) !%rbx ++
+		subq !%rax !%rbx ++
+		movq (imm nTypeInt) !%rax ++
+		ret ++
+		label "minFI" ++
+		movq (ind ~ofs:8 rsp) !%rbx ++
+		movq (ind ~ofs:24 rsp) !%xmm0 ++
+		cvtsi2sdq !%rax xmm1 ++
+		subsd !%xmm1 !%xmm0 ++
+		movq (imm nTypeFloat) !%rax ++
+		movq !%xmm0 !%rbx ++
+		ret ++
+		label "minIF" ++
+		movq (ind ~ofs:8 rsp) !%xmm1 ++
+		movq (ind ~ofs:24 rsp) !%rbx ++
+		cvtsi2sdq !%rbx xmm0 ++
+		subsd !%xmm1 !%xmm0 ++
+		movq (imm nTypeFloat) !%rax ++
+		movq !%xmm0 !%rbx ++
+		ret ++
+		label "minFF" ++
+		movq (ind ~ofs:8 rsp) !%xmm1 ++
+		movq (ind ~ofs:24 rsp) !%xmm0 ++
+		subsd !%xmm1 !%xmm0 ++
+		movq (imm nTypeFloat) !%rax ++
+		movq !%xmm0 !%rbx ++
+		ret ++
+
+		label "divII" ++
+		pushq !%rax ++
+		movq (ind ~ofs:16 rsp) !%rcx ++
+		cmpq (imm 0) !%rcx ++
+		je exitLabel ++
+		movq (ind ~ofs:32 rsp) !%rax ++
+	  	xorq !%rdx !%rdx ++
+	  	(cmpq (imm 0) !%rax) ++
+	  	(movq (imm (-1)) !%r13) ++
+	  	(cmovs !%r13 rdx) ++
+		(cmpq (imm 0) !%rcx) ++ (je exitLabel) ++
+		idivq !%rcx ++
+		movq !%rax !%rbx ++
+		movq (imm nTypeInt) !%rax ++
+		popq rcx ++
+		ret ++
+		label "divFI" ++
+		pushq !%rax ++
+		movq (ind ~ofs:16 rsp) !%rbx ++
+		cmpq (imm 0) !%rbx ++
+		je exitLabel ++
+		movq (ind ~ofs:32 rsp) !%xmm0 ++
+		cvtsi2sdq !%rax xmm1 ++
+		divsd !%xmm1 !%xmm0 ++
+		movq (imm nTypeFloat) !%rax ++
+		movq !%xmm0 !%rbx ++
+		popq rcx ++
+		ret ++
+		label "divIF" ++
+		pushq !%rax ++
+		movq (ind ~ofs:16 rsp) !%xmm1 ++
+		xorq !%rax !%rax ++
+		cvtsi2sdq !%rax xmm0 ++
+		ucomisd !%xmm0 !%xmm1 ++
+		je exitLabel ++
+		movq (ind ~ofs:32 rsp) !%rbx ++
+		cvtsi2sdq !%rbx xmm0 ++
+		divsd !%xmm1 !%xmm0 ++
+		movq (imm nTypeFloat) !%rax ++
+		movq !%xmm0 !%rbx ++
+		popq rcx ++
+		ret ++
+		label "divFF" ++
+		pushq !%rax ++
+		movq (ind ~ofs:16 rsp) !%xmm1 ++
+		xorq !%rax !%rax ++
+		cvtsi2sdq !%rax xmm0 ++
+		ucomisd !%xmm0 !%xmm1 ++
+		je exitLabel ++
+		movq (ind ~ofs:32 rsp) !%xmm0 ++
+		divsd !%xmm1 !%xmm0 ++
+		movq (imm nTypeFloat) !%rax ++
+		movq !%xmm0 !%rbx ++
+		popq rcx ++
 		ret ++
 
 		label "print_0" ++ (* Fonction principale print *)
