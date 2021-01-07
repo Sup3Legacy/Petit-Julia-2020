@@ -134,6 +134,7 @@ while !continue do
       in
       try
         begin
+          Parser.file_name := file_name;
           let e = DepManager.get_parsed_file lb in
           let _ = Typer.typerRepl e gVenv gFenv gSenv gAenv in
           Interp.interp_file e;
