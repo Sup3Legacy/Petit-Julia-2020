@@ -285,9 +285,6 @@ let rec compile_expr = function
 	| False -> pushq (imm nTypeBool) ++ pushq (imm valFalse)
 	| Nothing -> pushq (imm nTypeNothing) ++ pushq (imm 0)
 	| Bloc bloc -> compile_bloc bloc
-(*	| EntierIdent (entier, label) -> compile_expr (Binop (Times, Entier entier, Ident label))
-	| EntierParG (entier, bloc) -> compile_expr (Binop (Times, Entier entier, Bloc bloc))
-	| ParDIdent (exp, label) -> compile_expr (Binop (Times, exp, Ident label))*)
 	| Call (ident, funcArbr, expList) ->
 		compteurCall := !compteurCall + 1;
 		let rec parcours liste =
@@ -351,36 +348,6 @@ let rec compile_expr = function
 
 			movq !%rax !%rbx ++ movq !%rcx !%rax ++ (* Et on met ça sur %rax-%rbx *)
 			pushq !%rax ++ pushq !%rbx
-		| "_getelement" ->assert ((List.length expList) = 2);
-			e ++
-			popq rdx ++ popq rcx ++ (* type et valeur de l'indice *)
-			popq rbx ++ popq rax ++ (* type et valeur du pointeur vers le début *)
-
-			cmpq (imm nTypeArray) !%rax ++ jl exitLabel ++ (* On vérifie que c'est bien un array*)
-			
-			cmpq (imm nTypeInt) !%rcx ++ jne exitLabel ++ (* On vérifie que l'indice est bien un entier *)
-
-			cmpq (ind ~ofs:8 rbx) !%rdx ++ jg exitLabel ++ (* On compare qu'on reste dans les bornes de l'array ;) *) (* TODO vérifier que c'est bon *)
-			
-			movq (ind ~ofs:0 rbx) !%rax ++ (* Acquisition du type *)
-			subq (imm nTypeArray) !%rax ++
-			movq (ind ~ofs:16 ~index:rdx ~scale:8 rbx) !%rbx ++ (* Acquisition de la valeur *)
-			pushq !%rax ++ pushq !%rbx (* On empile le résultat *)
-		| "_setelement" ->assert ((List.length expList) = 3);
-			e ++
-			popq r15 ++ popq r13 ++ (* type et valeur à insérer*)
-			popq rdx ++ popq rcx ++ (* type et valeur de l'indice *)
-			popq rbx ++ popq rax ++ (* type et valeur de la donnée (array, a priori) à affecter *)
-			addq (imm nTypeArray) !%r13 ++
-
-			cmpq (imm nTypeArray) !%rax ++ jl exitLabel ++ (* On vérifie que c'est bien un array *)
-			cmpq (imm nTypeInt) !%rcx ++ jne exitLabel ++ (* On vérifie que l'indice est bien un entier *)
-			cmpq (ind ~ofs:0 rbx) !%r13 ++ jne exitLabel ++ (* On vérifie que la valeur insérée a le même type que le reste *)
-			cmpq (ind ~ofs:8 rbx) !%rdx ++ jge exitLabel ++ (* On compare qu'on reste dans les bornes de l'array ;) *)
-			
-			imulq (imm 1) !%rbx ++
-			movq !%r15 (ind ~ofs:16 ~index:rdx ~scale:8 rbx) ++(* Insertion de la valeur *) 
-			pushq (imm nTypeNothing) ++ pushq (imm nTypeBool)
 		| _ ->
 			begin
 				let flagfin = newFlagArb () in
@@ -474,9 +441,6 @@ let rec compile_expr = function
 		movq (ind ~ofs:(offset+8) rbp) !%rax ++ cmpq (imm nTypeUndef) !%rax ++
 		je exitLabel ++ pushq !%rax ++ pushq (ind ~ofs:offset rbp)
 	| Index (exp, ident, offset) ->
-		print_string ident;
-		print_int offset;
-		print_newline ();
 		let numClasse = numStruct ident in
 		(compile_expr exp) ++ (popq rbx) ++ (popq rax) ++ (cmpq (imm numClasse) !%rax) ++ (jne exitLabel) ++
 		(movq (ind ~ofs:(offset + 0) rbx) !%rax) ++ (movq (ind ~ofs:(offset + 8) rbx) !%rbx) ++ pushq !%rax ++ pushq !%rbx
@@ -537,6 +501,12 @@ let rec compile_expr = function
 		(if pjtype = Any then nop else (cmpq (imm (int_of_type pjtype)) !%rax ++
 		jne exitLabel)) ++ movq !%rbp !%rsp ++ popq rbp ++ ret
 	| For (posC, posFLoc, exp1, exp2, bloc) ->
+		let undef = ref nop in
+		let n1 = posFLoc/16 in
+		let n2 = posC/16 in
+		let () = for i = n1+1 to n2-1 do
+			undef := !undef ++ movq (imm nTypeUndef) (ind ~ofs:(i*16+8) rbp)
+		done in
 		let lDeb = getFor () in
 		let lFin = getFor () in
 		let e1 = compile_expr exp1 in
@@ -550,6 +520,7 @@ let rec compile_expr = function
 		pushq !%rbx ++ pushq !%rdx ++
 		jmp lFin ++
 		label lDeb ++
+		!undef ++
 		b ++
 		popn 16 ++
 		label lFin ++
@@ -560,12 +531,18 @@ let rec compile_expr = function
 		popn 16 ++
 		pushq (imm nTypeNothing) ++ pushq !%rax
 	| While (exp, debLoc, finLoc, bloc) ->
+		let undef = ref nop in
+		let n1 = finLoc/16 in
+		let n2 = debLoc/16 in
+		let () = for i = n1 to n2-1 do
+			undef := !undef ++ movq (imm nTypeUndef) (ind ~ofs:(i*16+8) rbp)
+		done in
 		let e = compile_expr exp in
 		let b = compile_bloc bloc in
 		let (label1, label2) = (getWhile (), getWhile ()) in
 		let comp = (label label1) ++ e ++ (popq rbx) ++ (popq rax) ++ (cmpq (imm (nTypeBool)) !%rax) ++ (jne exitLabel) ++ (cmpq (imm valTrue) !%rbx) ++ (jne label2) in
 		let corps = b ++ popn 16 ++ (jmp label1) ++ (label label2) in
-		comp ++ corps ++ pushq (imm nTypeNothing) ++ pushq !%rax
+		comp ++ !undef ++ corps ++ pushq (imm nTypeNothing) ++ pushq !%rax
 	| If (exp, bloc, else_) ->
 		let c = compile_expr exp in
 		let c1 = compile_bloc bloc in
