@@ -50,6 +50,7 @@ and add_prefix_lvalue lval name =
   match lval with
   | Lident (p, id) -> Lident (p, add_prefix_ident id name)
   | Lindex (e, p, id) -> Lindex (add_prefix_expr e name, p, add_prefix_ident id name)
+  | Larray (e1, e2) -> Larray (add_prefix_expr e1 name, add_prefix_expr e2 name)
 [@@deriving show]
 and add_prefix_else_ else_ name =
   match else_ with
