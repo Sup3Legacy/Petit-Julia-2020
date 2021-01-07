@@ -95,7 +95,7 @@ let rec add_prefix decl_list name =
 let rec handle_dep decl_list =
   match decl_list with
   | Dexpr(pos1, Eapplication (pos2, ident, [(pos3, Echaine pack_name)])) :: q when ident = "include"->
-    ((if Import_packages_set.mem pack_name !currentPackages then
+    ((if false && Import_packages_set.mem pack_name !currentPackages then (* Cela n'a plus lieu d'être, avec le système de namespace *)
         begin (* Si le package est déjà importé *)
           print_string ("Already imported package : " ^ pack_name);
           []
@@ -105,7 +105,7 @@ let rec handle_dep decl_list =
             let ajout =
               try
                 begin
-                  let a = get_package pack_name in
+                  let a = handle_dep (get_package pack_name) in
                   currentPackages := Import_packages_set.add pack_name !currentPackages;
                   print_endline ("Successfully imported package : " ^ pack_name);
                   let n = String.length pack_name in
