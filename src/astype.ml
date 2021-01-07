@@ -27,14 +27,14 @@ type operateur =
 ;;
 
 type pjtype = (* types de petitjulia *)
-  | Any
-  | Nothing
-  | Int64
-  | Float64
-  | Bool
+ 	| Any
+ 	| Nothing
+ 	| Int64
+ 	| Float64
+ 	| Bool
 	| String
 	| Array
-  | S of string
+ 	| S of string
 [@@deriving show]
 ;;
 
@@ -79,6 +79,7 @@ and exprTyper =
 and lvalueTyper =
 	| IdentL of pjtype * ident * bool
 	| IndexL of expressionTyper * ident * ident (* expression, name of struct, name of value *)
+	| ArrayL of expressionTyper * expressionTyper
 and elseTyper =
 	| EndI
 	| ElseI of blocTyper

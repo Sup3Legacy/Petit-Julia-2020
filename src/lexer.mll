@@ -66,7 +66,10 @@ rule tokens = parse
     }
   | (ident as s)"(" {Hyper.enterPar (); Hyper.disableEnd (); [IDENT_PARG (Hyper.position lexbuf, Hyper.treat_ident s)]}
   | (ident as s)"[" {Hyper.disableEnd (); [IDENT_CROCHETG (Hyper.position lexbuf, Hyper.treat_ident s)]}
-  | ")[" {Hyper.leavePar (); Hyper.disableEnd (); [PARD_CROCHETG (Hyper.position lexbuf)]}
+  | ")[" {
+    if Hyper.leavePar () then raise (Ast.Lexing_Error_Msg_Pos ("unoppened parenthesis", Hyper.position lexbuf));
+    Hyper.disableEnd ();
+    [PARD_CROCHETG (Hyper.position lexbuf)]}
   | ")" (ident as s) {
     if s = "true" || s = "false"
     then raise (Ast.Lexing_Error_Msg_Pos ("Illegal variable name "^s, Hyper.position lexbuf))

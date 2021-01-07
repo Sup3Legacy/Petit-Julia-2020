@@ -124,12 +124,15 @@ let rec chercheDefE (isLoc:bool) (vS:Tset.t) = function
   | Ebinop (_, _, (_, e1), (_, e2)) -> chercheDefE isLoc (chercheDefE isLoc vS e1) e2
   | Elvalue lv -> begin
     match lv with
-      |Lident _ -> vS
-      |Lindex ((_, e), _, _) -> chercheDefE isLoc vS e
+      | Lident _ -> vS
+      | Lindex ((_, e), _, _) -> chercheDefE isLoc vS e
+      | Larray ((_, e1), (_, e2)) -> chercheDefE isLoc (chercheDefE isLoc vS e1) e2
     end
   | ElvalueAffect (_, Lident (_, str), (_, e)) -> chercheDefE isLoc (Tset.add str vS) e
   | ElvalueAffect (_, Lindex ((_, e1), _, _), (_, e2)) ->
     chercheDefE isLoc (chercheDefE isLoc vS e1) e2
+  | ElvalueAffect (_, Larray ((_, e1), (_, e2)), (_, e3)) ->
+    chercheDefE isLoc (chercheDefE isLoc (chercheDefE isLoc vS e1) e2) e3
   | Ereturn (_, None) -> vS
   | Ereturn (_, Some (_, e)) -> chercheDefE isLoc vS e
   | Efor (_, (_, e1), (_, e2), (_, eL)) ->
@@ -169,9 +172,12 @@ let rec parcoursExpr (isLoc:bool) (vE:varEnv) (fE:funcEnv) (aE:argsEnv) (sE:stru
   | Ebinop (_, _, (_, e1), (_, e2)) -> parcoursExpr isLoc (parcoursExpr isLoc vE fE aE sE e1) fE aE sE e2
   | Elvalue lv -> begin
     match lv with
-      |Lident (p, str) -> if Tmap.mem str vE then vE else error ("undefined variable name "^str) p
-      |Lindex ((_, e), p, str) -> let env1 = parcoursExpr isLoc vE fE aE sE e in
+      | Lident (p, str) -> if Tmap.mem str vE then vE else error ("undefined variable name "^str) p
+      | Lindex ((_, e), p, str) ->
+        let env1 = parcoursExpr isLoc vE fE aE sE e in
         if Tmap.mem str aE then env1 else error ("undefined attribute name "^str) p
+      | Larray ((_, e1), (_, e2)) ->
+        parcoursExpr isLoc (parcoursExpr isLoc vE fE aE sE e1) fE aE sE e2
     end
   | ElvalueAffect (_, Lident (_, str), (_, e)) ->
     if Tmap.mem str vE then
@@ -184,6 +190,10 @@ let rec parcoursExpr (isLoc:bool) (vE:varEnv) (fE:funcEnv) (aE:argsEnv) (sE:stru
         let env1 = parcoursExpr isLoc vE fE aE sE e1 in
         parcoursExpr isLoc env1 fE aE sE e2
     else error ("undefined attribute name "^str) p
+  | ElvalueAffect (_, Larray ((_, e1), (_, e2)), (_, e3)) -> 
+      let env1 = parcoursExpr isLoc vE fE aE sE e1 in
+      let env2 = parcoursExpr isLoc env1 fE aE sE e2 in
+      parcoursExpr isLoc env2 fE aE sE e3
   | Ereturn (p,None) -> vE
   | Ereturn (p, Some (_, e)) -> parcoursExpr isLoc vE fE aE sE e
   | Efor (str, (_, e1), (_, e2), (_, eL)) ->
@@ -354,6 +364,15 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
         let (t3, et3) = testTypageE isLoc vE fE sE aE rT b e in
         if compatible t3 (S nm) then t2, LvalueE (IndexL ((t3, et3), nm, n))
         else error ("type incompatibility in index "^typeName t3^" not compatible with struct "^nm) p
+      | Larray ((p1, e1), (p2, e2)) ->
+        let t1, e1 = testTypageE isLoc vE fE sE aE rT b e1 in
+        let t2, e2 = testTypageE isLoc vE fE sE aE rT b e2 in
+        if compatible t1 Array then
+          if compatible t2 Int64 then
+            Any, LvalueE (ArrayL ((t1, e1), (t2, e2)))
+          else error ("type incompatibility "^typeName t2^" not compatible with int") p2
+        else error ("type incompatibility "^typeName t1^" not compatible with array") p1
+
     end
   | ElvalueAffect (pEqual, lv, (pe, e)) -> begin
     let (t, et) = testTypageE isLoc vE fE sE aE rT b e in
@@ -374,6 +393,15 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
             else error ("type incompatibility in index affectation : "^typeName t^" can't be given to var who has type "^typeName t2) pEqual
           else error ("type incompatibility in index affectation : "^typeName t3^" is not compatible with Struct "^nm) pDot
         else error ("type incompatibility in index affectation : "^nm^" who has "^n^" as an attribute is not mutable") pDot
+      | Larray ((p1, e1), (p2, e2)) ->
+        let t1, e1 = testTypageE isLoc vE fE sE aE rT b e1 in
+        let t2, e2 = testTypageE isLoc vE fE sE aE rT b e2 in
+        if compatible t1 Array then
+          if compatible t2 Int64 then
+            t, LvalueAffectE (ArrayL ((t1, e1), (t2, e2)), (t, et))
+          else error ("type incompatibility "^typeName t2^" not compatible with int") p2
+        else error ("type incompatibility "^typeName t1^" not compatible with array") p1
+
     end
   | Ereturn (p, opt) -> if b
     then begin

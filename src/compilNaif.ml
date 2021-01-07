@@ -164,6 +164,10 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 				let map = fst (Smap.find nameS !structMap) in
 				let i2 = 16 * fst (Smap.find nameC map) in
 				Index (e, nameS, i2), offset
+			| ArrayL ((_, e1), (_, e2)) -> 
+				let (e1, o1) = alloc_expr env offset e1 in
+				let (e2, o2) = alloc_expr env offset e2 in
+				Array (e1, e2), min o1 o2
 		end
 	| LvalueAffectE (l, (_, e)) -> begin
 		let e, offset = alloc_expr env offset e in
@@ -175,6 +179,10 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 				let map = fst (Smap.find nameS !structMap) in
 				let i2 = 16 * fst (Smap.find nameC map) in
 				LvalueAffectI (e2, nameS, i2, e), min o2 offset
+			| ArrayL ((_, e1), (_, e2)) -> 
+				let (e1, o1) = alloc_expr env offset e1 in
+				let (e2, o2) = alloc_expr env offset e2 in
+				LvalueAffectA (e1, e2, e), min offset (min o1 o2)
 		end
 	| ReturnE (p, None) -> Ret (p, Nothing), offset (* À vérifier *)
 	| ReturnE (p, Some (_, e)) ->
@@ -472,6 +480,22 @@ let rec compile_expr = function
 		let numClasse = numStruct ident in
 		(compile_expr exp) ++ (popq rbx) ++ (popq rax) ++ (cmpq (imm numClasse) !%rax) ++ (jne exitLabel) ++
 		(movq (ind ~ofs:(offset + 0) rbx) !%rax) ++ (movq (ind ~ofs:(offset + 8) rbx) !%rbx) ++ pushq !%rax ++ pushq !%rbx
+	| Array (e1, e2) ->
+		compile_expr e1 ++
+		compile_expr e2 ++
+		popq rdx ++ popq rcx ++ (* type et valeur de l'indice *)
+		popq rbx ++ popq rax ++ (* type et valeur du pointeur vers le début *)
+
+		cmpq (imm nTypeArray) !%rax ++ jl exitLabel ++ (* On vérifie que c'est bien un array*)
+		
+		cmpq (imm nTypeInt) !%rcx ++ jne exitLabel ++ (* On vérifie que l'indice est bien un entier *)
+
+		cmpq (ind ~ofs:8 rbx) !%rdx ++ jg exitLabel ++ (* On compare qu'on reste dans les bornes de l'array ;) *) (* TODO vérifier que c'est bon *)
+		
+		movq (ind ~ofs:0 rbx) !%rax ++ (* Acquisition du type *)
+		subq (imm nTypeArray) !%rax ++
+		movq (ind ~ofs:16 ~index:rdx ~scale:8 rbx) !%rbx ++ (* Acquisition de la valeur *)
+		pushq !%rax ++ pushq !%rbx (* On empile le résultat *)
 	| LvalueAffectV (Tag name, expr) ->
 		let code = compile_expr expr in
 		code ++ (popq rbx) ++ (popq rax) ++ movq !%rbx (univerlab ((rectify_character name)^"_val")) ++ movq !%rax (univerlab ((rectify_character name)^"_type")) ++ pushq !%rax ++ pushq !%rbx
@@ -490,6 +514,24 @@ let rec compile_expr = function
 			(movq !%rax (ind ~ofs:(entier + 0) r14)) ++
 			(movq !%rbx (ind ~ofs:(entier + 8) r14)) in
 		code1 ++ code2 ++ comparaison ++ target_type ++ pushq !%rax ++ pushq !%rbx
+	| LvalueAffectA (e1, e2, e3) -> 
+		compile_expr e1 ++
+		compile_expr e2 ++
+		compile_expr e3 ++
+		popq r15 ++ popq r13 ++ (* type et valeur à insérer*)
+		popq rdx ++ popq rcx ++ (* type et valeur de l'indice *)
+		popq rbx ++ popq rax ++ (* type et valeur de la donnée (array, a priori) à affecter *)
+		addq (imm nTypeArray) !%r13 ++
+
+		cmpq (imm nTypeArray) !%rax ++ jl exitLabel ++ (* On vérifie que c'est bien un array *)
+		cmpq (imm nTypeInt) !%rcx ++ jne exitLabel ++ (* On vérifie que l'indice est bien un entier *)
+		cmpq (ind ~ofs:0 rbx) !%r13 ++ jne exitLabel ++ (* On vérifie que la valeur insérée a le même type que le reste *)
+		cmpq (ind ~ofs:8 rbx) !%rdx ++ jge exitLabel ++ (* On compare qu'on reste dans les bornes de l'array ;) *)
+		
+		imulq (imm 1) !%rbx ++
+		movq !%r15 (ind ~ofs:16 ~index:rdx ~scale:8 rbx) ++(* Insertion de la valeur *) 
+		pushq (imm nTypeNothing) ++ pushq (imm nTypeBool)
+
 	| Ret (pjtype, exp) ->
 		compile_expr exp ++ (popq rbx) ++ (popq rax) ++
 		(if pjtype = Any then nop else (cmpq (imm (int_of_type pjtype)) !%rax ++

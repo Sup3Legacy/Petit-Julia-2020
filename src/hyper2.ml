@@ -36,5 +36,5 @@ let separate_string str file_name =
     if t = file_name then (t ^ ("::" ^ q), Some (String.concat "::" n))
     else
       (t, Some (String.concat "::" (q :: n)))
-  
+  | _ -> assert false
 
