@@ -61,9 +61,9 @@ let update () =
     try
       download index_url
     with _ -> failwith "Unable to download index..." in (* À améliorer *)
-  try
+  (try
     Sys.remove "index.json";
-  with _ -> ();
+  with _ -> ());
   let oc = open_out "index.json" in
   Printf.fprintf oc "%s" file;
   close_out oc;
