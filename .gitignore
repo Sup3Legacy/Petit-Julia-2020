@@ -24,9 +24,8 @@ bin/*
 
 src/test
 
-*.jl
-
-src/index.json
-src/*.jl
-
 src/gol
+*.out
+src/*.jl
+src/index.json
+*.jl
