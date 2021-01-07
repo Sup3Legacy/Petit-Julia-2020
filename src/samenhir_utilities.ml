@@ -134,6 +134,11 @@ let add_entry (trans:transitionTable) (state1:stateND) (term:string) (state2:sta
 	else StateMap.add state1 (Smap.add term (StateSet.singleton state2) Smap.empty) trans
 
 (* fonctions d'affichage *)
+let rec afficheP = function
+	|[] -> print_newline ()
+	|(Terminal t)::tl -> (print_string (" \""^t^"\"");afficheP tl)
+	|(NonTerminal t)::tl -> (print_string (" "^t);afficheP tl)
+
 let rec affichePD = function
 	|[] -> print_newline ()
 	|(TerminalD t)::tl -> (print_string (" \""^t^"\"");affichePD tl)
@@ -404,7 +409,7 @@ let findPrioToken p pMap =
 		| NonTerminal _::tl -> aux i l tl
 		| Terminal t::tl -> if Tmap.mem t pMap then let v = Tmap.find t pMap in if v > i then aux v (Some t) tl else aux i l tl else aux i l tl
 	in match aux min_int None p with
-		|None -> failwith "can't solve conflict because no prio token"
+		|None -> (afficheP p; failwith "can't solve conflict because no prio token")
 		|Some t -> t
 
 (* Fusionne la table des shift et celle des réduction pour faire la table des action depuis un état précis *)

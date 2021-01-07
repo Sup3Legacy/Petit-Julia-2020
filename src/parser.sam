@@ -18,7 +18,6 @@
 %token <Ast.position> CURLYG
 %token <Ast.position> CURLYD
 %token <Ast.position> AFFECT
-%token <Ast.position> AFFECTARRAY
 %token <Ast.position> OR
 %token <Ast.position> AND
 %token <Ast.position> EQ
@@ -52,8 +51,6 @@
 %token <Ast.position*string> IDENT_PARG
 %token <Ast.position*Int64.t> ENTIER_PARG
 %token <Ast.position*string> PARD_IDENT
-%token <Ast.position*string> IDENT_CROCHETG
-%token <Ast.position> PARD_CROCHETG
 
 %token TYPE
 
@@ -440,20 +437,6 @@ expr<Ast.expression>:
   | p1 = CROCHETG arr = separated_list_COMMA_expr p2 = CROCHETD {
     Hyper2.build_array arr
     }
-  | pe1 = IDENT_CROCHETG e2 = expr p2 = CROCHETD AFFECTARRAY e3 = expr {
-    let (p1, s) = pe1 in
-    (Hyper2.posVide, Eapplication (Hyper2.posVide, "_setelement", [p1, Elvalue (Lident (p1, s)); e2; e3]))
-  }
-  | pe1 = IDENT_CROCHETG e2 = expr p2 = CROCHETD {
-    let (p1, s) = pe1 in
-    (Hyper2.posVide, Eapplication (Hyper2.posVide, "_getelement", [p1, Elvalue (Lident (p1, s)); e2]))
-  }
-  | p1 = PARG e1 = expr p2 = PARD_CROCHETG e2 = expr p3 = CROCHETD AFFECTARRAY e3 = expr{
-    (Hyper2.posVide, Eapplication (Hyper2.posVide, "_setelement", [e1; e2; e3]))
-  }
-  | p1 = PARG e1 = expr p2 = PARD_CROCHETG e2 = expr p3 = CROCHETD {
-    (Hyper2.posVide, Eapplication (Hyper2.posVide, "_getelement", [e1; e2]))
-  }
   | pl = expr AFFECT e = expr {
   		match pl with
   			|p, Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, e)
@@ -475,6 +458,9 @@ lvalue<Ast.position * Ast.lvalue>:
   | e = expr DOT pi = IDENT {
     let (p,i) = pi in
     Hyper2.fusionPos (fst e) p, Lindex (e, p, (i : ident))}
+  | e1 = expr CROCHETG e2 = expr CROCHETD {
+    Hyper2.fusionPos (fst e1) (fst e2), Larray (e1, e2)
+  }
 ;
 
 lvalue_wMin_<Ast.position * Ast.lvalue>:
@@ -482,6 +468,9 @@ lvalue_wMin_<Ast.position * Ast.lvalue>:
   | e = expr_wMin_ DOT pi = IDENT {
     let (p,i) = pi in
     Hyper2.fusionPos (fst e) p, Lindex (e, p, (i : ident))}
+  | e1 = expr_wMin_ CROCHETG e2 = expr CROCHETD {
+    Hyper2.fusionPos (fst e1) (fst e2), Larray (e1, e2)
+  }
 ;
 
 else_exp<Ast.position * Ast.else_>:

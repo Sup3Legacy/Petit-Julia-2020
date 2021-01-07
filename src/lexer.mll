@@ -65,11 +65,6 @@ rule tokens = parse
           else raise (Ast.Lexing_Error_Msg_Pos ("Overflowing integer", Hyper.position lexbuf))
     }
   | (ident as s)"(" {Hyper.enterPar (); Hyper.disableEnd (); [IDENT_PARG (Hyper.position lexbuf, Hyper.treat_ident s)]}
-  | (ident as s)"[" {Hyper.disableEnd (); [IDENT_CROCHETG (Hyper.position lexbuf, Hyper.treat_ident s)]}
-  | ")[" {
-    if Hyper.leavePar () then raise (Ast.Lexing_Error_Msg_Pos ("unoppened parenthesis", Hyper.position lexbuf));
-    Hyper.disableEnd ();
-    [PARD_CROCHETG (Hyper.position lexbuf)]}
   | ")" (ident as s) {
     if s = "true" || s = "false"
     then raise (Ast.Lexing_Error_Msg_Pos ("Illegal variable name "^s, Hyper.position lexbuf))
@@ -104,7 +99,6 @@ rule tokens = parse
   | "+" {Hyper.disableEnd (); [PLUS (Hyper.position lexbuf)]}
   | "-" {Hyper.disableEnd (); [MINUS (Hyper.position lexbuf)]}
   | "=" {Hyper.disableEnd (); [AFFECT (Hyper.position lexbuf)]}
-  | ":=" {Hyper.disableEnd (); [AFFECTARRAY (Hyper.position lexbuf)]}
   | "||" {Hyper.disableEnd (); [OR (Hyper.position lexbuf)]}
   | "&&" {Hyper.disableEnd (); [AND (Hyper.position lexbuf)]}
   | "==" {Hyper.disableEnd (); [EQ (Hyper.position lexbuf)]}
