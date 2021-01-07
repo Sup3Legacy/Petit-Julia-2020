@@ -49,7 +49,6 @@ let get_packages_list json_file =
 let download name =
   let download_procedure  =
     Client.get (Uri.of_string name) >>= fun (resp, body) ->
-    let code = resp |> Response.status |> Code.code_of_status in
     body |> Cohttp_lwt.Body.to_string >|= fun body ->
     body
   in
@@ -62,6 +61,9 @@ let update () =
     try
       download index_url
     with _ -> failwith "Unable to download index..." in (* À améliorer *)
+  try
+    Sys.remove "index.json";
+  with _ -> ();
   let oc = open_out "index.json" in
   Printf.fprintf oc "%s" file;
   close_out oc;
@@ -82,6 +84,9 @@ let download_package request_name =
     begin
       let file = download (url) in
       if (String.sub file 0 3) = "404" then raise Error404;
+      (try
+       Sys.remove (name ^ ".jl");
+      with _ -> ());
       let oc = open_out (name ^ ".jl") in
       Printf.fprintf oc "%s" file;
       close_out oc;

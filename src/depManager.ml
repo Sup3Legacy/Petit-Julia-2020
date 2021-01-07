@@ -111,7 +111,8 @@ let rec handle_dep decl_list =
                   let n = String.length pack_name in
                   add_prefix a ((String.sub pack_name 0 (n -  3)) ^ "::")
                 end
-              with _ ->
+              with a ->
+                raise a
                 begin
                   print_endline ("Unable to import package : " ^ pack_name);
                   []
