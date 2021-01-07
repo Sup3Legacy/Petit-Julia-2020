@@ -383,11 +383,11 @@ let rec calcPrioPD pMap = function
 let rec calcPrioP pMap = function
 	| [] -> max_int
 	| NonTerminal _::tl -> calcPrioP pMap tl
-	| Terminal t::tl -> min (calcPrioP pMap tl) (Tmap.find t pMap)
+	| Terminal t::tl -> min (calcPrioP pMap tl) (try Tmap.find t pMap with Not_found -> max_int)
 
 let calcPrio pMap (p:production) = function
-	|None -> calcPrioP pMap p
-	|Some t -> Tmap.find t pMap
+	|None -> (try calcPrioP pMap p with Not_found -> assert false)
+	|Some t -> (try Tmap.find t pMap with Not_found -> assert false)
 
 (* Cherche la règle avec la priorité la plus importante pour savoir laquel réduire *)
 let findHighestPrio (ruleSet:Rset.t) pMap:action =
@@ -417,11 +417,11 @@ let fusionSR (shift_line:action Tmap.t) (rules:StateSet.t) pMap aMap (tset: Tset
 	let ruleMap = StateSet.fold (fun (n, pd, prio, suiv) m -> rajouteR_Rset suiv (n, unconvertPD_P pd, prio) m) rules Tmap.empty in 
 	let aux t m = match Tmap.mem t shift_line, Tmap.mem t ruleMap with
 		|false, false -> m
-		|true, false -> Tmap.add t (Tmap.find t shift_line) m
-		|false, true -> Tmap.add t (findHighestPrio (Tmap.find t ruleMap) pMap) m
+		|true, false -> (try Tmap.add t (Tmap.find t shift_line) m with Not_found -> assert false)
+		|false, true -> (try Tmap.add t (findHighestPrio (Tmap.find t ruleMap) pMap) m with Not_found -> assert false)
 		|true, true -> 
 			Tmap.add t (
-				let (n, p, prio) = match findHighestPrio (Tmap.find t ruleMap) pMap with
+				let (n, p, prio) = match findHighestPrio (try Tmap.find t ruleMap with Not_found -> assert false) pMap with
 					|REDUCE a -> a
 					| _ -> assert false
 				in let priorityToken = match prio with
@@ -478,21 +478,28 @@ let buildTable (g:grammar) (priority:priority) =
 	let a = buildAutomateD g in
 	if !print_all then print_string "Automate Deterministe fini\n";
 	let ntS = buildNtset g.rules in 
+	if !print_all then print_string "builded non-terminal set\n";
 	let tS = Tset.add endString (buildTset g.rules) in
+	if !print_all then print_string "builded terminal set\n";
 	let numMap = giveNumbers a.transitions in
+	if !print_all then print_string "Builded number map\n";
 	if !explain then afficheFichierEtats numMap;
 	let priorityMap = buildPriorityMap 0 priority in
+	if !print_all then print_string "Builded priority map\n";
 	let assocMap = buildAssocMap priority in
+	if !print_all then print_string "Debut build reductionTab\n";
 	let buildReduceTab set _ m =
 		let laws = reduces set in
-		Imap.add (StateSetMap.find set numMap) laws m in
+		Imap.add (try StateSetMap.find set numMap with Not_found -> assert false) laws m in
 	let reductionTab = StateSetMap.fold buildReduceTab a.transitions Imap.empty in
+	if !print_all then print_string "Fin build reductionTab\n";
 	let convertTrans t = 
 		Smap.map (fun s -> try StateSetMap.find s numMap
-		with Not_found -> (failwith "l.504") ) t
+		with Not_found -> assert false ) t
 	in let firstActionTab s trans m = 
-		Imap.add (StateSetMap.find s numMap) (convertTrans trans) m
+		Imap.add (try StateSetMap.find s numMap with Not_found -> assert false) (convertTrans trans) m
 	in let rawTableShift = StateSetMap.fold firstActionTab a.transitions Imap.empty in 
+	if !print_all then print_string "Builded rawTableShift\n";
 	let estNt str i = Ntset.mem str ntS in
 	let estT str i = Ntset.mem str tS in
 	let gotoTable = Imap.map (fun trans -> (Smap.filter estNt trans)) rawTableShift in

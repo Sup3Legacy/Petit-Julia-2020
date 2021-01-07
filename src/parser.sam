@@ -326,6 +326,12 @@ expr_wMin_<Ast.expression>:
       let (p2, el) = pel in
 	    Hyper2.fusionPos p1 p2, Eif (e, b, el)
     }
+  | p1 = CROCHETG p2 = CROCHETD {
+    Hyper2.build_array []
+  }
+  | p1 = CROCHETG e1 = expr COMMA e2 = expr arr = separated_list_C_E p2 = CROCHETD {
+    Hyper2.build_array (e1::e2::arr)
+    }
 ;
 
 expr_w_Ret<Ast.expression>:
@@ -381,6 +387,9 @@ expr_w_Ret<Ast.expression>:
   		let (e,b) = eb in
       let (p2, el) = pel in
       Hyper2.fusionPos p1 p2, Eif (e, b, el)
+    }
+  | p1 = CROCHETG arr = separated_list_COMMA_expr p2 = CROCHETD {
+    Hyper2.build_array arr
     }
 ;
 
