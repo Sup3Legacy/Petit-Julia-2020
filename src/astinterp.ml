@@ -17,6 +17,7 @@ and value =
   | Vstring of string
   | Vfloat of float (* Futur *)
   | Vstruct of structure
+  | Varray of value array
   | Vnothing
 ;;
 

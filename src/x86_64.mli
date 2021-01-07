@@ -145,6 +145,7 @@ val xmm12: [`Q] register
 val xmm13: [`Q] register
 val xmm14: [`Q] register
 val xmm15: [`Q] register
+  (** registres flottants 64 bits *)
 
 
 (** {1 Opérandes } *)
@@ -379,6 +380,9 @@ val pushq : [`Q] operand -> text
 
 val popq : [`Q] register -> text
   (** [popq r] place le mot en sommet de pile dans [r] et dépile *)
+
+val rdtsc : unit -> text
+  (** [rdtsc] place le contenu du registre de timestamp dans %rax *)
 
 (** {2 Divers } *)
 

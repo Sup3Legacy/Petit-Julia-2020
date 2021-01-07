@@ -27,13 +27,14 @@ type operateur =
 ;;
 
 type pjtype = (* types de petitjulia *)
-  | Any
-  | Nothing
-  | Int64
-  | Float64
-  | Bool
-  | String
-  | S of string
+ 	| Any
+ 	| Nothing
+ 	| Int64
+ 	| Float64
+ 	| Bool
+	| String
+	| Array
+ 	| S of string
 [@@deriving show]
 ;;
 
@@ -60,7 +61,8 @@ and exprTyper =
 	| ChaineE of string
 	| TrueE
 	| FalseE
-(*	| EntierIdentE of Int64.t * pjtype * ident * bool
+(*	| ArrayE of expressionTyper list
+	| EntierIdentE of Int64.t * pjtype * ident * bool
 	| EntierParGE of Int64.t * blocTyper*)
 	| BlocE of blocTyper
 	(*| ParDIdentE of expressionTyper * pjtype * ident * bool*)
@@ -77,6 +79,7 @@ and exprTyper =
 and lvalueTyper =
 	| IdentL of pjtype * ident * bool
 	| IndexL of expressionTyper * ident * ident (* expression, name of struct, name of value *)
+	| ArrayL of expressionTyper * expressionTyper
 and elseTyper =
 	| EndI
 	| ElseI of blocTyper

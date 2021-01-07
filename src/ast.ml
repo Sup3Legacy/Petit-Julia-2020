@@ -62,6 +62,7 @@ and expr =
 and lvalue =
   | Lident of position * ident
   | Lindex of expression * position * ident
+  | Larray of expression * expression
 [@@deriving show]
 and else_ =
   | Iend

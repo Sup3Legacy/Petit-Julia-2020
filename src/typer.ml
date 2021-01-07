@@ -38,6 +38,7 @@ let error (msg:string) (p:Ast.position) = raise (Ast.Typing_Error_Msg_Pos (msg,p
 let exists (t:Astype.pjtype) (env:structEnv):bool = match t with
   | Any | Nothing | Int64 | Float64 | Bool | String -> true
   | S s -> Tmap.mem s env
+  | Array -> true
 
 (* teste si le champ existe *)
 let argExists (t:string) (env:argsEnv) = Tmap.mem t env
@@ -50,11 +51,12 @@ let typeName (t:Astype.pjtype):string = match t with
   | Bool -> "Bool"
   | String -> "String"
   | S s -> "Struct \""^s^"\""
+  | Array -> "Array"
   | Any -> "Any"
 
 (* teste la correction d'une déclaration de structure et la rajoute aux différents environnements *)
 let parcoursStruct (sE:structEnv) (aE:argsEnv) (fE:funcEnv) (b,p,str,l):(structEnv * argsEnv * funcEnv) =
-  if str = "print" || str = "println" || str = "div" then
+  if str = "print" || str = "println" || str = "div" || str = "array_length" || str = "input_int" then
     error (str^" is not an allowed structuture name") p
   else
     if Tmap.mem str sE then error ("already defined structuture of name :"^str) p
@@ -81,7 +83,7 @@ let parcoursStruct (sE:structEnv) (aE:argsEnv) (fE:funcEnv) (b,p,str,l):(structE
 
 (* teste la correction d'une déclaration de fonction et la rajoute à l'environnement des fonctions *)
 let parcoursFonction (vE:varEnv) (fE:funcEnv) (sE:structEnv) (posStr, nameFunc, pL, posT, pjT, _):funcEnv =
-  if nameFunc = "print" || nameFunc = "println" || nameFunc = "div"
+  if nameFunc = "print" || nameFunc = "println" || nameFunc = "div" || nameFunc = "array_length" || nameFunc = "input_int"
   then error ("reserved name "^nameFunc) posStr
   else
     if Tmap.mem nameFunc vE
@@ -122,12 +124,15 @@ let rec chercheDefE (isLoc:bool) (vS:Tset.t) = function
   | Ebinop (_, _, (_, e1), (_, e2)) -> chercheDefE isLoc (chercheDefE isLoc vS e1) e2
   | Elvalue lv -> begin
     match lv with
-      |Lident _ -> vS
-      |Lindex ((_, e), _, _) -> chercheDefE isLoc vS e
+      | Lident _ -> vS
+      | Lindex ((_, e), _, _) -> chercheDefE isLoc vS e
+      | Larray ((_, e1), (_, e2)) -> chercheDefE isLoc (chercheDefE isLoc vS e1) e2
     end
   | ElvalueAffect (_, Lident (_, str), (_, e)) -> chercheDefE isLoc (Tset.add str vS) e
   | ElvalueAffect (_, Lindex ((_, e1), _, _), (_, e2)) ->
     chercheDefE isLoc (chercheDefE isLoc vS e1) e2
+  | ElvalueAffect (_, Larray ((_, e1), (_, e2)), (_, e3)) ->
+    chercheDefE isLoc (chercheDefE isLoc (chercheDefE isLoc vS e1) e2) e3
   | Ereturn (_, None) -> vS
   | Ereturn (_, Some (_, e)) -> chercheDefE isLoc vS e
   | Efor (_, (_, e1), (_, e2), (_, eL)) ->
@@ -160,16 +165,19 @@ let rec parcoursExpr (isLoc:bool) (vE:varEnv) (fE:funcEnv) (aE:argsEnv) (sE:stru
     if Tmap.mem str vE then parcoursExpr isLoc vE fE aE sE e
   else error ("undefined variable name "^str) p
   | Eapplication (pStr, str, eL) ->
-      if Tmap.mem str sE || Tmap.mem str fE || str = "print" || str = "println"
+      if Tmap.mem str sE || Tmap.mem str fE || str = "print" || str = "println" || str = "_getelement" || str = "_setelement" || str = "newarray" || str = "array_length" || str = "input_int"
       then List.fold_left (fun ve (p, e) -> parcoursExpr isLoc ve fE aE sE e) vE eL
       else error ("undefined function 1 "^str) pStr
   | Enot (_, e) | Eminus (_, e) -> parcoursExpr isLoc vE fE aE sE e
   | Ebinop (_, _, (_, e1), (_, e2)) -> parcoursExpr isLoc (parcoursExpr isLoc vE fE aE sE e1) fE aE sE e2
   | Elvalue lv -> begin
     match lv with
-      |Lident (p, str) -> if Tmap.mem str vE then vE else error ("undefined variable name "^str) p
-      |Lindex ((_, e), p, str) -> let env1 = parcoursExpr isLoc vE fE aE sE e in
+      | Lident (p, str) -> if Tmap.mem str vE then vE else error ("undefined variable name "^str) p
+      | Lindex ((_, e), p, str) ->
+        let env1 = parcoursExpr isLoc vE fE aE sE e in
         if Tmap.mem str aE then env1 else error ("undefined attribute name "^str) p
+      | Larray ((_, e1), (_, e2)) ->
+        parcoursExpr isLoc (parcoursExpr isLoc vE fE aE sE e1) fE aE sE e2
     end
   | ElvalueAffect (_, Lident (_, str), (_, e)) ->
     if Tmap.mem str vE then
@@ -182,6 +190,10 @@ let rec parcoursExpr (isLoc:bool) (vE:varEnv) (fE:funcEnv) (aE:argsEnv) (sE:stru
         let env1 = parcoursExpr isLoc vE fE aE sE e1 in
         parcoursExpr isLoc env1 fE aE sE e2
     else error ("undefined attribute name "^str) p
+  | ElvalueAffect (_, Larray ((_, e1), (_, e2)), (_, e3)) -> 
+      let env1 = parcoursExpr isLoc vE fE aE sE e1 in
+      let env2 = parcoursExpr isLoc env1 fE aE sE e2 in
+      parcoursExpr isLoc env2 fE aE sE e3
   | Ereturn (p,None) -> vE
   | Ereturn (p, Some (_, e)) -> parcoursExpr isLoc vE fE aE sE e
   | Efor (str, (_, e1), (_, e2), (_, eL)) ->
@@ -267,10 +279,11 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
       |_,_ -> error (Logo.booom) pI
     end
   | Eapplication (pName, ident, eL) -> begin
-    if ident = "print" || ident = "println"
-    then
-      (Nothing, CallE ((ident, ISet.singleton 0), List.fold_right (fun (_, e) l -> testTypageE isLoc vE fE sE aE rT b e::l) eL []))
-    else
+      match ident with 
+      | "print" | "println" -> (Nothing, CallE ((ident, ISet.singleton 0), List.fold_right (fun (_, e) l -> testTypageE isLoc vE fE sE aE rT b e::l) eL []))
+      | "newarray" | "_getelement" | "_setelement" -> (Any, CallE ((ident, ISet.singleton 0), List.fold_right (fun (_, e) l -> testTypageE isLoc vE fE sE aE rT b e::l) eL []))
+      | "array_length" | "input_int" -> (Int64, CallE ((ident, ISet.singleton 0), List.fold_right (fun (_, e) l -> testTypageE isLoc vE fE sE aE rT b e::l) eL []))
+      | _ ->
       if Tmap.mem ident fE then
         let l = try Tmap.find ident fE with Not_found -> assert false in
         let rec calcTyp l = match l with
@@ -351,6 +364,15 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
         let (t3, et3) = testTypageE isLoc vE fE sE aE rT b e in
         if compatible t3 (S nm) then t2, LvalueE (IndexL ((t3, et3), nm, n))
         else error ("type incompatibility in index "^typeName t3^" not compatible with struct "^nm) p
+      | Larray ((p1, e1), (p2, e2)) ->
+        let t1, e1 = testTypageE isLoc vE fE sE aE rT b e1 in
+        let t2, e2 = testTypageE isLoc vE fE sE aE rT b e2 in
+        if compatible t1 Array then
+          if compatible t2 Int64 then
+            Any, LvalueE (ArrayL ((t1, e1), (t2, e2)))
+          else error ("type incompatibility "^typeName t2^" not compatible with int") p2
+        else error ("type incompatibility "^typeName t1^" not compatible with array") p1
+
     end
   | ElvalueAffect (pEqual, lv, (pe, e)) -> begin
     let (t, et) = testTypageE isLoc vE fE sE aE rT b e in
@@ -371,6 +393,15 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
             else error ("type incompatibility in index affectation : "^typeName t^" can't be given to var who has type "^typeName t2) pEqual
           else error ("type incompatibility in index affectation : "^typeName t3^" is not compatible with Struct "^nm) pDot
         else error ("type incompatibility in index affectation : "^nm^" who has "^n^" as an attribute is not mutable") pDot
+      | Larray ((p1, e1), (p2, e2)) ->
+        let t1, e1 = testTypageE isLoc vE fE sE aE rT b e1 in
+        let t2, e2 = testTypageE isLoc vE fE sE aE rT b e2 in
+        if compatible t1 Array then
+          if compatible t2 Int64 then
+            t, LvalueAffectE (ArrayL ((t1, e1), (t2, e2)), (t, et))
+          else error ("type incompatibility "^typeName t2^" not compatible with int") p2
+        else error ("type incompatibility "^typeName t1^" not compatible with array") p1
+
     end
   | Ereturn (p, opt) -> if b
     then begin

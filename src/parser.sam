@@ -2,6 +2,7 @@
   open Ast
   open Astype
   open Hyper2
+  let file_name = ref ""
 
 %}
 
@@ -14,6 +15,8 @@
 %token <Ast.position> PARD
 %token <Ast.position> CROCHETG
 %token <Ast.position> CROCHETD
+%token <Ast.position> CURLYG
+%token <Ast.position> CURLYD
 %token <Ast.position> AFFECT
 %token <Ast.position> OR
 %token <Ast.position> AND
@@ -70,7 +73,8 @@
 %nonassoc unary_minus
 %right EXP
 %left DOT
-
+%left CROCHETG
+%left CROCHETD
 
 %start fichier
 
@@ -135,6 +139,7 @@ fonction<Ast.declaration>:
         | (p, "String") -> String, p
         | (p, "Any") -> Any, p
         | (p, "Nothing") -> Nothing, p
+        | (p, "Array") -> Array, p
         | (p, s) -> S s, p
       in
       Dfonction (p1,ig, parameters, p2, typ, (p,eL), "")
@@ -158,6 +163,7 @@ fonction<Ast.declaration>:
         | (p, "String") -> String, p
         | (p, "Any") -> Any, p
         | (p, "Nothing") -> Nothing, p
+        | (p, "Array") -> Array, p
         | (p, s) -> S s, p
       in
       Dfonction (p1,ig, parameters, p2, typ, (Hyper2.fusionPos (fst e) p, e::eL), "")
@@ -181,6 +187,7 @@ fonction<Ast.declaration>:
         | (p, "String") -> String, p
         | (p, "Any") -> Any, p
         | (p, "Nothing") -> Nothing, p
+        | (p, "Array") -> Array, p
         | (p, s) -> S s, p
       in
       Dfonction (p1,ig, parameters, p2, typ, (p,eL), doc)
@@ -204,6 +211,7 @@ fonction<Ast.declaration>:
         | (p, "String") -> String, p
         | (p, "Any") -> Any, p
         | (p, "Nothing") -> Nothing, p
+        | (p, "Array") -> Array, p
         | (p, s) -> S s, p
       in
       Dfonction (p1,ig, parameters, p2, typ, (Hyper2.fusionPos (fst e) p, e::eL), doc)
@@ -224,6 +232,7 @@ param<Ast.param>:
   | pi = IDENT pb = typage
     {
       let (p1,i) = pi in
+      
       let typ,p2 = match pb with
         | (p, "Float64") -> Float64, p
         | (p, "Int64") -> Int64, p
@@ -231,14 +240,25 @@ param<Ast.param>:
         | (p, "String") -> String, p
         | (p, "Any") -> Any, p
         | (p, "Nothing") -> Nothing, p
+        | (p, "Array") -> Array, p
         | (p, s) -> S s, p
       in
       Param (p1, i, p2, typ)
     }
   | pi = IDENT
     {
-      let (p1,i) = pi in
-      Param (p1, i, p1, Any)
+      let (p1, i_) = pi in
+      let (id, type_colle) = Hyper2.separate_string i_ !file_name in
+      match type_colle with 
+      | None -> Param (p1, id, p1, Any)
+      | Some "Float64" -> Param (p1, id, p1, Float64)
+      | Some "Int64" -> Param (p1, id, p1, Int64)
+      | Some "Bool" -> Param (p1, id, p1, Bool)
+      | Some "String" -> Param (p1, id, p1, String)
+      | Some "Any" -> Param (p1, id, p1, Any)
+      | Some "Nothing" -> Param (p1, id, p1, Nothing)
+      | Some "Array" -> Param (p1, id, p1, Array)
+      | Some s -> Param (p1, id, p1, S s)
     }
 ;
 
@@ -306,8 +326,11 @@ expr_wMin_<Ast.expression>:
       let (p2, el) = pel in
 	    Hyper2.fusionPos p1 p2, Eif (e, b, el)
     }
-  | p1 = CROCHETG liste = separated_list_COMMA_expr p2 = CROCHETD {
-    Hyper2.build_liste liste
+  | p1 = CROCHETG p2 = CROCHETD {
+    Hyper2.build_array []
+  }
+  | p1 = CROCHETG e1 = expr COMMA e2 = expr arr = separated_list_C_E p2 = CROCHETD {
+    Hyper2.build_array (e1::e2::arr)
     }
 ;
 
@@ -365,8 +388,8 @@ expr_w_Ret<Ast.expression>:
       let (p2, el) = pel in
       Hyper2.fusionPos p1 p2, Eif (e, b, el)
     }
-  | p1 = CROCHETG liste = separated_list_COMMA_expr p2 = CROCHETD {
-    Hyper2.build_liste liste
+  | p1 = CROCHETG arr = separated_list_COMMA_expr p2 = CROCHETD {
+    Hyper2.build_array arr
     }
 ;
 
@@ -405,11 +428,6 @@ expr<Ast.expression>:
       Hyper2.fusionPos p1 p2, Eapplication (p1, "print", l @ [(p1,Echaine "\\n")])
     else Hyper2.fusionPos p1 p2, Eapplication (p1, i, l)}
   | p = NOT e = expr {Hyper2.fusionPos p (fst e), Enot e}
-  | pl = expr AFFECT e = expr {
-  		match pl with
-  			|p, Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, e)
-  			| _ -> raise Ast.Parsing_Error
-  		}
   | pl = lvalue {let (p,l) = pl in (p, Elvalue l)}
   | p1 = MINUS e = expr %prec unary_minus {Hyper2.fusionPos p1 (fst e), Eminus e}
   | p1 = RETURN e = expr {Hyper2.fusionPos p1 (fst e), Ereturn (p1, Some e)}
@@ -425,9 +443,14 @@ expr<Ast.expression>:
       let (p2, el) = pel in
       Hyper2.fusionPos p1 p2, Eif (e, b, el)
     }
-  | p1 = CROCHETG liste = separated_list_COMMA_expr p2 = CROCHETD {
-    Hyper2.build_liste liste
+  | p1 = CROCHETG arr = separated_list_COMMA_expr p2 = CROCHETD {
+    Hyper2.build_array arr
     }
+  | pl = expr AFFECT e = expr {
+  		match pl with
+  			|p, Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, e)
+  			| _ -> raise Ast.Parsing_Error
+  		}
 ;
 
 whileExp<Ast.expression>:
@@ -444,6 +467,9 @@ lvalue<Ast.position * Ast.lvalue>:
   | e = expr DOT pi = IDENT {
     let (p,i) = pi in
     Hyper2.fusionPos (fst e) p, Lindex (e, p, (i : ident))}
+  | e1 = expr CROCHETG e2 = expr CROCHETD {
+    Hyper2.fusionPos (fst e1) (fst e2), Larray (e1, e2)
+  }
 ;
 
 lvalue_wMin_<Ast.position * Ast.lvalue>:
@@ -451,6 +477,9 @@ lvalue_wMin_<Ast.position * Ast.lvalue>:
   | e = expr_wMin_ DOT pi = IDENT {
     let (p,i) = pi in
     Hyper2.fusionPos (fst e) p, Lindex (e, p, (i : ident))}
+  | e1 = expr_wMin_ CROCHETG e2 = expr CROCHETD {
+    Hyper2.fusionPos (fst e1) (fst e2), Larray (e1, e2)
+  }
 ;
 
 else_exp<Ast.position * Ast.else_>:
