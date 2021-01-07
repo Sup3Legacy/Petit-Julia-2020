@@ -427,7 +427,7 @@ let fusionSR (shift_line:action Tmap.t) (rules:StateSet.t) pMap aMap (tset: Tset
 				in let priorityToken = match prio with
 					|None -> findPrioToken p pMap
 					|Some t -> t
-				in let pS = (try Tmap.find t pMap with Not_found -> failwith ("can't solve a shift/reduce conflict because \""^t^"\" has no associated priority"))
+				in let pS = (try Tmap.find t pMap with Not_found -> (afficheP p; failwith ("can't solve a shift/reduce conflict because \""^t^"\" has no associated priority")))
 				in let pR = Tmap.find priorityToken pMap in
 				if pS > pR then Tmap.find t shift_line
 				else if pS < pR then REDUCE (n, p, prio)

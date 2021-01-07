@@ -73,8 +73,10 @@
 %nonassoc unary_minus
 %right EXP
 %left DOT
+%nonassoc calcValArray
 %left CROCHETG
-%left CROCHETD
+%nonassoc priomax
+%nonassoc priomin
 
 %start fichier
 
@@ -467,7 +469,17 @@ lvalue<Ast.position * Ast.lvalue>:
   | e = expr DOT pi = IDENT {
     let (p,i) = pi in
     Hyper2.fusionPos (fst e) p, Lindex (e, p, (i : ident))}
-  | e1 = expr CROCHETG e2 = expr CROCHETD {
+  | e1 = expr_w_Ret CROCHETG e2 = expr CROCHETD %prec calcValArray {
+    Hyper2.fusionPos (fst e1) (fst e2), Larray (e1, e2)
+  }
+;
+
+lvalue_w_Ret<Ast.position * Ast.lvalue>:
+  | pi = IDENT {let (p,i) = pi in p,Lident (p,i)}
+  | e = expr_w_Ret DOT pi = IDENT {
+    let (p,i) = pi in
+    Hyper2.fusionPos (fst e) p, Lindex (e, p, (i : ident))}
+  | e1 = expr_w_Ret CROCHETG e2 = expr CROCHETD %prec calcValArray {
     Hyper2.fusionPos (fst e1) (fst e2), Larray (e1, e2)
   }
 ;
@@ -477,7 +489,7 @@ lvalue_wMin_<Ast.position * Ast.lvalue>:
   | e = expr_wMin_ DOT pi = IDENT {
     let (p,i) = pi in
     Hyper2.fusionPos (fst e) p, Lindex (e, p, (i : ident))}
-  | e1 = expr_wMin_ CROCHETG e2 = expr CROCHETD {
+  | e1 = expr_wMin_ CROCHETG e2 = expr CROCHETD %prec calcValArray {
     Hyper2.fusionPos (fst e1) (fst e2), Larray (e1, e2)
   }
 ;
@@ -527,7 +539,7 @@ bloc<Ast.bloc>:
 
 expr_bloc<Ast.expression * Ast.bloc>:
 	| e = expr {(e, (fst e, []))}
-	| e = expr b = expr_bloc2 {(e, b)}
+  | e = expr b = expr_bloc2 %prec priomax {(e,b)}
 	| e1 = expr_w_Ret pe2 = expr_wMin_ pb = expr_bloc2 {
     let (p1, e2) = pe2 in
     let (p2, eL) = pb in
