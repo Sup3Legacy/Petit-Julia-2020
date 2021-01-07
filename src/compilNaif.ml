@@ -454,7 +454,7 @@ let rec compile_expr = function
 		
 		cmpq (imm nTypeInt) !%rcx ++ jne exitLabel ++ (* On vérifie que l'indice est bien un entier *)
 
-		cmpq (ind ~ofs:8 rbx) !%rdx ++ jg exitLabel ++ (* On compare qu'on reste dans les bornes de l'array ;) *) (* TODO vérifier que c'est bon *)
+		cmpq (ind ~ofs:8 rbx) !%rdx ++ jge exitLabel ++ (* On compare qu'on reste dans les bornes de l'array ;) *) (* TODO vérifier que c'est bon *)
 		
 		movq (ind ~ofs:0 rbx) !%rax ++ (* Acquisition du type *)
 		subq (imm nTypeArray) !%rax ++
