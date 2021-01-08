@@ -195,9 +195,32 @@ Cependant, nous considérons nécessaire de continuer à travailler sur **Samenh
 
 Pour la deuxième partie du projet, nous projetons d'ajouter aussi à PetitJulia™ le support des **flottants** sur 64 bits ainsi que des **listes** (probablement tout simplement via des structures cachées derrière du sucre syntaxique); si nous en avons le temps!
 
-# VII] 
+# VII] Corrections des problèmes du premier rendu
 
-# VIII] Annexes
+-> flags
+-> multi-lignes rudimentaire du REPL
+
+# ... 
+
+# ... pPkg, depManager, namespace et pjulia-packages
+
+# ... génération de code du projet de base (donc sans flottants ni arrays)
+
+# ... extension flottants
+
+## ... Modifications tyoer
+
+## ... Modification production de code
+
+# ... extension arrays
+
+## ... première itération aved des structs
+
+## ... deuxième itération, plus propre
+
+# ... extensions des primitives (input_int, etc.)
+
+# ... Annexes
 
 ## A] Drapeaux de pjuliac
 

@@ -1,0 +1,46 @@
+{
+  "packages": [
+    {
+      "name": "list",
+      "version": "0.1.0",
+      "description": "Implémentation de listes chaînées",
+      "dependencies": [],
+      "url": "https://raw.githubusercontent.com/Sup3Legacy/pjulia-packages/main/list.jl"
+    },
+    {
+      "name": "arithlib",
+      "version": "0.1.0",
+      "description": "Fonctions utilitaires d'arithmétique",
+      "dependencies": [],
+      "url": "https://raw.githubusercontent.com/Sup3Legacy/pjulia-packages/main/arithlib.jl"
+    },
+    {
+      "name": "acker",
+      "version": "0.1.0",
+      "description": "Fonction(s) d'Ackerman",
+      "dependencies": [],
+      "url": "https://raw.githubusercontent.com/Sup3Legacy/pjulia-packages/main/acker.jl"
+    },
+    {
+      "name": "random",
+      "version": "0.1.4",
+      "description": "Fonctions aléatoires utiles",
+      "dependencies": [],
+      "url": "https://raw.githubusercontent.com/Sup3Legacy/pjulia-packages/main/random.jl"
+    },
+    {
+      "name": "matrix",
+      "version": "0.1.0",
+      "description": "Fonctions utiles pour des matrices",
+      "dependencies": [],
+      "url": "https://raw.githubusercontent.com/Sup3Legacy/pjulia-packages/main/matrix.jl"
+    },
+    {
+      "name": "gol",
+      "version": "0.1.0",
+      "description": "Game of life",
+      "dependencies": [],
+      "url": "https://raw.githubusercontent.com/Sup3Legacy/pjulia-packages/main/gol.jl"
+    }
+  ]
+}

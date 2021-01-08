@@ -10,6 +10,16 @@ let repo_url = "https://raw.githubusercontent.com/Sup3Legacy/pjulia-packages/mai
 let index_name = "index.json"
 let index_url = repo_url ^ index_name
 
+let package_folder = "packages"
+
+let package_path = 
+  (let paths = List.rev (String.split_on_char '/' Sys.executable_name) in
+  match paths with
+  | t :: q -> (String.concat "/" (List.rev q)) ^ "/" ^ package_folder ^ "/"
+  | [] -> failwith "empty path");;
+
+print_endline package_path;;
+
 module DepSet = Set.Make(String) (* pour les dépendances *)
 module PackMap = Map.Make(String) (* pour les packages *)
 
@@ -19,6 +29,10 @@ type package = (string * string * string * string * dependencySet) PackMap.t
 exception Error404
 
 let packagesMap = (ref PackMap.empty : package ref);;
+
+let get_package_path filename =
+  package_path ^ filename
+;;
 
 let decompose_json pack = (* Décompose un champ de package en ses champs *)
   let name = pack |> member "name" |> to_string in
@@ -62,9 +76,9 @@ let update () =
       download index_url
     with _ -> failwith "Unable to download index..." in (* À améliorer *)
   (try
-    Sys.remove "index.json";
+    Sys.remove (get_package_path "index.json");
   with _ -> ());
-  let oc = open_out "index.json" in
+  let oc = open_out (get_package_path "index.json") in
   Printf.fprintf oc "%s" file;
   close_out oc;
   print_endline "Downloaded, Imma parse it";
@@ -72,7 +86,7 @@ let update () =
 
 let download_package request_name =
   let index =
-  Yojson.Basic.from_file "index.json"
+  Yojson.Basic.from_file (get_package_path "index.json")
   in
   get_packages_list index;
   let (name, version, description, url, dependencies) =
@@ -85,9 +99,9 @@ let download_package request_name =
       let file = download (url) in
       if (String.sub file 0 3) = "404" then raise Error404;
       (try
-       Sys.remove (name ^ ".jl");
+       Sys.remove (get_package_path (name ^ ".jl"));
       with _ -> ());
-      let oc = open_out (name ^ ".jl") in
+      let oc = open_out (get_package_path (name ^ ".jl")) in
       Printf.fprintf oc "%s" file;
       close_out oc;
       print_endline ("Succesfully downloaded package " ^ name)
@@ -97,7 +111,7 @@ let download_package request_name =
 
 let remove_package name =
   let index =
-  Yojson.Basic.from_file "index.json"
+  Yojson.Basic.from_file (get_package_path "index.json")
   in
   get_packages_list index;
   let (name, version, description, url, dependencies) =
@@ -107,7 +121,7 @@ let remove_package name =
 in
 try
   begin
-    Sys.remove (name ^ ".jl");
+    Sys.remove (get_package_path (name ^ ".jl"));
     print_endline ("Succesfully removed package " ^ name)
   end
 with _ -> failwith "Failed removing requested package"

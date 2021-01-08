@@ -8,7 +8,7 @@ module Import_packages_set = Set.Make(String) (* Ensemble des packages déjà im
 let currentPackages = ref Import_packages_set.empty;;
 
 let get_package identifiant =
-  let file = open_in identifiant in (* À améliorer *)
+  let file = open_in (PPkg.get_package_path identifiant) in (* À améliorer *)
   let lb = Lexing.from_channel file in
   let e = Parser.fichier Lexer.token lb in
   match e with DeclarationList l -> l

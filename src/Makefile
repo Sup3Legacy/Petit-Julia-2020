@@ -2,11 +2,11 @@ all:pjuliac.exe pjuliarepl.exe
 	echo "Built everything! \n"
 
 compil: pjuliac.exe
-	dune exec ./pjuliac.exe test.jl
+	./pjuliac test.jl
 
 repl: pjuliarepl.exe
 	clear
-	rlwrap -f pjulia-words -c -pCyan dune exec ./pjuliarepl.exe
+	rlwrap -f pjulia-words -c -pCyan ./pjuliarepl
 
 pjuliac.exe:
 	dune build pjuliac.exe
