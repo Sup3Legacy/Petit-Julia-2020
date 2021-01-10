@@ -75,6 +75,7 @@ and exprTyper =
 	| ReturnE of pjtype * (expressionTyper option) (* expected type of the return *)
 	| ForE of ident * pjtype Tmap.t * expressionTyper * expressionTyper * blocTyper
 	| WhileE of expressionTyper * pjtype Tmap.t * blocTyper
+	| DoWhileE of  pjtype Tmap.t * blocTyper * expressionTyper
 	| IfE of expressionTyper * blocTyper * elseTyper
 and lvalueTyper =
 	| IdentL of pjtype * ident * bool

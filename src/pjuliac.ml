@@ -9,7 +9,7 @@ let show_fName = ref false;;
 let analytics = ref false;;
 
 let gVenv = ref (Tmap.singleton "nothing" (false,Nothing))
-let gFenv = ref (Tmap.singleton "div" [0, [Int64; Int64], Int64])
+let gFenv = ref (Tmap.singleton "div" [(0, [Int64; Int64], Int64);(1, [Float64; Int64], Float64);(2, [Int64; Float64], Float64);(3, [Float64; Float64], Float64)])
 let gSenv = ref (Tmap.empty : structEnv)
 let gAenv = ref (Tmap.empty : argsEnv)
 
