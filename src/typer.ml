@@ -143,7 +143,7 @@ let rec chercheDefE (isLoc:bool) (vS:Tset.t) = function
       if false && isLoc then chercheDefB isLoc env1 eL else env1
   | EdoWhile ((_, e), (_, eL)) ->
     let env1 = chercheDefB isLoc vS eL in
-    chercheDefE isLoc env1 e
+    let _ = chercheDefE isLoc env1 e in vS
   | Eif ((_, e), (_, eL), els) ->
       let env1 = chercheDefE isLoc vS e in
       let env2 = chercheDefB isLoc env1 eL in
@@ -221,7 +221,7 @@ let rec parcoursExpr (isLoc:bool) (vE:varEnv) (fE:funcEnv) (aE:argsEnv) (sE:stru
           Tmap.filter (fun k t -> not (Tset.mem k newdef)) vE)
       in
       let env2 = parcoursBloc true env1 fE aE sE eL in
-      let env3 = parcoursExpr isLoc env2 fE aE sE e
+      let env3 = parcoursExpr true env2 fE aE sE e
       in env3
   | Eif ((_, e), (_, eL), els) ->
       let env1 = parcoursExpr isLoc vE fE aE sE e in
