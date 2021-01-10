@@ -142,7 +142,7 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 				(offset, [])
 		in
 		match ident with 
-		| "print" | "div" | "_getelement" | "_setelement" | "newarray" | "array_length" | "input_int" | "input_string" -> Call (ident, Feuille (ident, 0), eL), offset
+		| "print" | "div" | "_getelement" | "_setelement" | "newarray" | "array_length" | "input_int" | "input_string" | "int_of_float" | "sqrt" -> Call (ident, Feuille (ident, 0), eL), offset
 		| _ ->
 			let f = try Tmap.find ident !functionMap with Not_found -> failwith ("not found "^ident) in
 			let arb:AstcompilN.functArbr = calcArb ident (ISet.fold (fun i l -> match Imap.find i f with
@@ -361,6 +361,28 @@ let rec compile_expr = function
 
 			movq !%rax !%rbx ++ movq !%rcx !%rax ++ (* Et on met ça sur %rax-%rbx *)
 			pushq !%rax ++ pushq !%rbx
+		| "int_of_float" ->
+			e ++
+			popq rbx ++ popq rax ++
+			cmpq (imm nTypeFloat) !%rax ++ jne exitLabel ++
+			movq !%rbx !%xmm0 ++
+			cvttsd2siq !%xmm0 rbx ++ movq (imm nTypeInt) !%rax ++
+			pushq !%rax ++ pushq !%rbx
+		| "sqrt" -> let (flottant, fin) = (getIf (), getIf ()) in
+			e ++
+			popq rbx ++ popq rax ++
+			cmpq (imm nTypeInt) !%rax ++ jne flottant ++
+			cvtsi2sdq !%rbx xmm0 ++
+			sqrtsd !%xmm0 !%xmm0 ++
+			movq !%xmm0 !%rbx ++
+			jmp fin ++
+			label flottant ++
+			cmpq (imm nTypeFloat) !%rax ++ jne exitLabel ++
+			movq !%rbx !%xmm0 ++
+			sqrtsd !%xmm0 !%xmm0 ++ movq !%xmm0 !%rbx ++
+			label fin ++
+			movq (imm nTypeFloat) !%rax ++ 
+			pushq !%rax ++ pushq !%rbx 
 		| _ ->
 			begin
 				let flagfin = newFlagArb () in
