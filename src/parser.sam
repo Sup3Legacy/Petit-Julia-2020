@@ -46,7 +46,6 @@
 %token <Ast.position> STRUCT
 %token <Ast.position> TRUE
 %token <Ast.position> WHILE
-%token <Ast.position> DO
 %token <Ast.position> DOWHILE
 
 %token <Ast.position*Int64.t * string> ENTIER_IDENT
