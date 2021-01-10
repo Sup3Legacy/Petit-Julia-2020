@@ -462,6 +462,7 @@ let rec compile_expr = function
 		(compile_expr exp) ++ (popq rbx) ++ (popq rax) ++ (cmpq (imm numClasse) !%rax) ++ (jne exitLabel) ++
 		(movq (ind ~ofs:(offset + 0) rbx) !%rax) ++ (movq (ind ~ofs:(offset + 8) rbx) !%rbx) ++ pushq !%rax ++ pushq !%rbx
 	| Array (e1, e2) ->
+		let label_get_element = getIf () in
 		compile_expr e1 ++
 		compile_expr e2 ++
 		popq rdx ++ popq rcx ++ (* type et valeur de l'indice *)
@@ -470,6 +471,10 @@ let rec compile_expr = function
 		cmpq (imm nTypeArray) !%rax ++ jl exitLabel ++ (* On vérifie que c'est bien un array*)
 		
 		cmpq (imm nTypeInt) !%rcx ++ jne exitLabel ++ (* On vérifie que l'indice est bien un entier *)
+
+		cmpq (imm 0) !%rdx ++ jge label_get_element ++ (* Si l'indice est négatif *)
+		addq (ind ~ofs:8 rbx) !%rdx ++
+		label label_get_element ++
 
 		cmpq (ind ~ofs:8 rbx) !%rdx ++ jge exitLabel ++ (* On compare qu'on reste dans les bornes de l'array ;) *) (* TODO vérifier que c'est bon *)
 		
@@ -496,6 +501,7 @@ let rec compile_expr = function
 			(movq !%rbx (ind ~ofs:(entier + 8) r14)) in
 		code1 ++ code2 ++ comparaison ++ target_type ++ pushq !%rax ++ pushq !%rbx
 	| LvalueAffectA (e1, e2, e3) -> 
+		let label_get_element = getIf () in
 		compile_expr e1 ++
 		compile_expr e2 ++
 		compile_expr e3 ++
@@ -506,8 +512,16 @@ let rec compile_expr = function
 
 		cmpq (imm nTypeArray) !%rax ++ jl exitLabel ++ (* On vérifie que c'est bien un array *)
 		cmpq (imm nTypeInt) !%rcx ++ jne exitLabel ++ (* On vérifie que l'indice est bien un entier *)
-		cmpq (ind ~ofs:0 rbx) !%r13 ++ jne exitLabel ++ (* On vérifie que la valeur insérée a le même type que le reste *)
+
+		cmpq (imm 0) !%rdx ++ jge label_get_element ++ (* Si l'indice est négatif *)
+		addq (ind ~ofs:8 rbx) !%rdx ++
+		label label_get_element ++
+
 		cmpq (ind ~ofs:8 rbx) !%rdx ++ jge exitLabel ++ (* On compare qu'on reste dans les bornes de l'array ;) *)
+
+
+		cmpq (ind ~ofs:0 rbx) !%r13 ++ jne exitLabel ++ (* On vérifie que la valeur insérée a le même type que le reste *)
+		
 		
 		imulq (imm 1) !%rbx ++
 		movq !%r15 (ind ~ofs:16 ~index:rdx ~scale:8 rbx) ++(* Insertion de la valeur *) 
