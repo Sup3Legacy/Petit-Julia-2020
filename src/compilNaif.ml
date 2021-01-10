@@ -142,7 +142,7 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 				(offset, [])
 		in
 		match ident with 
-		| "print" | "div" | "_getelement" | "_setelement" | "newarray" | "array_length" | "input_int" -> Call (ident, Feuille (ident, 0), eL), offset
+		| "print" | "div" | "_getelement" | "_setelement" | "newarray" | "array_length" | "input_int" | "input_string" -> Call (ident, Feuille (ident, 0), eL), offset
 		| _ ->
 			let f = try Tmap.find ident !functionMap with Not_found -> failwith ("not found "^ident) in
 			let arb:AstcompilN.functArbr = calcArb ident (ISet.fold (fun i l -> match Imap.find i f with
@@ -316,6 +316,17 @@ let rec compile_expr = function
 			movq ((if estMac then lab else ilab) (".Sscan_int")) !%rbx ++
 			movq (imm nTypeInt) !%rax ++
 			pushq !%rax ++ pushq !%rbx
+		| "input_string" -> 
+			let deplq = if estMac then (fun x -> leaq x rdi) else (fun x -> movq x !%rdi) in
+			let deplqrsi = if estMac then (fun x -> leaq x rsi) else (fun x -> movq x !%rsi) in
+			e ++ 
+			deplq (lab ".Sprint_string") ++
+			deplqrsi (lab ".Sscan_string") ++
+			movq (imm 0) !%rax ++
+			call "scanf" ++ 
+			movq ((if estMac then lab else ilab) (".Sscan_string")) !%rbx ++ 
+			movq (imm nTypeString) !%rax ++
+			pushq !%rax ++ pushq !%rbx
 		| "div" ->	let (label1, label2, label3, labelEnd) = getIf (), getIf (), getIf (), getIf () in
 			e ++ (cmpq (imm nTypeFloat) (ind ~ofs:24 rsp)) ++ je label1 ++
 	  		(cmpq (imm nTypeInt) (ind ~ofs:24 rsp)) ++ jne exitLabel ++
@@ -377,16 +388,24 @@ let rec compile_expr = function
 	  | Neq -> deb ++ (pushq (imm nTypeBool)) ++ (cmpq !%rax !%rcx) ++ (jne label1) ++
 							  (cmpq !%rbx !%rdx) ++ (jne label1) ++ (pushq (imm valFalse)) ++
 							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valTrue)) ++ (label label2)
-	  | Lo -> deb ++ (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
-							  (cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
-							  (pushq (imm nTypeBool)) ++
-							  (cmpq !%rbx !%rdx) ++ (jge label1) ++ (pushq (imm valTrue)) ++
-							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valFalse)) ++ (label label2)
-	  | Gr -> deb ++ (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
-							  (cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
-							  (pushq (imm nTypeBool)) ++
-							  (cmpq !%rbx !%rdx) ++ (jle label1) ++ (pushq (imm valTrue)) ++
-							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valFalse)) ++ (label label2)
+	  | Lo -> let (label3, labelEnd) = getIf (), getIf () in
+						ins1 ++ ins2 ++ (cmpq (imm nTypeFloat) (ind ~ofs:24 rsp)) ++ je label1 ++
+	  				(cmpq (imm nTypeInt) (ind ~ofs:24 rsp)) ++ jne exitLabel ++
+						(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label2 ++ call "loII" ++ jmp labelEnd ++
+						(label label2) ++ (cmpq (imm nTypeFloat) (ind ~ofs:8 rsp)) ++ jne exitLabel ++ call "loIF" ++ jmp labelEnd ++
+ 	  				(label label1) ++
+						(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label3 ++ call "loFI" ++ jmp labelEnd ++
+						(label label3) ++ (cmpq (imm nTypeFloat) (ind ~ofs:8 rsp)) ++ jne exitLabel ++ call "loFF" ++ jmp labelEnd ++
+ 	  				(label labelEnd) ++ addq (imm 32) !%rsp ++ pushq !%rax ++ pushq !%rbx
+	  | Gr -> let (label3, labelEnd) = getIf (), getIf () in
+		ins1 ++ ins2 ++ (cmpq (imm nTypeFloat) (ind ~ofs:24 rsp)) ++ je label1 ++
+		(cmpq (imm nTypeInt) (ind ~ofs:24 rsp)) ++ jne exitLabel ++
+		(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label2 ++ call "goII" ++ jmp labelEnd ++
+		(label label2) ++ (cmpq (imm nTypeFloat) (ind ~ofs:8 rsp)) ++ jne exitLabel ++ call "goIF" ++ jmp labelEnd ++
+		 (label label1) ++
+		(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label3 ++ call "goFI" ++ jmp labelEnd ++
+		(label label3) ++ (cmpq (imm nTypeFloat) (ind ~ofs:8 rsp)) ++ jne exitLabel ++ call "goFF" ++ jmp labelEnd ++
+		 (label labelEnd) ++ addq (imm 32) !%rsp ++ pushq !%rax ++ pushq !%rbx
 	  | Leq -> deb ++ (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
 							   (cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
 							   (pushq (imm nTypeBool)) ++
@@ -661,6 +680,140 @@ let compile_program f ofile =
     xorq !%rdx !%rdx ++
     idivq !%rax ++
 		ret ++*)
+		label "loII" ++
+		movq (ind ~ofs:8 rsp) !%rbx ++
+		movq (ind ~ofs:24 rsp) !%rax ++
+		cmpq !%rax !%rbx ++
+		jge "loII_f" ++
+		movq (imm valFalse) !%rbx ++
+		jmp "loII_t" ++
+		label "loII_f" ++
+		movq (imm valTrue) !%rbx ++
+		label "loII_t" ++
+		movq (imm nTypeBool) !%rax ++
+		ret ++
+
+		label "loFI" ++
+		movq (ind ~ofs:8 rsp) !%rbx ++ 
+		movq (ind ~ofs:24 rsp) !%xmm0 ++
+		cvtsi2sdq !%rax xmm1 ++ 
+		cmpltsd !%xmm1 !%xmm0 ++ 
+		movq !%xmm0 !%rbx ++
+		movq (imm nTypeBool) !%rax ++
+		cmpq (imm (-1)) !%rbx ++
+		jne "loFI_f" ++
+		movq (imm valTrue) !%rbx ++
+		jmp "loFI_t" ++
+		label "loFI_f" ++
+		movq (imm valFalse) !%rbx ++
+		label "loFI_t" ++
+		ret ++
+
+		label "loIF" ++
+		movq (ind ~ofs:8 rsp) !%xmm0 ++
+		movq (ind ~ofs:24 rsp) !%rbx ++
+		cvtsi2sdq !%rbx xmm1 ++
+		cmpltsd !%xmm1 !%xmm0 ++ 
+		movq !%xmm0 !%rbx ++
+		movq (imm nTypeBool) !%rax ++
+		cmpq (imm (-1)) !%rbx ++
+		je "loIF_f" ++
+		movq (imm valTrue) !%rbx ++
+		jmp "loIF_t" ++
+		label "loIF_f" ++
+		movq (imm valFalse) !%rbx ++
+		label "loIF_t" ++
+		ret ++
+
+		label "loFF" ++
+		movq (ind ~ofs:8 rsp) !%xmm0 ++
+		movq (ind ~ofs:24 rsp) !%xmm1 ++
+		cmpltsd !%xmm1 !%xmm0 ++
+		movq (imm nTypeFloat) !%rax ++
+		movq !%xmm0 !%rbx ++
+		cmpq (imm (-1)) !%rbx ++
+		je "loFF_f" ++
+		movq (imm valTrue) !%rbx ++
+		jmp "loFF_t" ++
+		label "loFF_f" ++
+		movq (imm valFalse) !%rbx ++
+		label "loFF_t" ++
+		movq (ind ~ofs:24 rsp) !%rax ++
+		cmpq (ind ~ofs:8 rsp) !%rax ++ (* Écarter le cas d'égalité stricte, qui peut tromper le '<' *)
+		jne "loFF_t_0" ++
+		movq (imm valFalse) !%rbx ++ 
+		label "loFF_t_0" ++
+		movq (imm nTypeBool) !%rax ++
+		ret ++
+
+		label "goII" ++
+		movq (ind ~ofs:8 rsp) !%rbx ++
+		movq (ind ~ofs:24 rsp) !%rax ++
+		cmpq !%rax !%rbx ++
+		jle "goII_f" ++
+		movq (imm valFalse) !%rbx ++
+		jmp "goII_t" ++
+		label "goII_f" ++
+		movq (imm valTrue) !%rbx ++
+		label "goII_t" ++
+		movq (imm nTypeBool) !%rax ++
+		ret ++
+
+
+		label "goFI" ++
+		movq (ind ~ofs:8 rsp) !%rbx ++ 
+		movq (ind ~ofs:24 rsp) !%xmm0 ++
+		cvtsi2sdq !%rax xmm1 ++ 
+		cmpnlesd !%xmm1 !%xmm0 ++ 
+		movq !%xmm0 !%rbx ++
+		movq (imm nTypeBool) !%rax ++
+		cmpq (imm (-1)) !%rbx ++
+		jne "goFI_f" ++
+		movq (imm valTrue) !%rbx ++
+		jmp "goFI_t" ++
+		label "goFI_f" ++
+		movq (imm valFalse) !%rbx ++
+		label "goFI_t" ++
+		ret ++
+
+		label "goIF" ++
+		movq (ind ~ofs:8 rsp) !%xmm0 ++
+		movq (ind ~ofs:24 rsp) !%rbx ++
+		cvtsi2sdq !%rbx xmm1 ++
+		cmpnlesd !%xmm1 !%xmm0 ++ 
+		movq !%xmm0 !%rbx ++
+		movq (imm nTypeBool) !%rax ++
+		cmpq (imm (-1)) !%rbx ++
+		je "goIF_f" ++
+		movq (imm valTrue) !%rbx ++
+		jmp "goIF_t" ++
+		label "goIF_f" ++
+		movq (imm valFalse) !%rbx ++
+		label "goIF_t" ++
+		ret ++
+
+		label "goFF" ++
+		movq (ind ~ofs:8 rsp) !%xmm0 ++
+		movq (ind ~ofs:24 rsp) !%xmm1 ++
+		cmpnlesd !%xmm1 !%xmm0 ++
+		movq !%xmm0 !%rbx ++
+		cmpq (imm (-1)) !%rbx ++
+		je "goFF_f" ++
+		movq (imm valTrue) !%rbx ++
+		jmp "goFF_t" ++
+		label "goFF_f" ++
+		movq (imm valFalse) !%rbx ++
+		label "goFF_t" ++
+		movq (ind ~ofs:24 rsp) !%rax ++
+		cmpq (ind ~ofs:8 rsp) !%rax ++ (* Écarter le cas d'égalité stricte, qui peut tromper le '<' *)
+		jne "goFF_t_0" ++
+		movq (imm valFalse) !%rbx ++ 
+		label "goFF_t_0" ++
+		movq (imm nTypeBool) !%rax ++
+		ret ++
+
+
+
 		label "addII" ++
 		movq (ind ~ofs:8 rsp) !%rbx ++
 		movq (ind ~ofs:24 rsp) !%rax ++
@@ -906,7 +1059,8 @@ let compile_program f ofile =
 			 (label ".Sprint_true" ++ string "true") ++
 			 (label ".Sprint_false" ++ string "false") ++
 			 (label ".Sprint_error" ++ string "type or \"Division by zero\" failure\n") ++
-			 (label ".Sscan_int" ++ (dquad [0]))
+			 (label ".Sscan_int" ++ (dquad [0])) ++ 
+			 (label ".Sscan_string" ++ (dquad [0]))
    }
  in
  let f = open_out ofile in
