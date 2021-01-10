@@ -456,8 +456,9 @@ let rec compile_expr = function
 	  				movq !%rdx !%rax ++ movq !%rbx !%rcx ++ xorq !%rdx !%rdx ++
 	  				(cmpq (imm 0) !%rax) ++ (movq (imm (-1)) !%r13) ++ (cmovs !%r13 rdx) ++
 	  				idivq !%rcx ++ pushq (imm nTypeInt) ++ pushq !%rdx
-	  | Exp -> deb ++ (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
-	  				(cmpq (imm nTypeInt) !%rcx) ++ (jne exitLabel) ++
+		| Exp -> let (flottant, fin, label3, label4) = (getIf (), getIf (), getIf (), getIf ()) in
+			deb ++ (cmpq (imm nTypeInt) !%rax) ++ (jne exitLabel) ++
+						(cmpq (imm nTypeInt) !%rcx) ++ (jne flottant) ++
 						(movq !%rdx !%rax) ++ (movq !%rbx !%rbx) ++ (movq (imm 1) !%rcx) ++
 						(label label1) ++
 						(cmpq (imm 0) !%rbx) ++ (je label2) ++
@@ -465,7 +466,17 @@ let rec compile_expr = function
 						(jmp label1) ++
 						(label label2) ++
 						(movq (imm nTypeInt) !%rax) ++ (movq !%rcx !%rbx) ++
-						(pushq !%rax) ++ (pushq !%rbx)
+						(pushq !%rax) ++ (pushq !%rbx) ++ (jmp fin) ++
+				(label flottant) ++
+					cmpq (imm nTypeFloat) !%rcx ++ jne exitLabel ++
+					movq !%rdx !%xmm0 ++ movq (imm 1) !%rax ++ cvtsi2sdq !%rax xmm1 ++
+					(label label3) ++
+					(cmpq (imm 0) !%rbx) ++ (je label4) ++
+					(decq !%rbx) ++ mulsd !%xmm0 !%xmm1 ++
+					(jmp label3) ++
+					(label label4) ++
+					(movq (imm nTypeFloat) !%rax) ++ (movq !%xmm1 !%rbx) ++
+					(pushq !%rax) ++ (pushq !%rbx) ++ label fin
 	  | And -> ins1 ++ popq rbx ++ popq rax ++ (cmpq (imm nTypeBool) !%rax) ++ jne exitLabel ++
 	  				(cmpq (imm valTrue) !%rbx) ++ jne label1 ++
 	  				ins2 ++ popq rbx ++ popq rax ++ (cmpq (imm nTypeBool) !%rax) ++ jne exitLabel ++
