@@ -46,7 +46,6 @@
 %token <Ast.position> STRUCT
 %token <Ast.position> TRUE
 %token <Ast.position> WHILE
-%token <Ast.position> DO
 %token <Ast.position> DOWHILE
 
 %token <Ast.position*Int64.t * string> ENTIER_IDENT
@@ -470,8 +469,9 @@ whileExp<Ast.expression>:
 ;
 
 doWhileExp<Ast.expression>:
-  | p1 = DO b = bloc DOWHILE e = expr p2 = END {
-    Hyper2.fusionPos p1 p2, EdoWhile (e, b)
+  | p1 = DOWHILE be = bloc_expr_END {
+    let (b,e) = be in
+    Hyper2.fusionPos p1 (fst e), EdoWhile (e, b)
   }
 ;
 
@@ -558,6 +558,23 @@ expr_bloc<Ast.expression * Ast.bloc>:
 	| e1 = expr_w_Ret pe2 = expr_wMin_ {
     let (p, e2) = pe2 in
     (e1, (p, [pe2]))}
+;
+
+bloc_expr_END<Ast.bloc * Ast.expression>:
+  | e = expr p = END {((fst e,[]),e)}
+  | e1 = expr_w_Ret e2 = expr_wMin_ END {
+    (fst e1, [e1]), e2
+  }
+  | e = expr SEMICOLON b = bloc_expr_END {
+    let (b,ef) = b in
+    let (p2, eL) = b in
+    (Hyper2.fusionPos (fst e) p2, e::eL), ef
+  }
+  | p1 = SEMICOLON b = bloc_expr_END {
+    let (b,ef) = b in
+    let (p2, eL) = b in
+    (Hyper2.fusionPos p1 p2, eL), ef
+  }
 ;
 
 expr_bloc2<Ast.bloc>:
