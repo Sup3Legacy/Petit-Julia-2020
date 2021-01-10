@@ -353,6 +353,11 @@ val cmpq: [`Q] operand -> [`Q] operand -> text
 val ucomiss: [`L] operand -> [`L] operand -> text
 val ucomisd: [`Q] operand -> [`Q] operand -> text
 
+val cmpltsd: [`Q] operand -> [`Q] operand -> text
+val cmplesd: [`Q] operand -> [`Q] operand -> text
+val cmpnltsd: [`Q] operand -> [`Q] operand -> text
+val cmpnlesd: [`Q] operand -> [`Q] operand -> text
+
 val testb: [`B] operand -> [`B] operand -> text
 val testw: [`W] operand -> [`W] operand -> text
 val testl: [`L] operand -> [`L] operand -> text

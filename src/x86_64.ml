@@ -321,6 +321,11 @@ let cmpq a b = ins "cmpq %a, %a" a () b ()
 let ucomiss a b = ins "ucomiss %a, %a" a () b ()
 let ucomisd a b = ins "ucomisd %a, %a" a () b ()
 
+let cmpltsd a b = ins "cmpltsd %a, %a" a () b ()
+let cmplesd a b = ins "cmplesd %a, %a" a () b ()
+let cmpnltsd a b = ins "cmpnltsd %a, %a" a () b ()
+let cmpnlesd a b = ins "cmpnlesd %a, %a" a () b ()
+
 let testb a b = ins "testb %a, %a" a () b ()
 let testw a b = ins "testw %a, %a" a () b ()
 let testl a b = ins "testl %a, %a" a () b ()
