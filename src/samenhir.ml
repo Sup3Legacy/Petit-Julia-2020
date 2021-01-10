@@ -28,7 +28,12 @@ let main () =
 			let outfile = (Filename.chop_suffix !file ".sam" ^ ".ml") in
 			let f = open_in !file in
 			let buf = Lexing.from_channel f in
-			let parsed = SamenhirParser.program SamenhirLexer.token buf in
+			let parsed = try SamenhirParser.program SamenhirLexer.token buf
+			with SamenhirParser.Samenhir_Parsing_Error _ -> (let e = Lexing.lexeme_end_p buf in
+				print_int e.pos_lnum;
+				print_newline ();
+				exit 1)
+ in
 			let () = close_in f in
 			let table = Samenhir_utilities.buildTable (Samenhir_utilities.unrawGrammar parsed.g) parsed.prio in
 			let p = {gR = parsed.g; startLTable = table.startLine; gotoTab = table.goto; actionTab = table.action; tokenList = parsed.tokenList; head = parsed.header} in

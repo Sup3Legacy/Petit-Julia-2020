@@ -8,7 +8,7 @@ let posVide:Ast.position = {ldeb = -1; cdeb = -1; lfin = -1; cfin = -1}
 let keywords = Hashtbl.create 12
 let words = [("else", ELSE posVide); ("elseif", ELSEIF posVide); ("end", END posVide); ("false", FALSE posVide); ("for", FOR posVide);
   ("function", FUNCTION posVide); ("if", IF posVide); ("mutable", MUTABLE); ("return", RETURN posVide); ("struct", STRUCT posVide);
-  ("true", TRUE posVide); ("while", WHILE posVide)]
+  ("true", TRUE posVide); ("while", WHILE posVide); ("do", DO posVide); ("dowhile", DOWHILE posVide)]
 let () = List.iter (fun (s, t) -> Hashtbl.add keywords s t) words
 
 exception Not_an_int

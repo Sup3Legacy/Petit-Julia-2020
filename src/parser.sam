@@ -46,6 +46,8 @@
 %token <Ast.position> STRUCT
 %token <Ast.position> TRUE
 %token <Ast.position> WHILE
+%token <Ast.position> DO
+%token <Ast.position> DOWHILE
 
 %token <Ast.position*Int64.t * string> ENTIER_IDENT
 %token <Ast.position*string> IDENT_PARG
@@ -323,6 +325,7 @@ expr_wMin_<Ast.expression>:
       Hyper2.fusionPos p1 p2, Efor ((i : ident), e1, e2, b)
     }
   | w = whileExp { w }
+  | w = doWhileExp { w }
   | p1 = IF eb = expr_bloc pel = else_exp {
   		let (e, b) = eb in
       let (p2, el) = pel in
@@ -385,6 +388,7 @@ expr_w_Ret<Ast.expression>:
       Hyper2.fusionPos p1 p2,	Efor ((i : ident), e1, e2, b)
     }
   | w = whileExp { w }
+  | w = doWhileExp { w }
   | p1 = IF eb = expr_bloc pel = else_exp {
   		let (e,b) = eb in
       let (p2, el) = pel in
@@ -440,6 +444,7 @@ expr<Ast.expression>:
       Hyper2.fusionPos p1 p2,	Efor ((i : ident), e1, e2, b)
     }
   | w = whileExp { w }
+  | w = doWhileExp { w }
   | p1 = IF eb = expr_bloc pel = else_exp {
   		let (e,b) = eb in
       let (p2, el) = pel in
@@ -462,6 +467,12 @@ whileExp<Ast.expression>:
   | p1 = WHILE e1 = expr_w_Ret e2 = expr_wMin_ pb = bloc_END {
     let (p2,(p,eL)) = pb in
     Hyper2.fusionPos p1 p2, Ewhile (e1, (Hyper2.fusionPos (fst e2) p, e2::eL))}
+;
+
+doWhileExp<Ast.expression>:
+  | p1 = DO b = bloc DOWHILE e = expr p2 = END {
+    Hyper2.fusionPos p1 p2, EdoWhile (e, b)
+  }
 ;
 
 lvalue<Ast.position * Ast.lvalue>:

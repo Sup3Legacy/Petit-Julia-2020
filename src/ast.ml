@@ -57,6 +57,7 @@ and expr =
   | Ereturn of position * (expression option)
   | Efor of ident * expression * expression * bloc
   | Ewhile of expression * bloc
+  | EdoWhile of expression * bloc
   | Eif of expression * bloc * else_
 [@@deriving show]
 and lvalue =
