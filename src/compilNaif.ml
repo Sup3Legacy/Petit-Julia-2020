@@ -1209,7 +1209,7 @@ let compile_program f ofile =
 		movq (imm nTypeFloat) !%rax ++
 		ret ++
 
-	label "input_int" ++
+	label "input_int_0" ++
 		pushq !%rbp ++
 		deplq (lab ".Sprint_int") rdi ++
 		deplq (lab ".Sscan_int") rsi ++
