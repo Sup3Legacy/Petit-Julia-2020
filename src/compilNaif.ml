@@ -372,6 +372,13 @@ let rec compile_expr = function
 			movq !%rbx !%xmm0 ++
 			cvttsd2siq !%xmm0 rbx ++ movq (imm nTypeInt) !%rax ++
 			pushq !%rax ++ pushq !%rbx
+		| "float_of_int" ->
+			e ++
+			popq rbx ++ popq rax ++
+			cmpq (imm nTypeInt) !%rax ++ jne exitLabel ++
+			cvtsi2sdq !%rbx xmm0 ++
+			movq (imm nTypeInt) !%rax ++
+			pushq !%rax ++ pushq !%rbx
 		| "sqrt" -> let (flottant, fin) = (getIf (), getIf ()) in
 			e ++
 			popq rbx ++ popq rax ++
