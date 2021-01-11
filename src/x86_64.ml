@@ -366,6 +366,10 @@ let popq r = ins "popq %s" r
 
 let rdtsc () = ins "rdtsc"
 
+let tpause a = ins "tpause %a" a ()
+
+let hlt () = ins "hlt"
+
 type program = {
   text : [ `text ] asm;
   data : [ `data ] asm;

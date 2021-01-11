@@ -536,7 +536,9 @@ let resetFE (v:funcEnv ref) =
   v := Tmap.add "float" [(0, [Int64], Float64); (1, [Float64], Float64)] !v;
   v := Tmap.add "input_int" [(0, [], Int64)] !v;
   v := Tmap.add "array_length" [(0, [Array], Int64)] !v;
-  v := Tmap.add "sqrt" [(0, [Int64], Float64); (1, [Float64], Int64)] !v
+  v := Tmap.add "sqrt" [(0, [Int64], Float64); (1, [Float64], Int64)] !v;
+  v := Tmap.add "delay" [(0, [Int64], Nothing)] !v;
+  v := Tmap.add "timestamp" [(0, [], Int64)] !v
 
 let resetSE (v:structEnv ref) = 
   v := Tmap.empty

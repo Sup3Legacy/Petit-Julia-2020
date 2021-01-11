@@ -247,7 +247,7 @@ let compteurArbreAppel = ref 0
 let int_of_type t = match t with
  	| Any -> nTypeUndef
  	| Nothing -> nTypeNothing
-  	| Int64 -> nTypeInt
+  | Int64 -> nTypeInt
  	| Float64 -> nTypeFloat
 	| Bool -> nTypeBool
 	| String -> nTypeString
@@ -1218,9 +1218,39 @@ let compile_program f ofile =
 		movq (imm nTypeInt) !%rax ++
 		popq rbp ++
 		ret ++
+	
+	label "delay_0" ++
+		movq (ind ~ofs:8 rsp) !%rbx ++
+		movq (ind ~ofs:16 rsp) !%rax ++
+		cmpq (imm nTypeInt) !%rax ++ jne exitLabel ++ (* delay prend en entrée un nombre entier -> les milisecondes *)
+		xorq !%rax !%rax ++ xorq !%rdx !%rdx ++
+		rdtsc () ++ addq !%rax !%rbx ++ shlq (imm 32) !%rdx ++ addq !%rdx !%rbx ++
+		label "delay_loop" ++
+		rdtsc () ++
+		(*hlt () ++*)
+		shlq (imm 32) !%rdx ++
+		addq !%rdx !%rax ++
+		cmpq !%rax !%rbx ++ jg "delay_loop" ++
+		ret ++
+	
+	label "timestamp_0" ++
+		xorq !%rax !%rax ++
+		rdtsc () ++ shlq (imm 32) !%rdx ++
+		addq !%rdx !%rax ++ movq !%rax !%rbx ++
+		movq (imm nTypeInt) !%rax ++
+		ret ++
 
 	label exitLabel ++
 		deplq (lab ".Sprint_error") rdi ++
+		call "printf" ++
+		movq !%r12 !%rsp ++
+		popq rbp ++
+		popq r12 ++ popq rbx ++
+		movq (imm 1) !%rax ++
+		ret ++
+
+	label error0div ++
+		deplq (lab ".Sprint_0div") rdi ++
 		call "printf" ++
 		movq !%r12 !%rsp ++
 		popq rbp ++

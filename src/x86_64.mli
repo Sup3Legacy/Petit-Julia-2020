@@ -389,6 +389,10 @@ val popq : [`Q] register -> text
 val rdtsc : unit -> text
   (** [rdtsc] place le contenu du registre de timestamp dans %rax *)
 
+val tpause : [`L] operand -> text
+
+val hlt : unit -> text
+
 (** {2 Divers } *)
 
 val label : label -> [> ] asm
