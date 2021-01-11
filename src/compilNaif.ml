@@ -290,7 +290,7 @@ let rec compile_expr = function
 	| Entier i -> pushq (imm nTypeInt) ++ movq (imm64 i) !%rax ++ pushq !%rax
 	| Flottant f -> (*pushq (imm nTypeFloat) ++ pushq (immD f)*) (* À changer *)
 		let n = string_of_int (Hashtbl.find fMap (string_of_float f)) in
-		pushq (imm nTypeFloat) ++ pushq ((if estMac then lab else ilab) ("float_"^n))
+		pushq (imm nTypeFloat) ++ pushq ((if estMac then lab else ilab) ("constant_float_"^n))
 	| Chaine s ->
 		let n = string_of_int (Hashtbl.find sMap s) in
 		pushq (imm nTypeString) ++ (if estMac then (fun x -> leaq x rax ++ pushq !%rax) else pushq) (lab ("string_"^n))
@@ -1270,7 +1270,7 @@ let compile_program f ofile =
 
     data =
        Hashtbl.fold (fun x i l -> l ++ label ("string_"^string_of_int i) ++ string (Scanf.unescaped x)) sMap nop ++
-			 Hashtbl.fold (fun x i l -> l ++ label ("float_"^string_of_int i) ++ (double (float_of_string x))) fMap nop ++
+			 Hashtbl.fold (fun x i l -> l ++ label ("constant_float_"^string_of_int i) ++ (double (float_of_string x))) fMap nop ++
 			 Tmap.fold (fun x i l -> if x<> "nothing" then l ++ label ((rectify_character x)^"_type") ++ (dquad [nTypeUndef])
 			 														++ label ((rectify_character x)^"_val") ++ (dquad [0]) else l) smap nop ++
 		(label "nothing_type" ++ (dquad [nTypeNothing])) ++
