@@ -8,10 +8,14 @@ let type_only = ref false;;
 let show_fName = ref false;;
 let analytics = ref false;;
 
-let gVenv = ref (Tmap.singleton "nothing" (false,Nothing))
-let gFenv = ref (Tmap.singleton "div" [(0, [Int64; Int64], Int64);(1, [Float64; Int64], Float64);(2, [Int64; Float64], Float64);(3, [Float64; Float64], Float64)])
+let gVenv = ref (Tmap.empty : varEnv)
+let () = Typer.resetVE gVenv
+let gFenv = ref (Tmap.empty : funcEnv)
+let () = Typer.resetFE gFenv
 let gSenv = ref (Tmap.empty : structEnv)
+let () = Typer.resetSE gSenv
 let gAenv = ref (Tmap.empty : argsEnv)
+let () = Typer.resetAE gAenv
 
 module Sset = Set.Make(String)
 let afficheL l =

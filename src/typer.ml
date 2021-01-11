@@ -17,7 +17,6 @@ let estCompile = ref false
 (* teste si deux types sont compatibles *)
 let compatible (t1:Astype.pjtype) (t2:Astype.pjtype) = t1 = Any || t2 = Any || t1 = t2
 
-
 let rec rajouteFonction (i1, n1, l1) = function
   |[] -> [ISet.singleton i1, n1, l1]
   |(i2, n2, l2)::tl when l2=l1 ->
@@ -167,7 +166,7 @@ let rec parcoursExpr (isLoc:bool) (vE:varEnv) (fE:funcEnv) (aE:argsEnv) (sE:stru
     if Tmap.mem str vE then parcoursExpr isLoc vE fE aE sE e
   else error ("undefined variable name "^str) p
   | Eapplication (pStr, str, eL) ->
-      if Tmap.mem str sE || Tmap.mem str fE || str = "print" || str = "println" || str = "_getelement" || str = "_setelement" || str = "newarray" || str = "array_length" || str = "input_int" || str = "input_string" || str = "int_of_float" || str = "float_of_int" || str = "sqrt"
+      if Tmap.mem str sE || Tmap.mem str fE || str = "print" || str = "println" || str = "_getelement" || str = "_setelement" || str = "newarray"
       then List.fold_left (fun ve (p, e) -> parcoursExpr isLoc ve fE aE sE e) vE eL
       else error ("undefined function 1 "^str) pStr
   | Enot (_, e) | Eminus (_, e) -> parcoursExpr isLoc vE fE aE sE e
@@ -291,10 +290,6 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
       match ident with 
       | "print" | "println" -> (Nothing, CallE ((ident, ISet.singleton 0), List.fold_right (fun (_, e) l -> testTypageE isLoc vE fE sE aE rT b e::l) eL []))
       | "newarray" | "_getelement" | "_setelement" -> (Any, CallE ((ident, ISet.singleton 0), List.fold_right (fun (_, e) l -> testTypageE isLoc vE fE sE aE rT b e::l) eL []))
-      | "array_length" | "input_int" | "int_of_float" -> (Int64, CallE ((ident, ISet.singleton 0), List.fold_right (fun (_, e) l -> testTypageE isLoc vE fE sE aE rT b e::l) eL []))
-      | "input_string" -> (String, CallE ((ident, ISet.singleton 0), List.fold_right (fun (_, e) l -> testTypageE isLoc vE fE sE aE rT b e::l) eL []))
-      | "sqrt" -> (Float64, CallE ((ident, ISet.singleton 0), List.fold_right (fun (_, e) l -> testTypageE isLoc vE fE sE aE rT b e::l) eL []))
-      | "float_of_int" -> (Float64, CallE ((ident, ISet.singleton 0), List.fold_right (fun (_, e) l -> testTypageE isLoc vE fE sE aE rT b e::l) eL []))
       | _ ->
       if Tmap.mem ident fE then
         let l = try Tmap.find ident fE with Not_found -> assert false in
@@ -531,6 +526,24 @@ let verificationType (declL:Ast.fichier) (envV:varEnv ref) (envF:funcEnv ref) (e
     envS := sp;
     envA := ap;
     (eL, Tmap.map (fun (_, t) -> t) vp, sp, fonctions)
+
+let resetVE (v:varEnv ref) =
+  v := Tmap.singleton "nothing" (false, Nothing)
+
+let resetFE (v:funcEnv ref) =
+  v := Tmap.singleton "div" [(0, [Int64; Int64], Int64); (1, [Float64; Int64], Float64); (2, [Int64; Float64], Float64); (3, [Float64; Float64], Float64)];
+  v := Tmap.add "int" [(0, [Float64], Int64); (1, [Int64], Int64)] !v;
+  v := Tmap.add "float" [(0, [Int64], Float64); (1, [Float64], Float64)] !v;
+  v := Tmap.add "input_int" [(0, [], Int64)] !v;
+  v := Tmap.add "array_length" [(0, [Array], Int64)] !v;
+  v := Tmap.add "sqrt" [(0, [Int64], Float64); (1, [Float64], Int64)] !v
+
+let resetSE (v:structEnv ref) = 
+  v := Tmap.empty
+
+let resetAE (v:argsEnv ref) =
+  v := Tmap.empty 
+
 
 (* fonctions d'interface avec l'extérieur *)
 let typerCompilateur = (fun a -> estCompile := true; verificationType a)
