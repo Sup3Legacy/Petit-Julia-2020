@@ -8,8 +8,9 @@ let nTypeInt = 1
 let nTypeFloat = 2
 let nTypeBool = 3
 let nTypeString = 4
-let nTypeStruct = 5
-(* À partir de 5 : structs *)
+let nTypeChar = 5
+let nTypeStruct = 6
+(* À partir de 6 : structs *)
 let nTypeArray = ref 65536 (* un array d'int à n dimension aura comme type : nTypeInt + n * nTypeArray *)
 
 
@@ -247,11 +248,12 @@ let compteurArbreAppel = ref 0
 let int_of_type t = match t with
  	| Any -> nTypeUndef
  	| Nothing -> nTypeNothing
-  | Int64 -> nTypeInt
+  	| Int64 -> nTypeInt
  	| Float64 -> nTypeFloat
 	| Bool -> nTypeBool
-	| String -> nTypeString
+	| String -> nTypeChar + !nTypeArray
 	| Array -> !nTypeArray
+	| Char64 -> nTypeChar
  	| S s -> numStruct s
 
 let newFlagArb () =
@@ -292,8 +294,13 @@ let rec compile_expr = function
 		let n = string_of_int (Hashtbl.find fMap (string_of_float f)) in
 		pushq (imm nTypeFloat) ++ pushq ((if estMac then lab else ilab) ("constant_float_"^n))
 	| Chaine s ->
-		let n = string_of_int (Hashtbl.find sMap s) in
-		pushq (imm nTypeString) ++ (if estMac then (fun x -> leaq x rax ++ pushq !%rax) else pushq) (lab ("string_"^n))
+		let n = String.length s in
+		let n2 = (n + 3) * 8 in
+		let depl = ref (movq (imm (nTypeChar + !nTypeArray)) (ind ~ofs:0 rax) ++ movq (imm n) (ind ~ofs:8 rax) ) in
+		for i = 0 to n-1 do
+			depl := !depl ++ (movq (imm (Char.code s.[i])) (ind ~ofs:(i*8+16) rax))
+		done;
+		movq (imm n2) !%rdi ++ call "malloc" ++ !depl ++ movq (imm 0) (ind ~ofs:((n+2)*8) rax) ++ pushq (imm (nTypeChar + !nTypeArray)) ++ pushq !%rax
 	| True -> pushq (imm nTypeBool) ++ pushq (imm valTrue)
 	| False -> pushq (imm nTypeBool) ++ pushq (imm valFalse)
 	| Nothing -> pushq (imm nTypeNothing) ++ pushq (imm 0)
@@ -1117,7 +1124,7 @@ let compile_program f ofile =
 		je "ifFloat" ++
 		(cmpq (imm nTypeBool) !%rax) ++
 		je "ifBool" ++
-		(cmpq (imm nTypeString) !%rax) ++
+		(cmpq (imm (nTypeChar + !nTypeArray)) !%rax) ++
 		je "ifString" ++
 		label "ifBool" ++
 		call "print_bool" ++
@@ -1148,8 +1155,17 @@ let compile_program f ofile =
     	ret ++
 
 	label "print_string" ++
-		movq (imm 0) !%rax ++
+		movq !%rdi !%rbx ++
+		addq (imm 16) !%rbx ++
+		label "print_string_begin" ++
+		cmpq (imm 0) (ind rbx) ++
+		je "print_string_end" ++
+		movq (ind rbx) !%rsi ++
+		deplq (lab ".Sprint_char") rdi ++
 		call "printf" ++
+		addq (imm 8) !%rbx ++
+		jmp "print_string_begin" ++
+		label "print_string_end" ++
     	ret ++
 
 	label "print_bool" ++
@@ -1193,6 +1209,11 @@ let compile_program f ofile =
 		movq (ind ~ofs:8 rsp) !%rbx ++
 		movq (imm nTypeFloat) !%rax ++
 		ret ++ 
+
+	label "char_0" ++
+		movq (ind ~ofs:8 rsp) !%rbx ++
+		movq (imm nTypeChar) !%rax ++
+		ret ++ 	
 
 	label "sqrt_0" ++
 		movq (ind ~ofs:8 rsp) !%rax ++
@@ -1295,7 +1316,7 @@ let compile_program f ofile =
 		(label "nothing_val" ++ (dquad [0])) ++
         (label ".Sprint_int" ++ string "%zd") ++
 		(label ".Sprint_float" ++ string "%f") ++
-		(label ".Sprint_string" ++ string "%s") ++
+		(label ".Sprint_char" ++ string "%c") ++
 		(label ".Sprint_true" ++ string "true") ++
 		(label ".Sprint_false" ++ string "false") ++
 		(label ".Sprint_error" ++ string "Type failure\n") ++
