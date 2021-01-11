@@ -138,6 +138,24 @@ rule tokens = parse
       if b then [SEMICOLON (Hyper.position lexbuf)]
       else tokens lexbuf
     }
+  | '\''(_ as c)'\'' {Hyper.enableEnd ();
+    [CHAR (Hyper.position lexbuf, Char.code c)]
+  }
+  | "\'\\n\'" {Hyper.enableEnd ();
+    [CHAR (Hyper.position lexbuf, Char.code '\n')]
+  }
+  | "\'\\\\'" {Hyper.enableEnd ();
+    [CHAR (Hyper.position lexbuf, Char.code '\\')]
+  }
+  | "\'\\t\'" {Hyper.enableEnd ();
+    [CHAR (Hyper.position lexbuf, Char.code '\t')]
+  }
+  | "\'\\\"\'" {Hyper.enableEnd ();
+    [CHAR (Hyper.position lexbuf, Char.code '\"')]
+  }
+  | "\'\\\'\'" {Hyper.enableEnd ();
+    [CHAR (Hyper.position lexbuf, Char.code '\'')]
+  }
   | space {tokens lexbuf}
   | chaine as s {Hyper.enableEnd (); [CHAINE  (Hyper.position lexbuf,(String.sub s 1 (String.length s - 2)))]}
   | _ as c{

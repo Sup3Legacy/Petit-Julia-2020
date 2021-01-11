@@ -115,7 +115,7 @@ let parcoursFonction (vE:varEnv) (fE:funcEnv) (sE:structEnv) (posStr, nameFunc, 
 
 (* Calcule de toutes les variables definies dans les différentes structures *)
 let rec chercheDefE (isLoc:bool) (vS:Tset.t) = function
-  | Eentier _ | Eflottant _ | Echaine _ | Etrue | Efalse | EentierIdent _ -> vS
+  | Eentier _ | Eflottant _ | Echar _ | Echaine _ | Etrue | Efalse | EentierIdent _ -> vS
   | EentierParG (_, _, (_, eL)) | Ebloc1 (_, eL) -> chercheDefB isLoc vS eL
   | EparDIdent ((_, e), _, _) -> chercheDefE isLoc vS e
   | Eapplication (_, _, eL) -> List.fold_left (fun env (_,e) -> chercheDefE isLoc env e) vS eL
@@ -159,7 +159,7 @@ and chercheDefElse (isLoc:bool) (vS:Tset.t) = function
 
 (* parcours récursivement l'expression pour tester la définition des différentes variable et les définir (isLoc = is local) *)
 let rec parcoursExpr (isLoc:bool) (vE:varEnv) (fE:funcEnv) (aE:argsEnv) (sE:structEnv):Ast.expr -> varEnv = function
-  | Eentier _ | Eflottant _ | Echaine _ | Etrue | Efalse -> vE
+  | Eentier _ | Eflottant _ | Echaine _ | Echar _ | Etrue | Efalse -> vE
   | EentierIdent (p, _, ident) -> if Tmap.mem ident vE then vE else error ("undefined variable name "^ident) p
   | EentierParG (_, _, (_, eL)) | Ebloc1 (_, eL) -> parcoursBloc isLoc vE fE aE sE eL
   | EparDIdent ((_, e), p, str) ->
@@ -255,7 +255,8 @@ let rec parcours1 (vEnv:varEnv) (fEnv:funcEnv) (sEnv:structEnv) (aEnv:argsEnv) =
 let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:argsEnv) (rT:Astype.pjtype) (b:bool):Ast.expr -> expressionTyper = function
   | Eentier i -> Int64, EntierE i
   | Eflottant f -> Float64, FlottantE f
-  | Echaine str -> String, ChaineE str
+  | Echaine str -> String, ChaineE (Scanf.unescaped str)
+  | Echar c -> Char64, CharE c
   | Etrue -> Bool, TrueE
   | Efalse -> Bool, FalseE
   | EentierIdent (p, i, str) ->
@@ -532,7 +533,7 @@ let resetVE (v:varEnv ref) =
 
 let resetFE (v:funcEnv ref) =
   v := Tmap.singleton "div" [(0, [Int64; Int64], Int64); (1, [Float64; Int64], Float64); (2, [Int64; Float64], Float64); (3, [Float64; Float64], Float64)];
-  v := Tmap.add "int" [(0, [Float64], Int64); (1, [Int64], Int64)] !v;
+  v := Tmap.add "int" [(0, [Float64], Int64); (1, [Int64], Int64); (2, [Char64], Int64)] !v;
   v := Tmap.add "float" [(0, [Int64], Float64); (1, [Float64], Float64)] !v;
   v := Tmap.add "input_int" [(0, [], Int64)] !v;
   v := Tmap.add "array_length" [(0, [Array], Int64)] !v;

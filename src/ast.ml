@@ -42,6 +42,7 @@ and expr =
   | Eentier of Int64.t
   | Eflottant of float
   | Echaine of ident
+  | Echar of int
   | Etrue
   | Efalse
   | EentierIdent of position * Int64.t * ident

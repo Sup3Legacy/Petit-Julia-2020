@@ -62,6 +62,7 @@ and exprTyper =
 	| ChaineE of string
 	| TrueE
 	| FalseE
+	| CharE of int
 (*	| ArrayE of expressionTyper list
 	| EntierIdentE of Int64.t * pjtype * ident * bool
 	| EntierParGE of Int64.t * blocTyper*)

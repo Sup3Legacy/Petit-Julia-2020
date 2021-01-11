@@ -114,6 +114,7 @@ let rec calcArb s = function
 
 let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN.expression * int) = function
 	| EntierE i -> Entier i, offset
+	| CharE c -> Char c, offset
 	| FlottantE f ->
 		(* Tout comme les strings, les immediats flottants doivent être mis dans .data *)
 		begin
@@ -293,6 +294,7 @@ let rec compile_expr = function
 	| Flottant f -> (*pushq (imm nTypeFloat) ++ pushq (immD f)*) (* À changer *)
 		let n = string_of_int (Hashtbl.find fMap (string_of_float f)) in
 		pushq (imm nTypeFloat) ++ pushq ((if estMac then lab else ilab) ("constant_float_"^n))
+	| Char c -> pushq (imm nTypeChar) ++ pushq (imm c)
 	| Chaine s ->
 		let n = String.length s in
 		let n2 = (n + 3) * 8 in
@@ -1195,7 +1197,12 @@ let compile_program f ofile =
 
 	label "int_1" ++
 		movq (ind ~ofs:8 rsp) !%rbx ++
-		movq (imm nTypeFloat) !%rax ++
+		movq (imm nTypeInt) !%rax ++
+		ret ++
+
+	label "int_2" ++
+		movq (ind ~ofs:8 rsp) !%rbx ++
+		movq (imm nTypeInt) !%rax ++
 		ret ++
 
 	label "float_0" ++

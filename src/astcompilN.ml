@@ -15,6 +15,7 @@ type expression =
 	| Entier of Int64.t
 	| Flottant of float
 	| Chaine of string
+	| Char of int
 	| True
 	| False
 	| Nothing
