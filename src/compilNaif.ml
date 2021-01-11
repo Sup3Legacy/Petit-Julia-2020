@@ -80,6 +80,7 @@ module Smap = Map.Make(String)
 
 let structMap = ref (Smap.empty: Astype.structEnv)
 let functionMap = ref (Smap.empty: Astype.funcMap)
+let functionEnv = ref (Smap.empty: Astype.funcEnv)
 
 let numStruct ident = nTypeStruct + snd (Smap.find ident !structMap)
 
@@ -148,11 +149,11 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 				(offset, [])
 		in
 		match ident with 
-		| "print" | "div" | "_getelement" | "_setelement" | "newarray" | "array_length" | "input_int" | "input_string" | "int_of_float" | "float_of_int" | "sqrt" -> Call (ident, Feuille (ident, 0), eL), offset
+		| "print" | "_getelement" | "_setelement" | "newarray" -> Call (ident, Feuille (ident, 0), eL), offset
 		| _ ->
-			let f = try Tmap.find ident !functionMap with Not_found -> failwith ("not found "^ident) in
-			let arb:AstcompilN.functArbr = calcArb ident (ISet.fold (fun i l -> match Imap.find i f with
-					|StructBuilder l1 |Funct (l1, _, _, _)  -> (List.fold_right (fun (_, p) l2 -> p::l2) l1 [],i,0)::l) iSet [])
+			let f1 = try Tmap.find ident !functionEnv with Not_found -> failwith ("not found function "^ident) in
+			let f = List.fold_left (fun m (i,l,s) -> Imap.add i l m) Imap.empty f1 in
+			let arb:AstcompilN.functArbr = calcArb ident (List.fold_left (fun l (i,p,s) -> if ISet.mem i iSet then (p, i, 0)::l else l) [] f1)
 			in Call (ident, arb, eL), offset
 		end
 	| NotE (_,e) -> let (e, o) = alloc_expr env offset e in Not e, o
@@ -226,9 +227,10 @@ and alloc_else (env:local_env) (offset:int) = function
 		let (els, o3) = alloc_else env offset els in
 		Elseif (e, l, els), min o3 o2
 
-let alloc_fichier (eL, varMap, sEnv, fMap:fichierTyper):fichier =
+let alloc_fichier (eL, varMap, sEnv, fMap, fEnv:fichierTyper):fichier =
 	structMap := sEnv;
 	functionMap := fMap;
+	functionEnv := fEnv;
 	nTypeArray := 100 + Smap.cardinal sEnv;
 	let (l, o) = List.fold_right (fun e (l, o) -> let (e, o2) = alloc_expr Tmap.empty 0 e in (e::l, min o o2)) eL ([], 0) in
 	(l, o, varMap, fMap)

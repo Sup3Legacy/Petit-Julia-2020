@@ -95,5 +95,5 @@ type funct =
 	|StructBuilder of ((ident * pjtype) list)
 and funcMap = funct Imap.t Tmap.t
 
-type fichierTyper = exprTyper list * pjtype Tmap.t * structEnv * funcMap
+type fichierTyper = exprTyper list * pjtype Tmap.t * structEnv * funcMap * funcEnv
 ;;

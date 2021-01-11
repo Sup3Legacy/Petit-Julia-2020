@@ -525,7 +525,7 @@ let verificationType (declL:Ast.fichier) (envV:varEnv ref) (envF:funcEnv ref) (e
     envF := fp;
     envS := sp;
     envA := ap;
-    (eL, Tmap.map (fun (_, t) -> t) vp, sp, fonctions)
+    (eL, Tmap.map (fun (_, t) -> t) vp, sp, fonctions, fp)
 
 let resetVE (v:varEnv ref) =
   v := Tmap.singleton "nothing" (false, Nothing)
