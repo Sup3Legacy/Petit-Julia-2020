@@ -469,8 +469,13 @@ whileExp<Ast.expression>:
 ;
 
 doWhileExp<Ast.expression>:
-  | p1 = DOWHILE b = bloc p2 = END {
+  | p1 = DOWHILE b = bloc_END {
+    let p2,b = b in
     Hyper2.fusionPos p1 p2, EdoWhile b
+  }
+  | p1 = DOWHILE e = expr b = bloc_END {
+    let p2, (pb, eL) = b in
+    Hyper2.fusionPos p1 p2, EdoWhile (Hyper2.fusionPos (fst e) pb, e::eL)
   }
 ;
 
