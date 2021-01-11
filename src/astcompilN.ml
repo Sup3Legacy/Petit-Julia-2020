@@ -35,7 +35,7 @@ type expression =
 	| Ret of pjtype * expression (* expected type of the return *)
 	| For of int * int * expression * expression * bloc
 	| While of expression * int * int * bloc
-	| DoWhile of int * int * bloc * expression
+	| DoWhile of int * int * bloc
 	| If of expression * bloc * else_
 and else_ =
 	| End

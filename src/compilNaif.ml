@@ -200,6 +200,10 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 		let env2, fpcur2 = Tmap.fold (fun k _ (m, n) -> (Tmap.add k (n-16) m, n-16)) tmap (env, offset) in
 		let (l,o2) = List.fold_right (fun (_, e) (l, o1) -> let e,o2 = (alloc_expr env2 fpcur2 e) in (e::l, min o1 o2)) eL ([], min fpcur2 o1) in
 		While (e, offset, fpcur2, l), o2
+	| DoWhileE (tmap, (_, eL)) ->
+		let env2, fpcur2 = Tmap.fold (fun k _ (m, n) -> (Tmap.add k (n-16) m, n-16)) tmap (env, offset) in
+		let (l,o2) = List.fold_right (fun (_, e) (l, o1) -> let e,o2 = (alloc_expr env2 fpcur2 e) in (e::l, min o1 o2)) eL ([], fpcur2) in
+		DoWhile (offset, fpcur2, l), o2		
 	| IfE ((_, e), (_, eL), els) ->
 		let (e, o1) = alloc_expr env offset e in
 		let (l, o2) = List.fold_right (fun (_, e) (l, o1) -> let e,o2 = (alloc_expr env offset e) in (e::l, min o1 o2)) eL ([], o1) in
@@ -634,6 +638,17 @@ let rec compile_expr = function
 		let comp = (label label1) ++ e ++ (popq rbx) ++ (popq rax) ++ (cmpq (imm (nTypeBool)) !%rax) ++ (jne exitLabel) ++ (cmpq (imm valTrue) !%rbx) ++ (jne label2) in
 		let corps = b ++ popn 16 ++ (jmp label1) ++ (label label2) in
 		comp ++ !undef ++ corps ++ pushq (imm nTypeNothing) ++ pushq !%rax
+	| DoWhile (debLoc, finLoc, bloc) ->
+		let undef = ref nop in
+		let n1 = finLoc/16 in
+		let n2 = debLoc/16 in
+		let () = for i = n1 to n2-1 do
+			undef := !undef ++ movq (imm nTypeUndef) (ind ~ofs:(i*16+8) rbp)
+		done in
+		let corps = compile_bloc bloc in
+		let label1 = getWhile () in
+		let comp = (popq rbx) ++ (popq rax) ++ (cmpq (imm (nTypeBool)) !%rax) ++ (jne exitLabel) ++ (cmpq (imm valTrue) !%rbx) ++ (je label1) in
+		(label label1) ++ !undef ++ corps ++ comp ++ pushq (imm nTypeNothing) ++ pushq !%rax
 	| If (exp, bloc, else_) ->
 		let c = compile_expr exp in
 		let c1 = compile_bloc bloc in

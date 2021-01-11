@@ -141,9 +141,8 @@ let rec chercheDefE (isLoc:bool) (vS:Tset.t) = function
   | Ewhile ((_, e), (_, eL)) ->
       let env1 = chercheDefE isLoc vS e in
       if false && isLoc then chercheDefB isLoc env1 eL else env1
-  | EdoWhile ((_, e), (_, eL)) ->
-    let env1 = chercheDefB isLoc vS eL in
-    let _ = chercheDefE isLoc env1 e in vS
+  | EdoWhile ((_, eL)) ->
+    let env1 = chercheDefB isLoc vS eL in vS
   | Eif ((_, e), (_, eL), els) ->
       let env1 = chercheDefE isLoc vS e in
       let env2 = chercheDefB isLoc env1 eL in
@@ -215,14 +214,13 @@ let rec parcoursExpr (isLoc:bool) (vE:varEnv) (fE:funcEnv) (aE:argsEnv) (sE:stru
           Tmap.filter (fun k t -> not (Tset.mem k newdef)) env1)
       in let _ = parcoursBloc true env2 fE aE sE eL
       in env2
-  | EdoWhile ((_, e), (_, eL)) -> 
+  | EdoWhile ((_, eL)) -> 
       let env1 = if isLoc then vE
         else (let newdef = chercheDefB isLoc Tset.empty eL in
           Tmap.filter (fun k t -> not (Tset.mem k newdef)) vE)
       in
       let env2 = parcoursBloc true env1 fE aE sE eL in
-      let env3 = parcoursExpr true env2 fE aE sE e
-      in env3
+      vE
   | Eif ((_, e), (_, eL), els) ->
       let env1 = parcoursExpr isLoc vE fE aE sE e in
       let env2 = parcoursBloc isLoc env1 fE aE sE eL in
@@ -446,14 +444,14 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
     then let blocWhile = testTypEBloc true vE2 fE sE aE rT b eL in
       Nothing, WhileE ((t, et), v, blocWhile)
     else error ("expected a Bool but got an "^typeName t) pe
-  | EdoWhile ((pe, e), (pb, eL)) ->
+  | EdoWhile ((pb, eL)) ->
     let vE2 = parcoursBloc true vE fE aE sE eL in
-    let (t, et) = testTypageE isLoc vE2 fE sE aE rT b e in
     let v = Tmap.map (fun (_,t) -> t) (Tmap.filter (fun k (b,t) -> if Tmap.mem k vE then b != fst (try Tmap.find k vE with Not_found -> assert false) else true) vE2) in
-    if compatible Bool t
-    then let blocWhile = testTypEBloc true vE2 fE sE aE rT b eL in
-      Nothing, DoWhileE (v, blocWhile, (t, et))
-    else error ("expected a Bool but got an "^typeName t) pe
+    let blocWhile = testTypEBloc true vE2 fE sE aE rT b eL in
+    if compatible Bool (fst blocWhile)
+    then
+      Nothing, DoWhileE (v, blocWhile)
+    else error ("expected a Bool but got an "^typeName (fst blocWhile)) pb
   | Eif ((pe, e), (pb, eL), els) ->
       let (t, et) = testTypageE isLoc vE fE sE aE rT b e in
       if compatible Bool t

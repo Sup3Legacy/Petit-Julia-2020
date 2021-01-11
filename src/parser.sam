@@ -469,9 +469,8 @@ whileExp<Ast.expression>:
 ;
 
 doWhileExp<Ast.expression>:
-  | p1 = DOWHILE be = bloc_expr_END {
-    let (b,e) = be in
-    Hyper2.fusionPos p1 (fst e), EdoWhile (e, b)
+  | p1 = DOWHILE b = bloc p2 = END {
+    Hyper2.fusionPos p1 p2, EdoWhile b
   }
 ;
 
@@ -544,6 +543,9 @@ bloc<Ast.bloc>:
   | p = SEMICOLON pb = bloc {
       let (p2, eL) = pb in
       Hyper2.fusionPos p p2, eL
+  }
+  | p = SEMICOLON {
+    p, []
   }
 ;
 

@@ -101,6 +101,7 @@ let rajoutePosition tk lb =
     | STRUCT _ -> STRUCT p
     | TRUE _ -> TRUE p
     | WHILE _ -> WHILE p
+    | DOWHILE _ -> DOWHILE p
     | _ -> failwith "Unknown keyword"
 
 let file = ref "test.jl"

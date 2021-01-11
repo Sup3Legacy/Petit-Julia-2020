@@ -43,7 +43,7 @@ let rec add_prefix_expr e name =
   | Ereturn (pos, Some e) -> Ereturn (pos, Some (add_prefix_expr e name))
   | Efor (id, e1, e2, b) -> Efor (add_prefix_ident id name, add_prefix_expr e1 name, add_prefix_expr e2 name, add_prefix_bloc b name)
   | Ewhile (e, b) -> Ewhile (add_prefix_expr e name, add_prefix_bloc b name)
-  | EdoWhile (e, b) -> EdoWhile (add_prefix_expr e name, add_prefix_bloc b name)
+  | EdoWhile b -> EdoWhile (add_prefix_bloc b name)
   | Eif (e, b, e_) -> Eif (add_prefix_expr e name, add_prefix_bloc b name, add_prefix_else_ e_ name)
   )
   in (p, e2)
