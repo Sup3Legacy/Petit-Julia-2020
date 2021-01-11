@@ -1223,14 +1223,14 @@ let compile_program f ofile =
 		movq (ind ~ofs:8 rsp) !%rbx ++
 		movq (ind ~ofs:16 rsp) !%rax ++
 		cmpq (imm nTypeInt) !%rax ++ jne exitLabel ++ (* delay prend en entrée un nombre entier -> les milisecondes *)
-		xorq !%rax !%rax ++ xorq !%rdx !%rdx ++
-		rdtsc () ++ addq !%rax !%rbx ++ shlq (imm 32) !%rdx ++ addq !%rdx !%rbx ++
-		label "delay_loop" ++
-		rdtsc () ++
-		(*hlt () ++*)
-		shlq (imm 32) !%rdx ++
-		addq !%rdx !%rax ++
-		cmpq !%rax !%rbx ++ jg "delay_loop" ++
+		subq (imm 16) !%rsp ++
+		movq (imm 0) (ind ~ofs:8 rsp) ++
+		movq !%rbx (ind ~ofs:0 rsp) ++
+		movq !%rsp !%rdi ++
+		movq (imm 0) !%rsi ++
+		movq (imm 35) !%rax ++
+		syscall () ++
+		addq (imm 16) !%rsp ++
 		ret ++
 	
 	label "timestamp_0" ++
@@ -1258,8 +1258,26 @@ let compile_program f ofile =
 		movq (imm 1) !%rax ++
 		ret ++ 
 	
+	label errorCall1 ++
+		deplq (lab ".Sprint_call1") rdi ++
+		call "printf" ++
+		movq !%r12 !%rsp ++
+		popq rbp ++
+		popq r12 ++ popq rbx ++
+		movq (imm 1) !%rax ++
+		ret ++ 
+	
+	label errorCall2 ++
+		deplq (lab ".Sprint_call2") rdi ++
+		call "printf" ++
+		movq !%r12 !%rsp ++
+		popq rbp ++
+		popq r12 ++ popq rbx ++
+		movq (imm 1) !%rax ++
+		ret ++ 
+	
 	label errorOoB ++
-		deplq (lab ".Sprint_IOoB") rdi ++
+		deplq (lab ".Sprint_IOoB") rdi ++ 
 		call "printf" ++
 		movq !%r12 !%rsp ++
 		popq rbp ++

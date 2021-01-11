@@ -370,6 +370,8 @@ let tpause a = ins "tpause %a" a ()
 
 let hlt () = ins "hlt"
 
+let syscall () = ins "syscall"
+
 type program = {
   text : [ `text ] asm;
   data : [ `data ] asm;

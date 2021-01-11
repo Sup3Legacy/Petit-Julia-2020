@@ -393,6 +393,8 @@ val tpause : [`L] operand -> text
 
 val hlt : unit -> text
 
+val syscall : unit -> text
+
 (** {2 Divers } *)
 
 val label : label -> [> ] asm
