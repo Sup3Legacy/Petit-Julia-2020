@@ -142,7 +142,7 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 				(offset, [])
 		in
 		match ident with 
-		| "print" | "div" | "_getelement" | "_setelement" | "newarray" | "array_length" | "input_int" | "input_string" | "int_of_float" | "sqrt" -> Call (ident, Feuille (ident, 0), eL), offset
+		| "print" | "div" | "_getelement" | "_setelement" | "newarray" | "array_length" | "input_int" | "input_string" | "int_of_float" | "float_of_int" | "sqrt" -> Call (ident, Feuille (ident, 0), eL), offset
 		| _ ->
 			let f = try Tmap.find ident !functionMap with Not_found -> failwith ("not found "^ident) in
 			let arb:AstcompilN.functArbr = calcArb ident (ISet.fold (fun i l -> match Imap.find i f with
@@ -377,7 +377,8 @@ let rec compile_expr = function
 			popq rbx ++ popq rax ++
 			cmpq (imm nTypeInt) !%rax ++ jne exitLabel ++
 			cvtsi2sdq !%rbx xmm0 ++
-			movq (imm nTypeInt) !%rax ++
+			movq !%xmm0 !%rbx ++
+			movq (imm nTypeFloat) !%rax ++
 			pushq !%rax ++ pushq !%rbx
 		| "sqrt" -> let (flottant, fin) = (getIf (), getIf ()) in
 			e ++
