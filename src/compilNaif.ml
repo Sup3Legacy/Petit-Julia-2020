@@ -502,7 +502,7 @@ let rec compile_expr = function
 		addq (ind ~ofs:8 rbx) !%rdx ++
 		label label_get_element ++
 
-		cmpq (ind ~ofs:8 rbx) !%rdx ++ jge exitLabel ++ (* On compare qu'on reste dans les bornes de l'array ;) *) (* TODO vérifier que c'est bon *)
+		cmpq (ind ~ofs:8 rbx) !%rdx ++ jge errorOoB ++ (* On compare qu'on reste dans les bornes de l'array ;) *) (* TODO vérifier que c'est bon *)
 		
 		movq (ind ~ofs:0 rbx) !%rax ++ (* Acquisition du type *)
 		subq (imm !nTypeArray) !%rax ++
@@ -543,7 +543,7 @@ let rec compile_expr = function
 		addq (ind ~ofs:8 rbx) !%rdx ++
 		label label_get_element ++
 
-		cmpq (ind ~ofs:8 rbx) !%rdx ++ jge exitLabel ++ (* On compare qu'on reste dans les bornes de l'array ;) *)
+		cmpq (ind ~ofs:8 rbx) !%rdx ++ jge errorOoB ++ (* On compare qu'on reste dans les bornes de l'array ;) *)
 
 
 		cmpq (ind ~ofs:0 rbx) !%r13 ++ jne exitLabel ++ (* On vérifie que la valeur insérée a le même type que le reste *)
@@ -1256,8 +1256,17 @@ let compile_program f ofile =
 		popq rbp ++
 		popq r12 ++ popq rbx ++
 		movq (imm 1) !%rax ++
+		ret ++ 
+	
+	label errorOoB ++
+		deplq (lab ".Sprint_IOoB") rdi ++
+		call "printf" ++
+		movq !%r12 !%rsp ++
+		popq rbp ++
+		popq r12 ++ popq rbx ++
+		movq (imm 1) !%rax ++
 		ret ++
-    codefun;
+		codefun;
 
     data =
        Hashtbl.fold (fun x i l -> l ++ label ("string_"^string_of_int i) ++ string (Scanf.unescaped x)) sMap nop ++
@@ -1271,7 +1280,7 @@ let compile_program f ofile =
 		(label ".Sprint_string" ++ string "%s") ++
 		(label ".Sprint_true" ++ string "true") ++
 		(label ".Sprint_false" ++ string "false") ++
-		(label ".Sprint_error" ++ string "type or \"Division by zero\" failure\n") ++
+		(label ".Sprint_error" ++ string "Type failure\n") ++
 		(label ".Sprint_0div" ++ string "Division by zero error\n") ++
 		(label ".Sprint_IOoB" ++ string "Index out of bound error\n") ++
 		(label ".Sprint_undef" ++ string "Undef error\n") ++
