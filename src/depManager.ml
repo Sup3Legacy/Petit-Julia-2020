@@ -27,6 +27,8 @@ let rec add_prefix_expr e name =
   | Eentier _ as s -> s
   | Eflottant _ as s -> s
   | Echaine _ as s -> s
+  | Echar _ as s -> s
+  | EAssert (i, s, exp) -> EAssert (i, s, add_prefix_expr exp name)
   | Etrue as s -> s
   | Efalse as s -> s
   | EentierIdent (p, i, ide) -> EentierIdent (p, i, add_prefix_ident ide name)
