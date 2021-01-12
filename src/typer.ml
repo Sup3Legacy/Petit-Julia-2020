@@ -264,6 +264,7 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
   | EAssert (l, n, (p, e)) -> 
     let (t,et) = (testTypageE isLoc vE fE sE aE rT b e) in
     if compatible t Bool then Nothing, AssertE (l, n, (t, et))
+    else error ("found "^typeName t^" which is not compatible with Bool") p
   | EentierIdent (p, i, str) ->
       let var =
         try snd (Tmap.find str vE)

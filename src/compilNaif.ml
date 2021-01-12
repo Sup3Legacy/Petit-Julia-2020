@@ -144,6 +144,14 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 				(offset, [])
 		in Bloc eL, offset
 	| CallE ((ident, iSet:(string * ISet.t)), eL) -> begin
+		let () = match ident with
+			| "div" -> CompilRef.div := true
+			| "float" -> CompilRef.div := true
+			| "char" -> CompilRef.div := true
+			| "int" -> CompilRef.div := true
+			| "input_int" -> CompilRef.input_int := true
+			| _ -> ()
+		in
 		compteurCall := !compteurCall + 1;
 		let (offset, eL) =
 			List.fold_right
@@ -165,10 +173,19 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 		then
 			(Hashtbl.add sMap n !compteurString;
 			compteurString := !compteurString + 1)
-		in let (e, o) = alloc_expr env offset e in ((Assert l n e), o)
-		
+		in let (e, o) = alloc_expr env offset e in (Assert (l,n,e), o)
 	| MinusE (_, e) -> let (e, o) = alloc_expr env offset e in Minus e, o
 	| BinopE (o, (_, e1), (_, e2)) ->
+		let () = match o with 
+			|Plus -> CompilRef.add := true
+			|Times -> CompilRef.mul := true
+			|Minus -> CompilRef.sub := true
+			|Geq -> CompilRef.ge := true
+			|Gr -> CompilRef.g := true
+			|Leq -> CompilRef.le := true
+			|Lo -> CompilRef.l := true
+			| _  -> ()
+		in 
 		let (e1, o1) = alloc_expr env offset e1 in
 		let (e2, o2) = alloc_expr env offset e2 in
 		Binop (o, e1, e2), min o1 o2
@@ -321,8 +338,8 @@ let rec compile_expr = function
 	| Assert (l, s, e) -> 
 		let ind = Hashtbl.find sMap s in
 		compile_expr e ++
-		popq !%rbx ++ popq !%rax ++ cmpq (imm nTypeBool) !%rbx ++ jne errorTypeE ++
-		movq (imm l) !%rdi ++ (if estMac then leaq (lab ("string"^ind)) rsi else movq (lab ("string"^ind)) !%rsi) ++
+		popq rbx ++ popq rax ++ cmpq (imm nTypeBool) !%rax ++ jne errorTypeE ++
+		movq (imm l) !%rdi ++ (if estMac then leaq (lab ("string"^string_of_int ind)) rsi else movq (lab ("string"^string_of_int ind)) !%rsi) ++
 		cmpq (imm valTrue) !%rbx ++ jne errorAssert ++ pushq (imm nTypeNothing) ++ pushq !%rax
 	| Call (ident, funcArbr, expList) ->
 		compteurCall := !compteurCall + 1;
@@ -717,7 +734,8 @@ let compile_program f ofile =
 		movq (imm 0) !%rax ++ (* exit *)
 		ret ++
 
-	label "loII" ++
+	(if !CompilRef.l then
+		label "loII" ++
 		movq (ind ~ofs:8 rsp) !%rbx ++
 		movq (ind ~ofs:24 rsp) !%rax ++
 		cmpq !%rax !%rbx ++
@@ -730,7 +748,7 @@ let compile_program f ofile =
 		movq (imm nTypeBool) !%rax ++
 		ret ++
 
-	label "loFI" ++
+		label "loFI" ++
 		movq (ind ~ofs:8 rsp) !%rbx ++ 
 		movq (ind ~ofs:24 rsp) !%xmm0 ++
 		cvtsi2sdq !%rax xmm1 ++ 
@@ -746,7 +764,7 @@ let compile_program f ofile =
 		label "loFI_t" ++
 		ret ++
 
-	label "loIF" ++
+		label "loIF" ++
 		movq (ind ~ofs:8 rsp) !%xmm0 ++
 		movq (ind ~ofs:24 rsp) !%rbx ++
 		cvtsi2sdq !%rbx xmm1 ++
@@ -762,7 +780,7 @@ let compile_program f ofile =
 		label "loIF_t" ++
 		ret ++
 
-	label "loFF" ++
+		label "loFF" ++
 		movq (ind ~ofs:8 rsp) !%xmm0 ++
 		movq (ind ~ofs:24 rsp) !%xmm1 ++
 		cmpltsd !%xmm0 !%xmm1 ++
@@ -776,9 +794,11 @@ let compile_program f ofile =
 		label "loFF_t" ++
 		movq (ind ~ofs:24 rsp) !%rax ++
 		movq (imm nTypeBool) !%rax ++
-		ret ++
+		ret
+		else nop) ++
 
-	label "goII" ++
+	(if !CompilRef.g then
+		label "goII" ++
 		movq (ind ~ofs:8 rsp) !%rbx ++
 		movq (ind ~ofs:24 rsp) !%rax ++
 		cmpq !%rax !%rbx ++
@@ -791,7 +811,7 @@ let compile_program f ofile =
 		movq (imm nTypeBool) !%rax ++
 		ret ++
 
-	label "goFI" ++
+		label "goFI" ++
 		movq (ind ~ofs:8 rsp) !%rbx ++ 
 		movq (ind ~ofs:24 rsp) !%xmm0 ++
 		cvtsi2sdq !%rax xmm1 ++ 
@@ -807,7 +827,7 @@ let compile_program f ofile =
 		label "goFI_t" ++
 		ret ++
 
-	label "goIF" ++
+		label "goIF" ++
 		movq (ind ~ofs:8 rsp) !%xmm0 ++
 		movq (ind ~ofs:24 rsp) !%rbx ++
 		cvtsi2sdq !%rbx xmm1 ++
@@ -823,7 +843,7 @@ let compile_program f ofile =
 		label "goIF_t" ++
 		ret ++
 
-	label "goFF" ++
+		label "goFF" ++
 		movq (ind ~ofs:8 rsp) !%xmm0 ++
 		movq (ind ~ofs:24 rsp) !%xmm1 ++
 		cmpnlesd !%xmm0 !%xmm1 ++
@@ -837,9 +857,11 @@ let compile_program f ofile =
 		label "goFF_t" ++
 		movq (ind ~ofs:24 rsp) !%rax ++
 		movq (imm nTypeBool) !%rax ++
-		ret ++
+		ret 
+		else nop) ++
 
-	label "leqII" ++
+	(if !CompilRef.le then
+		label "leqII" ++
 		movq (ind ~ofs:8 rsp) !%rbx ++
 		movq (ind ~ofs:24 rsp) !%rax ++
 		cmpq !%rax !%rbx ++
@@ -852,7 +874,7 @@ let compile_program f ofile =
 		movq (imm nTypeBool) !%rax ++
 		ret ++
 
-	label "leqFI" ++
+		label "leqFI" ++
 		movq (ind ~ofs:8 rsp) !%rbx ++ 
 		movq (ind ~ofs:24 rsp) !%xmm0 ++
 		cvtsi2sdq !%rax xmm1 ++ 
@@ -868,7 +890,7 @@ let compile_program f ofile =
 		label "leqFI_t" ++
 		ret ++
 
-	label "leqIF" ++
+		label "leqIF" ++
 		movq (ind ~ofs:8 rsp) !%xmm0 ++
 		movq (ind ~ofs:24 rsp) !%rbx ++
 		cvtsi2sdq !%rbx xmm1 ++
@@ -884,7 +906,7 @@ let compile_program f ofile =
 		label "leqIF_t" ++
 		ret ++
 
-	label "leqFF" ++
+		label "leqFF" ++
 		movq (ind ~ofs:8 rsp) !%xmm0 ++
 		movq (ind ~ofs:24 rsp) !%xmm1 ++
 		cmplesd !%xmm0 !%xmm1 ++
@@ -899,9 +921,11 @@ let compile_program f ofile =
 		label "leqFF_t" ++
 		movq (ind ~ofs:24 rsp) !%rax ++
 		movq (imm nTypeBool) !%rax ++
-		ret ++
+		ret 
+		else nop) ++
 
-	label "geqII" ++
+	(if !CompilRef.ge then
+		label "geqII" ++
 		movq (ind ~ofs:8 rsp) !%rbx ++
 		movq (ind ~ofs:24 rsp) !%rax ++
 		cmpq !%rax !%rbx ++
@@ -914,7 +938,7 @@ let compile_program f ofile =
 		movq (imm nTypeBool) !%rax ++
 		ret ++
 
-	label "geqFI" ++
+		label "geqFI" ++
 		movq (ind ~ofs:8 rsp) !%rbx ++ 
 		movq (ind ~ofs:24 rsp) !%xmm0 ++
 		cvtsi2sdq !%rax xmm1 ++ 
@@ -930,7 +954,7 @@ let compile_program f ofile =
 		label "geqFI_t" ++
 		ret ++
 
-	label "geqIF" ++
+		label "geqIF" ++
 		movq (ind ~ofs:8 rsp) !%xmm0 ++
 		movq (ind ~ofs:24 rsp) !%rbx ++
 		cvtsi2sdq !%rbx xmm1 ++
@@ -946,7 +970,7 @@ let compile_program f ofile =
 		label "geqIF_t" ++
 		ret ++
 
-	label "geqFF" ++
+		label "geqFF" ++
 		movq (ind ~ofs:8 rsp) !%xmm0 ++
 		movq (ind ~ofs:24 rsp) !%xmm1 ++
 		cmpnltsd !%xmm0 !%xmm1 ++
@@ -961,9 +985,11 @@ let compile_program f ofile =
 		label "geqFF_t" ++
 		movq (ind ~ofs:24 rsp) !%rax ++
 		movq (imm nTypeBool) !%rax ++
-		ret ++
+		ret 
+		else nop) ++
 
-	label "addII" ++
+	(if !CompilRef.add then
+		label "addII" ++
 		movq (ind ~ofs:8 rsp) !%rbx ++
 		movq (ind ~ofs:24 rsp) !%rax ++
 		addq !%rax !%rbx ++
@@ -994,9 +1020,11 @@ let compile_program f ofile =
 		addsd !%xmm1 !%xmm0 ++
 		movq (imm nTypeFloat) !%rax ++
 		movq !%xmm0 !%rbx ++
-		ret ++
+		ret 
+		else nop) ++
 
-	label "mulII" ++
+	(if !CompilRef.mul then
+		label "mulII" ++
 		movq (ind ~ofs:8 rsp) !%rbx ++
 		movq (ind ~ofs:24 rsp) !%rax ++
 		imulq !%rax !%rbx ++
@@ -1024,9 +1052,11 @@ let compile_program f ofile =
 		mulsd !%xmm1 !%xmm0 ++
 		movq (imm nTypeFloat) !%rax ++
 		movq !%xmm0 !%rbx ++
-		ret ++
+		ret 
+		else nop) ++
 
-	label "minII" ++
+	(if !CompilRef.sub then
+		label "minII" ++
 		movq (ind ~ofs:8 rsp) !%rax ++
 		movq (ind ~ofs:24 rsp) !%rbx ++
 		subq !%rax !%rbx ++
@@ -1054,9 +1084,11 @@ let compile_program f ofile =
 		subsd !%xmm1 !%xmm0 ++
 		movq (imm nTypeFloat) !%rax ++
 		movq !%xmm0 !%rbx ++
-		ret ++
+		ret 
+		else nop) ++
 
-	label "div_0" ++
+	(if !CompilRef.div then
+		label "div_0" ++
 		pushq !%rax ++
 		movq (ind ~ofs:16 rsp) !%rcx ++
 		cmpq (imm 0) !%rcx ++
@@ -1073,7 +1105,7 @@ let compile_program f ofile =
 		popq rcx ++
 		ret ++
 	
-	label "div_1" ++
+		label "div_1" ++
 		pushq !%rax ++
 		movq (ind ~ofs:16 rsp) !%rbx ++
 		cmpq (imm 0) !%rbx ++
@@ -1086,7 +1118,7 @@ let compile_program f ofile =
 		popq rcx ++
 		ret ++
 	
-	label "div_2" ++
+		label "div_2" ++
 		pushq !%rax ++
 		movq (ind ~ofs:16 rsp) !%xmm1 ++
 		xorq !%rax !%rax ++
@@ -1101,7 +1133,7 @@ let compile_program f ofile =
 		popq rcx ++
 		ret ++
 	
-	label "div_3" ++
+		label "div_3" ++
 		pushq !%rax ++
 		movq (ind ~ofs:16 rsp) !%xmm1 ++
 		xorq !%rax !%rax ++
@@ -1113,7 +1145,8 @@ let compile_program f ofile =
 		movq (imm nTypeFloat) !%rax ++
 		movq !%xmm0 !%rbx ++
 		popq rcx ++
-		ret ++
+		ret 
+		else nop) ++
 
 	label "print_0" ++ (* Fonction principale print *)
 		pushq !%rbp ++
@@ -1220,38 +1253,44 @@ let compile_program f ofile =
 		movq (imm nTypeInt) !%rax ++
 		ret ++
 
-	label "int_0" ++
+	(if !CompilRef.int then
+		label "int_0" ++
 		movq (ind ~ofs:8 rsp) !%xmm0 ++
 		cvttsd2siq !%xmm0 rbx ++
 		movq (imm nTypeInt) !%rax ++
 		ret ++
 
-	label "int_1" ++
+		label "int_1" ++
 		movq (ind ~ofs:8 rsp) !%rbx ++
 		movq (imm nTypeInt) !%rax ++
 		ret ++
 
-	label "int_2" ++
+		label "int_2" ++
 		movq (ind ~ofs:8 rsp) !%rbx ++
 		movq (imm nTypeInt) !%rax ++
-		ret ++
+		ret
+		else nop) ++
 
-	label "float_0" ++
+	(if !CompilRef.float then
+		label "float_0" ++
 		movq (ind ~ofs:8 rsp) !%rax ++
 		cvtsi2sdq !%rax xmm0 ++
 		movq !%xmm0 !%rbx ++
 		movq (imm nTypeFloat) !%rax ++
 		ret ++
-
-	label "float_1" ++
+	
+		label "float_1" ++
 		movq (ind ~ofs:8 rsp) !%rbx ++
 		movq (imm nTypeFloat) !%rax ++
-		ret ++ 
+		ret 
+		else nop) ++ 
 
-	label "char_0" ++
+	(if !CompilRef.char then
+		label "char_0" ++
 		movq (ind ~ofs:8 rsp) !%rbx ++
 		movq (imm nTypeChar) !%rax ++
-		ret ++ 	
+		ret
+		else nop) ++
 
 	label "sqrt_0" ++
 		movq (ind ~ofs:8 rsp) !%rax ++
@@ -1268,7 +1307,8 @@ let compile_program f ofile =
 		movq (imm nTypeFloat) !%rax ++
 		ret ++
 
-	label "input_int_0" ++
+	(if !CompilRef.input_int then
+		label "input_int_0" ++
 		pushq !%rbp ++
 		deplq (lab ".Sprint_int") rdi ++
 		deplq (lab ".Sscan_int") rsi ++
@@ -1276,7 +1316,8 @@ let compile_program f ofile =
 		movq ((if estMac then lab else ilab) (".Sscan_int")) !%rbx ++
 		movq (imm nTypeInt) !%rax ++
 		popq rbp ++
-		ret ++
+		ret
+		else nop) ++
 	
 	label "delay_0" ++
 		movq (ind ~ofs:8 rsp) !%rbx ++
@@ -1382,7 +1423,7 @@ let compile_program f ofile =
 		(label ".Sprint_char" ++ string "%c") ++
 		(label ".Sprint_true" ++ string "true") ++
 		(label ".Sprint_false" ++ string "false") ++
-(*)		(label ".Sprint_error" ++ string "Type failure\n") ++*)
+(*		(label ".Sprint_error" ++ string "Type failure\n") ++*)
 		(label ".Sprint_0div" ++ string "Division by zero error\n") ++
 		(label ".Sprint_IOoB" ++ string "Index out of bound error\n") ++
 		(label ".Sprint_undef" ++ string "Undef error\n") ++
