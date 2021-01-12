@@ -214,11 +214,57 @@ Pour la deuxième partie du projet, nous projetons d'ajouter aussi à PetitJulia
 
 # ... extension arrays
 
+Un ajout que nous aouhaitions faire dans notre projet était les tableaux. En effet, des structures utilisées astucieusement permettent de se passer de tableaux, mais il est toujours plus agréable d'utiliser des vrais tableaux, avec tout le sucre syntaxique qui facilite la vie du programmeur (par exemple l'accès et la modification d'une cellule avec `a[i]`).
+
 ## ... première itération aved des structs
+
+La première implémentation que nous avons essayée était une implémentation simple à mettre en place :
+
+Nous nous donnons une structure :
+
+```julia
+mutable struct List head :: Any; tail :: List end;
+```
+
+Cette structure implémente une liste chaînée (comme c'est le cas dans un des tests fournis). Nous avons implémenté en Julia les primitives `list_length`, `get_element` et `set_element` (de bêtes fonctiosn récursives) et nous avons ajouté au parser quelques règles pour pouvoir utiliser du sucre syntaxique : `a[i]` est remplacé au moment de l'analyse syntaxique par `get_element(a, i)`, et de même pour la mutation `a[i] = b`, remplacée par `set_element(a, i, b)`. Enfin, `[A, b, c, ...]` est remplacé par `List(a, List(b, List(c, ...)))`.
+
+Cette première implémentation avait le bon goût d'être très simple à mettre en place (juste quelques règles à ajouter au parser ainsi que des primitives basiques en pJulia). Cependant, elle posait un défaut conséquent : Il n'était pas vraiment possible de faire des listes ayant un type fixé. Deuxièmement, et principalement, notre but était de faire des tableaux, pas des listes. On avait là une pseudo-structure de tableau qui était en fait exactement une liste chaînée, avec les avantages mais aussi les incovénients (particulièrement l'accès en temps linéaire au lie ude constant) qui viennent avec. Nous avons donc totalement refondu cette implémentation.
 
 ## ... deuxième itération, plus propre
 
-# ... extensions des primitives (input_int, etc.)
+Notre but dans cette refonte a été de faire des arrays en bonne et due forme : taille et type fixes, accès en temps constant aux éléments. Nous avons gardé le même sucre syntaxique, étant la syntaxe universelle pour la définition, l'accès et la mutation de tableaux.
+
+Premièrement, nous nous sommes donné une primitive, `newarray(len, val)`, qui alloue sur le tas un tableau de `len + 2` mots avec toutes les cellules initialisées à la valeur initiale `val`. Les deux premiers mots alloués sont le type et la taille du tableau. Ensuite, on stocke une donnée par mot (contrairement à 2 pour les structures; ici, le type est commun à tous les éléments et est stocké dans le premier mot du tableau, pas besoin de le dupliquer `len` fois!). Ensuite, le sucre syntaxique `a[i]` et `a[i] = b` est interprété durant l'analyse syntaxique comme une règle supplémentaire de Lvalue (cf. plus haut la définition de notre grammaire). Enfin, le sucre syntaxique `[a, b, c, ...]` est remplacé au moment du parsing par une expression de la forme :
+
+```julia
+(
+_temp_array = newarray(len, a) #len est la longueur du tableau représenté par le sucre syntaxique
+_temp_array[1] = b
+_temp_array[2] = 2
+...;
+_temp_array
+)
+```
+
+Cela évite d'avoir à créer une primitive d'initialisation de tableau qui prenne un nombre variable d'arguments (bien que cela soit possible, de la même façon que `print`).
+
+Un problème a été délicat : comment intégrer les arrays dans notre système de types? 
+
+Plusieurs possibilités ont été évoquées : 
+- se donner un type unique `Array` : tous les arrays, peu importe leur dimension et le type de leurs cellules, ont le même type. Cela serait simple mais ne permettrait pas de conserver des tableaux avec un type fixe : si on se donne un talbeaux de tableaux, on peut remplacer un de ses éléments par un tableau de n'importe quelle dimension, car il aura toujours le même type `Array`
+- se donner des types explicites, par exemple `Int64 Array Array` ou bien `Float64 Array` : cela assure la bonne définition des types des arrays, mais cela complexifie beaucoup l'étapde de typage.
+
+Nous avons alors décidé de partir sur une solution intermédiaire : Lors du parsing, tous les tableaux ont un unique type `Array`. Cependant, à l'exécution, les tableaux ont un type bien défini ressemblant à `Int64 Array Array`. En effet, le type d'un tableau est de la forme `i + n * a`, où `n` est la dimension du tableau, `a` l'entier associé au type `Array` et `i` l'entier associé au type de élémentaire contenu dans le tableau (pour `Int64 Array Array`, c'est `Int64`). Ainsi, on peut vérifier à l'exécution que les mutations et accès des éléments d'un tableaux sont licites.
+
+Quelques petites remarques sur le fonctionnement des tableaux :
+- il est possible d'accéder à un élément d'un tablerau via un indice négatif : `a[-1]` renvoie le dernier élément du tableau, etc.
+- lorsqu'un tableau est multi-dimensionnel, on peut accéder à ses éléments via cette syntaxe : `a[i][j]`.
+- Comme dans d'autres languages, l'initialisation d'un tableau avec une valeur ne duplique pas cette dernière. Par exemple, `newarray(2, newarray(2, 0))` renvoie unb tableau dont les deux éléments pointent vers le même tableau. Pour créer un tableau en profondeur, il est préférable d'utiliser la fonction `make_matrix(d, lengths, init_value)`, dans le package `matrix`.
+
+
+# ... extension strings et chars
+
+# ... extensions des primitives (input_int, delay, timestamp, typeof, int, float, input_string, etc.) + erreurs
 
 # ... Annexes
 
