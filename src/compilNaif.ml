@@ -76,6 +76,7 @@ let errorTypeE = "typingError"
 let errorCall1 = "call1Error"
 let errorCall2 = "call2Error"
 let errorOoB = "outOfBound"
+let errorAssert = "assertError"
 
 module Smap = Map.Make(String)
 
@@ -1131,6 +1132,9 @@ let compile_program f ofile =
 		je "ifBool" ++
 		(cmpq (imm (nTypeChar + !nTypeArray)) !%rax) ++
 		je "ifString" ++
+		(cmpq (imm (nTypeChar)) !%rax) ++
+		je "ifChar" ++
+		ret ++
 		label "ifBool" ++
 		call "print_bool" ++
 		ret ++
@@ -1142,7 +1146,10 @@ let compile_program f ofile =
 		ret ++
 		label "ifString" ++
 		call "print_string" ++
-    	ret ++
+		ret ++
+		label "ifChar" ++
+		call "print_char" ++
+		ret ++
 
 	label "print_int" ++
 		movq !%rdi !%rsi ++
@@ -1157,7 +1164,15 @@ let compile_program f ofile =
 		movq (imm 1) !%rax ++
 		call "printf" ++
 		movq (imm 0) !%rax ++
-    	ret ++
+			ret ++
+	
+	label "print_char" ++
+		movq !%rdi !%rsi ++
+		deplq (lab ".Sprint_char") rdi ++
+		movq (imm 0) !%rax ++
+		call "printf" ++
+		movq (imm 0) !%rax ++
+			ret ++
 
 	label "print_string" ++
 		movq !%rdi !%rbx ++
@@ -1270,6 +1285,11 @@ let compile_program f ofile =
 		addq !%rdx !%rax ++ movq !%rax !%rbx ++
 		movq (imm nTypeInt) !%rax ++
 		ret ++
+	
+	label "typeof_0" ++
+		movq !%rax !%rbx ++
+		movq (imm nTypeInt) !%rax ++
+		ret ++
 
 (*)	label exitLabel ++
 		deplq (lab ".Sprint_error") rdi ++
@@ -1355,6 +1375,7 @@ let compile_program f ofile =
 		(label ".Sprint_typing" ++ string "Wrong type error\n") ++
 		(label ".Sprint_call1" ++ string "No compatible function error\n") ++
 		(label ".Sprint_call2" ++ string "Too many compatible functions error\n") ++
+		(label ".Sprint_assert" ++ string "Assertion error\n") ++
 		(label ".Sscan_int" ++ (dquad [0])) ++ 
 		(label ".Sscan_string" ++ (dquad [0]))
    }
