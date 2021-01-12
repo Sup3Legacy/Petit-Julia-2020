@@ -540,7 +540,8 @@ let resetFE (v:funcEnv ref) =
   v := Tmap.add "sqrt" [(0, [Int64], Float64); (1, [Float64], Int64)] !v;
   v := Tmap.add "delay" [(0, [Int64], Nothing)] !v;
   v := Tmap.add "timestamp" [(0, [], Int64)] !v;
-  v := Tmap.add "char" [(0, [Int64], Char64)] !v
+  v := Tmap.add "char" [(0, [Int64], Char64)] !v;
+  v := Tmap.add "typeof" [(0, [Any], Int64)] !v
 
 let resetSE (v:structEnv ref) = 
   v := Tmap.empty
