@@ -43,6 +43,7 @@ and expr =
   | Eflottant of float
   | Echaine of ident
   | Echar of int
+  | EAssert of (int * string * expression)
   | Etrue
   | Efalse
   | EentierIdent of position * Int64.t * ident

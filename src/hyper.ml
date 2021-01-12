@@ -8,7 +8,7 @@ let posVide:Ast.position = {ldeb = -1; cdeb = -1; lfin = -1; cfin = -1}
 let keywords = Hashtbl.create 12
 let words = [("else", ELSE posVide); ("elseif", ELSEIF posVide); ("end", END posVide); ("false", FALSE posVide); ("for", FOR posVide);
   ("function", FUNCTION posVide); ("if", IF posVide); ("mutable", MUTABLE); ("return", RETURN posVide); ("struct", STRUCT posVide);
-  ("true", TRUE posVide); ("while", WHILE posVide); ("dowhile", DOWHILE posVide)]
+  ("true", TRUE posVide); ("while", WHILE posVide); ("dowhile", DOWHILE posVide); ("assert", ASSERT posVide)]
 let () = List.iter (fun (s, t) -> Hashtbl.add keywords s t) words
 
 exception Not_an_int
@@ -102,6 +102,7 @@ let rajoutePosition tk lb =
     | TRUE _ -> TRUE p
     | WHILE _ -> WHILE p
     | DOWHILE _ -> DOWHILE p
+    | ASSERT _ -> ASSERT p
     | _ -> failwith "Unknown keyword"
 
 let file = ref "test.jl"

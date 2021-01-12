@@ -34,6 +34,7 @@
 %token <Ast.position> EXP
 %token <Ast.position> NOT
 %token <Ast.position> DOT
+%token <Ast.position> ASSERT
 
 %token <Ast.position> ELSE
 %token <Ast.position> ELSEIF
@@ -62,6 +63,7 @@
 
 %token <string> DOCSTRING
 
+%nonassoc ASSERT
 %nonassoc RETURN
 %right AFFECT
 %left OR
@@ -277,6 +279,7 @@ separated_list_C_E<Ast.expression list>:
 ;
 
 expr_wMin_<Ast.expression>:
+  | p = ASSERT e = expr {p, EAssert (p.ldeb, !file_name, e)}
   | pe1 = expr_wMin_ p = EQ pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, Eq, pe1, pe2)) }
   | pe1 = expr_wMin_ p = NEQ pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, Neq, pe1, pe2)) }
   | pe1 = expr_wMin_ p = L pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, Lo, pe1, pe2)) }
@@ -341,6 +344,7 @@ expr_wMin_<Ast.expression>:
 ;
 
 expr_w_Ret<Ast.expression>:
+  | p = ASSERT e = expr_w_Ret {p, EAssert (p.ldeb, !file_name, e)}
   | pe1 = expr p = EQ pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Eq, pe1, pe2) }
   | pe1 = expr p = NEQ pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Neq, pe1, pe2) }
   | pe1 = expr p = L pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Lo, pe1, pe2) }
@@ -402,6 +406,7 @@ expr_w_Ret<Ast.expression>:
 ;
 
 expr<Ast.expression>:
+  | p = ASSERT e = expr {p, EAssert (p.ldeb, !file_name, e)}
   | pe1 = expr p = EQ pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Eq, pe1, pe2) }
   | pe1 = expr p = NEQ pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Neq, pe1, pe2) }
   | pe1 = expr p = L pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Lo, pe1, pe2) }
