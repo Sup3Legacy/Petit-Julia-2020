@@ -204,6 +204,106 @@ Pour la deuxième partie du projet, nous projetons d'ajouter aussi à PetitJulia
 
 # ... pPkg, depManager, namespace et pjulia-packages
 
+Durant le travail sur ce projet, il nous a semblé intéressant d'implémenter non seulement un compilateur, mais aussi un environnement de développement basique pour notre language. C'est pour ça que nous avons mis en place un système de packages, permettant, comme dans beaucou d'autres languages, de scinder les composants d'un projet sur plusieurs fichiers, ou bien d'utiliser des fonctions pré-implémentées, par exemple par la communauté.
+
+## pjulia-packages
+
+Nous avons créé un [repo Github](https://github.com/Sup3Legacy/pjulia-packages) contenant quelques modules de base (par exemple `matrix`, qui contient des méthodes utiles pour utiliser des matrices).
+
+## pPkg
+
+De même que Julia a son gestionnaire de paquets : `Pkg`, nous avons doté petitèJulia de `pPkg`. Il s'agit d'un tout petit gestionnaire de paquets très basique incorporé dans notre REPL et avec lequel il est possible d'interragir via quelques commandes dans la console de ce dernier :
+- `#update` : cette commande télécharge la liste des paquets disponibles (`index.json`), contenant plein d'informations comme leur versions, dépendances, URL, descriptionn, et la parse.
+- `#install package` : cette commande installe le paquet `package`. Les paquets sont installés dans un sous-répertoire `/packages`. (Si cette commande jette une erreur, il faut possiblement ajouter ce sous-dossier à la main). /!\ pour cela, il faut avoir au préalable téléchargé la liste des paquets avec `#update`
+- `#remove package` : cette commande supprime le paquet `package`, s'il existe.
+
+NB : le temps nous a manqué pour ajouter à pPkg la gestion des dépendances et des versions. Il n'en tient donc pas compte.
+
+## Namespace
+
+Une fois un gestionnaire de paquets basique mis en place, nous avons réfléchi à la façon d'importer les paquets pour les utiliser dans des programmes pJulia. Après plusieurs tests plus ou moins ratés, nous avons statué sur ceci :
+- L'importation d'un paquet se fait avec l'expression `include("package.jl")` (il ne faut pas oublier le `.jl`). Tous les `include` doivent être mis tout en haut du fichier, avant tout autre expression ou déclaration. Les paquets doivent être dans le sous-répertoire `/packages`
+- L'utilisation des fonctions ou variables globales définies dans un paquet, nous utilisons cette syntaxe : `package::fonction(a, package::variable)`.
+
+Petit exemple :
+
+```julia
+include("matrix.jl")
+include("gol.jl")
+include("random.jl")
+
+a = matrix::make_matrix(2, [2, 2], 0)
+gol::run()
+
+```
+
+Lors de la compilation, les `::` sont remplacés par des `__`, pour que le fichier ASM soit accepté par `gcc`.
+
+## depManager
+
+Le partie centrale de notre système de paquets est `depManager.ml`, partie de la compilation entre le parsing et le typage, chargé de charger et ajouté les paquets importés.
+
+Lorsque depManager rencontre un appel à `include`, il charge le fichier correspondant, le parse, et modifie tous les identifiants (sauf primitives) apparaissant dans l'arbre syntaxique du paquet pour correspondre au nom par lequel on appelle ces fonctions et variables globales. Enfin, il ajoute cet arbre de syntaxe abstraite à l'arbre du fichier principal. Par exemple, si on se donne les fichiers :
+
+```julia
+#package1.jl
+function succ(n :: Int64) :: Int64
+	return n + 1
+end;
+varGlob = 69
+```
+
+```julia
+#package2.jl
+include("package1.jl")
+function foo(n :: Int64) :: Int64
+	return n
+end;
+bar = 42
+```
+
+et
+
+```julia
+#test.jl
+include("package1.jl")
+include("package2.jl")
+
+println(package1::succ(5), package1::varGlob)
+println(package2::package1::succ(5))
+println(package2::bar)
+```
+
+L'AST généré par depManager lors de la compilation de `test.jl` correspond à un fichier d'origine de la forme :
+
+```julia
+#test.jl 
+
+#package1 importé depuis test
+function succ(package1__n :: Int64) :: Int64
+	return package1__n + 1
+end;
+package1__varGlob = 69
+
+#package1 importé depuis package2, lui-même importé depuis test
+function succ(package2__package1__n :: Int64) :: Int64
+	return package2__package1__n + 1
+end;
+package2__package1__varGlob = 69
+
+#package2 importé depuis test
+function foo(package2__n :: Int64) :: Int64
+	return n
+end;
+package2__bar = 42
+
+println(package1__succ(5), package1__varGlob)
+println(package2__package1__succ(5))
+println(package2__bar)
+```
+
+On peut remarquer une chose : on ne peut pas importer plusieurs fois le même paquet depuis un même fichier. Cependant, on peut importer un même paquet depuis un fichier, tout en l'important aussi depusi un fichier lui-même importé. On se retrouve alors avec deux copies _a priori_ identique du paquet, donc seuls les identifiants diffèrent. Cela ajoute une masse parfois importante aux exécutables, mais cela permet d'isoler le comportement des différents modules du programmes. De plus, il nous semblait raisonnable de nous arrêter là au niveau de la gestion des modules.
+
 # ... génération de code du projet de base (donc sans flottants ni arrays)
 
 # ... extension flottants
@@ -240,7 +340,7 @@ Premièrement, nous nous sommes donné une primitive, `newarray(len, val)`, qui 
 (
 _temp_array = newarray(len, a) #len est la longueur du tableau représenté par le sucre syntaxique
 _temp_array[1] = b
-_temp_array[2] = 2
+_temp_array[2] = c
 ...;
 _temp_array
 )
@@ -258,13 +358,41 @@ Nous avons alors décidé de partir sur une solution intermédiaire : Lors du pa
 
 Quelques petites remarques sur le fonctionnement des tableaux :
 - il est possible d'accéder à un élément d'un tablerau via un indice négatif : `a[-1]` renvoie le dernier élément du tableau, etc.
-- lorsqu'un tableau est multi-dimensionnel, on peut accéder à ses éléments via cette syntaxe : `a[i][j]`.
-- Comme dans d'autres languages, l'initialisation d'un tableau avec une valeur ne duplique pas cette dernière. Par exemple, `newarray(2, newarray(2, 0))` renvoie unb tableau dont les deux éléments pointent vers le même tableau. Pour créer un tableau en profondeur, il est préférable d'utiliser la fonction `make_matrix(d, lengths, init_value)`, dans le package `matrix`.
+- lorsqu'un tableau est multi-dimensionnel, on peut accéder à ses éléments via cette syntaxe : `a[i][j]...[z]`.
+- Comme dans d'autres languages, l'initialisation d'un tableau avec une valeur ne duplique pas cette dernière. Par exemple, `newarray(2, newarray(2, 0))` renvoie un tableau dont les deux éléments pointent vers le même tableau. Pour créer un tableau en profondeur, il est préférable d'utiliser la fonction `make_matrix(d, lengths, init_value)`, dans le package `matrix` (initialise un tableau multi-dimensionnel de dimension `d` où la `i`-ème dimension a une taille `lengths[i]` et dont la valeur initiale de base (la plus en profondeur) est `init_value`)
 
 
 # ... extension strings et chars
 
 # ... extensions des primitives (input_int, delay, timestamp, typeof, int, float, input_string, etc.) + erreurs
+
+## int
+
+Cette fonction convertit son argument (entier ou flottant) vers un entier, éventuellement en arondissant à l'entier inférieur.
+
+## float
+
+Cette fonction convertit son argument (entier ou flottant) vers le flottant correspondant
+
+## sqrt
+
+Cette fonction renvoie la racine carrée (sous forme d'un flottant) de son argument entier ou flottant
+
+## input_int
+
+Cette fonction permet de lire un entier sur l'éntrée standard.
+
+## delay
+
+Cette fonction déclenche une pause de l'exécution du programme. L'argument est en secondes. /!\ la compatibilité n'est pas tout à fait bonne, comme cette fonction utilise un *syscall*. Elle a été testée est est fonctionnelle sous Ubuntu 20 mais ne semble pas marcher sur MacOS.
+
+## timestamp
+
+Cette fonction renvoie le timestamp actuel de la machine, lu sur le registre TSC.
+
+## typeof
+
+Cette fonction renvoie le type de son argument, sous forme d'un entier.
 
 # ... Annexes
 
