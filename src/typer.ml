@@ -52,6 +52,7 @@ let typeName (t:Astype.pjtype):string = match t with
   | S s -> "Struct \""^s^"\""
   | Array -> "Array"
   | Any -> "Any"
+  | Char64 -> "Char64"
 
 (* teste la correction d'une déclaration de structure et la rajoute aux différents environnements *)
 let parcoursStruct (sE:structEnv) (aE:argsEnv) (fE:funcEnv) (b,p,str,l):(structEnv * argsEnv * funcEnv) =
@@ -404,11 +405,15 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
       | Larray ((p1, e1), (p2, e2)) ->
         let t1, e1 = testTypageE isLoc vE fE sE aE rT b e1 in
         let t2, e2 = testTypageE isLoc vE fE sE aE rT b e2 in
-        if compatible t1 Array then
-          if compatible t2 Int64 then
+        if compatible t2 Int64 then
+          if t1 = String then 
+            if compatible t Char64 then 
+              Char64, LvalueAffectE (ArrayL ((t1, e1), (t2, e2)), (t, et))              
+            else error ("type incompatibility "^typeName t^" not compatible with Char") pe
+          else if compatible t1 Array then
             t, LvalueAffectE (ArrayL ((t1, e1), (t2, e2)), (t, et))
-          else error ("type incompatibility "^typeName t2^" not compatible with int") p2
-        else error ("type incompatibility "^typeName t1^" not compatible with array") p1
+          else error ("type incompatibility "^typeName t1^" not compatible with array") p1
+        else error ("type incompatibility "^typeName t2^" not compatible with int") p2
 
     end
   | Ereturn (p, opt) -> if b
