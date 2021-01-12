@@ -320,11 +320,22 @@ On peut remarquer une chose : on ne peut pas importer plusieurs fois le même pa
 
 # ... génération de code du projet de base (donc sans flottants ni arrays)
 
+# ... Nos ajouts à x86-64.ml
+
 # ... extension flottants
 
-## ... Modifications typer
+La gestion des flottants est une extension que nous avions prévu d'apporter au compilateur depuis la première phase de réflexion.
+
+## ... Modifications lexer/typer
+
+Nous avons ajouté au lexer une règle pour accepter des constantes flottantes : `(chiffre+'.' | '.'chiffre+ | chiffre+'.'chiffre+)(('e'|'E')('-'|'+')?chiffre+)?`
+
+Nous avons en même temps ajouté à l'AST un constructeur Flottant ainsi que les règles de typage dans le typer. Par exemple, un opérateur arithmétique prenant en argument au moins une valeur flottante renverra un flottant.
 
 ## ... Modification production de code
+
+Là encore, il n'y eu besoin que de compléter ce que nous avions déjà mis en place pour les entiers : chaque opérateur (`+, -, *, ^, <, >, <=, >=`) est découpé en 4, en fonction de la combinaison Entier-Entier/Entier-Flottant/... qu'il a en argument. Lorsque nécessaire, les entiers sont convertis en flottants au moyen de l'instruction `cvtsi2sdq` (cf la liste de nos ajouts à `x86-64.ml`)
+
 
 # ... extension arrays
 
@@ -407,6 +418,12 @@ Cette fonction renvoie le timestamp actuel de la machine, lu sur le registre TSC
 ## typeof
 
 Cette fonction renvoie le type de son argument, sous forme d'un entier.
+
+# ... Ajouts divers
+
+## ... docstrings et utilisation dans le REPL
+
+## ... assert
 
 # ... Annexes
 
