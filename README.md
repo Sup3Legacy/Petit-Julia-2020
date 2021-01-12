@@ -204,20 +204,32 @@ Pour la deuxième partie du projet, nous projetons d'ajouter aussi à PetitJulia
 
 # ... pPkg, depManager, namespace et pjulia-packages
 
-Durant le travail sur ce projet, il nous a semblé intéressant d'implémenter non seulement un compilateur, mais aussi un environnement de développement basique pour notre language. C'est pour ça que nous avons mis en place un système de packages, permettant, comme dans beaucou d'autres languages, de scinder les composants d'un projet sur plusieurs fichiers, ou bien d'utiliser des fonctions pré-implémentées, par exemple par la communauté.
+Durant le travail sur ce projet, il nous a semblé intéressant d'implémenter non seulement un compilateur, mais aussi un environnement de développement 'complet' pour notre language. C'est pour ça que nous avons mis en place un système de packages permettant, comme dans beaucoup d'autres languages, de scinder les composantes d'un projet en plusieurs fichiers, ou bien d'utiliser des fonctions pré-implémentées.
 
 ## pjulia-packages
 
-Nous avons créé un [repo Github](https://github.com/Sup3Legacy/pjulia-packages) contenant quelques modules de base (par exemple `matrix`, qui contient des méthodes utiles pour utiliser des matrices).
+Nous avons créé un [repo Github](https://github.com/Sup3Legacy/pjulia-packages) contenant quelques modules de base (par exemple `matrix`, qui contient des méthodes utiles pour utiliser des matrices). Ce repo contient de plus un répertoire des paquets disponibles, sous la forme d'un fichier JSON avec des enregistrements de la forme :
+
+```json
+{
+  "name": "random",
+  "version": "0.1.4",
+  "description": "Fonctions aléatoires utiles",
+  "dependencies": [],
+  "url": "https://raw.githubusercontent.com/Sup3Legacy/pjulia-packages/main/random.jl"
+}
+```
 
 ## pPkg
 
-De même que Julia a son gestionnaire de paquets : `Pkg`, nous avons doté petitèJulia de `pPkg`. Il s'agit d'un tout petit gestionnaire de paquets très basique incorporé dans notre REPL et avec lequel il est possible d'interragir via quelques commandes dans la console de ce dernier :
-- `#update` : cette commande télécharge la liste des paquets disponibles (`index.json`), contenant plein d'informations comme leur versions, dépendances, URL, descriptionn, et la parse.
+De même que Julia a son gestionnaire de paquets : `Pkg`, nous avons doté petit-Julia de `pPkg`. Il s'agit d'un tout petit gestionnaire de paquets très basique incorporé dans notre REPL et avec lequel il est possible d'interragir via quelques commandes dans la console de ce dernier :
+- `#update` : cette commande télécharge la liste des paquets disponibles (`index.json`).
 - `#install package` : cette commande installe le paquet `package`. Les paquets sont installés dans un sous-répertoire `/packages`. (Si cette commande jette une erreur, il faut possiblement ajouter ce sous-dossier à la main). /!\ pour cela, il faut avoir au préalable téléchargé la liste des paquets avec `#update`
 - `#remove package` : cette commande supprime le paquet `package`, s'il existe.
 
-NB : le temps nous a manqué pour ajouter à pPkg la gestion des dépendances et des versions. Il n'en tient donc pas compte.
+NB : 
+* le temps nous a manqué pour ajouter à pPkg la gestion des dépendances et des versions. Il n'en tient donc pas compte.
+* pPkg utilise plusieurs modules, notamment pour faire des requêtes HTTPS ou bien parser les fichiers JSON. Ces modules étant capricieux et n'ayant de notre côté pas eu beaucoup de temps pour les stabiliser, pPkg a parfois tendance à avoir des comportements plus ou moins indéfinis.
 
 ## Namespace
 
@@ -241,9 +253,9 @@ Lors de la compilation, les `::` sont remplacés par des `__`, pour que le fichi
 
 ## depManager
 
-Le partie centrale de notre système de paquets est `depManager.ml`, partie de la compilation entre le parsing et le typage, chargé de charger et ajouté les paquets importés.
+Le composant central de notre système de paquets est `depManager.ml`, s'intégrant entre le parsing et le typage.
 
-Lorsque depManager rencontre un appel à `include`, il charge le fichier correspondant, le parse, et modifie tous les identifiants (sauf primitives) apparaissant dans l'arbre syntaxique du paquet pour correspondre au nom par lequel on appelle ces fonctions et variables globales. Enfin, il ajoute cet arbre de syntaxe abstraite à l'arbre du fichier principal. Par exemple, si on se donne les fichiers :
+Lorsque depManager rencontre un appel à `include`, il charge le fichier correspondant, le parse (enfin le fait parser par le parseur), et modifie tous les identifiants (sauf primitives) apparaissant dans l'arbre syntaxique du paquet pour correspondre au nom par lequel on appelle ces fonctions et variables globales. Enfin, il ajoute cet arbre de syntaxe abstraite à l'arbre du fichier principal. Par exemple, si on se donne les fichiers :
 
 ```julia
 #package1.jl
@@ -281,12 +293,14 @@ L'AST généré par depManager lors de la compilation de `test.jl` correspond à
 
 #package1 importé depuis test
 function succ(package1__n :: Int64) :: Int64
+	#On peut voir ici qu'à tous les identifiants a été ajouté "package1__"
 	return package1__n + 1
 end;
 package1__varGlob = 69
 
 #package1 importé depuis package2, lui-même importé depuis test
 function succ(package2__package1__n :: Int64) :: Int64
+	#on a déjà ajouté "package1__" puis "package2__"
 	return package2__package1__n + 1
 end;
 package2__package1__varGlob = 69
@@ -308,7 +322,7 @@ On peut remarquer une chose : on ne peut pas importer plusieurs fois le même pa
 
 # ... extension flottants
 
-## ... Modifications tyoer
+## ... Modifications typer
 
 ## ... Modification production de code
 
@@ -402,6 +416,7 @@ Cette fonction renvoie le type de son argument, sous forme d'un entier.
 * `--parse_only` : arrête l'exécution après avoir parsé le fichier
 * `--type_only` : arrête l'exécution après avoir typé le fichier
 * `--show_file_name` : affiche le nom du fichier si il ne plante pas à l'exécution
+* `-analytics` : affiche à l'issue de la compilation quelques informations plus ou moins utiles à propos de celle-ci, notamment le nombre des labels utilisés.
 
 ## B] Liste des fichiers
 Ci-dessous sont listés les fichiers du projet, accompagnés d'une brève description de leur utilité.
@@ -410,7 +425,7 @@ Ci-dessous sont listés les fichiers du projet, accompagnés d'une brève descri
 * `ast.ml` : déclaration des types récursifs de l'arbre abstrait du programme.
 * `astinterp.ml` : déclaration des types utilisés lors de l'interprétation.
 * `astype.ml` : déclaration des types utilisés lors du typage.
-* `dune` : déclaration des directives de compilation (utilse pour intégrer Samenhir!).
+* `dune` : déclaration des directives de compilation (utilsé pour intégrer Samenhir!).
 * `dune-project` : déclarations annexes de `dune`.
 * `hyper.ml` : fichier contenant le code `OCaml` utilisé par le Lexer.
 * `hyper2.ml` : quelques fonctions utilisées dans le Parser.
