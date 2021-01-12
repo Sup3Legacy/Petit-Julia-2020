@@ -22,7 +22,8 @@ type operateur =
   | Modulo
   | Exp
   | And
-  | Or
+	| Or
+	| Concat
 [@@deriving show]
 ;;
 

@@ -36,6 +36,7 @@ let docstring = "\"\"\""((car|'\n'|'\t')*)"\"\"\""
 
 rule tokens = parse
   | docstring as s {Hyper.disableEnd (); [DOCSTRING (String.sub s 3 (String.length s - 6))]}
+  | "@" {Hyper.disableEnd (); [CONCAT (Hyper.position lexbuf)]}
   | nombre as i { Hyper.enableEnd ();
     try [INT (Hyper.position lexbuf, Int64.of_string i)]
     with _ -> raise (Ast.Lexing_Error_Msg_Pos ("Overflowing integer", Hyper.position lexbuf)) }

@@ -108,6 +108,8 @@ let rec handle_dep decl_list =
             let ajout =
               try
                 begin
+                  let n = String.length pack_name in
+                  Parser.file_name := pack_name;
                   let a = handle_dep (get_package pack_name) in
                   currentPackages := Import_packages_set.add pack_name !currentPackages;
                   print_endline ("Successfully imported package : " ^ pack_name);

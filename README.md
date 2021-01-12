@@ -316,11 +316,16 @@ println(package2__package1__succ(5))
 println(package2__bar)
 ```
 
-On peut remarquer une chose : on ne peut pas importer plusieurs fois le même paquet depuis un même fichier. Cependant, on peut importer un même paquet depuis un fichier, tout en l'important aussi depusi un fichier lui-même importé. On se retrouve alors avec deux copies _a priori_ identique du paquet, donc seuls les identifiants diffèrent. Cela ajoute une masse parfois importante aux exécutables, mais cela permet d'isoler le comportement des différents modules du programmes. De plus, il nous semblait raisonnable de nous arrêter là au niveau de la gestion des modules.
+On peut remarquer une chose : on ne peut pas importer plusieurs fois le même paquet depuis un même fichier. Cependant, on peut importer un même paquet depuis un fichier, tout en l'important aussi depusi un fichier lui-même importé. On se retrouve alors avec deux copies _a priori_ identique du paquet, donc seuls les identifiants diffèrent. Cela ajoute une masse parfois importante aux exécutables, mais cela permet d'isoler le comportement des différents modules du programmes. De plus nous étions satisfaits de ce système basique qui permet déjà de faire des choses intéressantes!
 
 # ... génération de code du projet de base (donc sans flottants ni arrays)
 
 # ... Nos ajouts à x86-64.ml
+Nous avons ajouté quelques fonctionnalités à la bibliothèque `x86-64.ml` :
+- la détection automatique du type d'OS : Linux ou MacOS. Elle sert dans certains cas de figure, par exemple pour `lab`.
+- les registres flottants SMID 64 bits : les registres `%xmm0` à `xmm15`.
+- des opérations sur les flottants : par exemple `cvtsi2sdq`, instruction de conversion d'entier vers flottant, ainsi que les instruction de comparaison de flottants
+- des instructions spéciales comme par exemple `rdtsc` pour la lecture du registrer de timestamp ou bien `syscall`
 
 # ... extension flottants
 
