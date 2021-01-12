@@ -174,7 +174,7 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 			(Hashtbl.add sMap n !compteurString;
 			compteurString := !compteurString + 1)
 		in let (e, o) = alloc_expr env offset e in (Assert (l,n,e), o)
-	| MinusE (_, e) -> let (e, o) = alloc_expr env offset e in Minus e, o
+	| MinusE (_, e) -> let () = CompilRef.sub := true in let (e, o) = alloc_expr env offset e in Minus e, o
 	| BinopE (o, (_, e1), (_, e2)) ->
 		let () = match o with 
 			|Plus -> CompilRef.add := true
