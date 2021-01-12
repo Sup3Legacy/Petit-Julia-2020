@@ -13,6 +13,9 @@
   open Ast
 
   exception Lexing_error of string
+
+  let string_buffer = Buffer.create 1024
+
 }
 
 let chiffre = ['0'-'9']
@@ -24,8 +27,7 @@ let ident = ident_sub(("::"ident_sub)*)
 let nombre = chiffre+
 
 let flottant = (chiffre+'.' | '.'chiffre+ | chiffre+'.'chiffre+)(('e'|'E')('-'|'+')?chiffre+)?
-let car = [' '-'!''#'-'['']'-'~'] | "\\n" | "\\t" | "\\\"" | "\\\\"
-let chaine = '\"'(car*)'\"'
+let car = [' '-'!''#'-'['']'-'~'] 
 let notPar = [^'('-')']
 let unclosedPar = '('(notPar*)eof
 let space = (' ' | '\t')*
@@ -157,7 +159,7 @@ rule tokens = parse
     [CHAR (Hyper.position lexbuf, Char.code '\'')]
   }
   | space {tokens lexbuf}
-  | chaine as s {Hyper.enableEnd (); [CHAINE  (Hyper.position lexbuf,(String.sub s 1 (String.length s - 2)))]}
+  | '"'     { [CHAINE (Hyper.position lexbuf,string lexbuf)] }
   | _ as c{
     if c = '"' then raise (Ast.Lexing_Error_Msg_Pos ("unclosed string", Hyper.position lexbuf))
     else raise (Ast.Lexing_Error_Msg_Pos ("unknown char : " ^ (String.make 1 c), Hyper.position lexbuf))
@@ -173,6 +175,30 @@ and comment = parse
     else tokens lexbuf
     }
   | _ {comment lexbuf}
+
+and string = parse
+  | '"'
+      {Hyper.enableEnd (); let s = Buffer.contents string_buffer in
+    Buffer.reset string_buffer;
+    s }
+  | "\\n"
+      { Buffer.add_string string_buffer "\n";
+    string lexbuf }
+  | "\\\""
+      { Buffer.add_string string_buffer "\\\"";
+    string lexbuf }
+  | "\\t"
+      { Buffer.add_string string_buffer "\\t";
+    string lexbuf }
+  | "\\\\"
+      { Buffer.add_string string_buffer "\\\\";
+    string lexbuf }
+  | car as c
+      { Buffer.add_char string_buffer c;
+  string lexbuf }
+  | eof
+      { raise (Lexing_error "unterminated string") }
+
 
 
 {
