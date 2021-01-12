@@ -257,7 +257,7 @@ let rec parcours1 (vEnv:varEnv) (fEnv:funcEnv) (sEnv:structEnv) (aEnv:argsEnv) =
 let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:argsEnv) (rT:Astype.pjtype) (b:bool):Ast.expr -> expressionTyper = function
   | Eentier i -> Int64, EntierE i
   | Eflottant f -> Float64, FlottantE f
-  | Echaine str -> String, ChaineE (Scanf.unescaped str)
+  | Echaine str -> String, ChaineE str
   | Echar c -> Char64, CharE c
   | Etrue -> Bool, TrueE
   | Efalse -> Bool, FalseE

@@ -185,13 +185,13 @@ and string = parse
       { Buffer.add_string string_buffer "\n";
     string lexbuf }
   | "\\\""
-      { Buffer.add_string string_buffer "\\\"";
+      { Buffer.add_string string_buffer "\"";
     string lexbuf }
   | "\\t"
-      { Buffer.add_string string_buffer "\\t";
+      { Buffer.add_string string_buffer "\t";
     string lexbuf }
   | "\\\\"
-      { Buffer.add_string string_buffer "\\\\";
+      { Buffer.add_string string_buffer "\\";
     string lexbuf }
   | car as c
       { Buffer.add_char string_buffer c;

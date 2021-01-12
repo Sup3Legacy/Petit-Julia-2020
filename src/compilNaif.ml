@@ -1412,7 +1412,7 @@ let compile_program f ofile =
 	codefun;
 
     data =
-       Hashtbl.fold (fun x i l -> l ++ label ("string"^string_of_int i) ++ string (Scanf.unescaped x)) sMap nop ++
+       Hashtbl.fold (fun x i l -> l ++ label ("string"^string_of_int i) ++ string x) sMap nop ++
 			 Hashtbl.fold (fun x i l -> l ++ label ("constant_float"^string_of_int i) ++ (double (float_of_string x))) fMap nop ++
 			 Tmap.fold (fun x i l -> if x<> "nothing" then l ++ label ((rectify_character x)^"_type") ++ (dquad [nTypeUndef])
 			 														++ label ((rectify_character x)^"_val") ++ (dquad [0]) else l) smap nop ++
