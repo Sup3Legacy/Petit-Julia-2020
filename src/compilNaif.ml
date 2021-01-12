@@ -65,7 +65,7 @@ let getNewArray () =
 ;; 
 
 let rectify_character str =
-	String.concat "__" (List.filter (fun x -> x <> "") (String.split_on_char ':' str))
+	String.concat "." (List.filter (fun x -> x <> "") (String.split_on_char ':' str))
 ;;
 
 
@@ -160,6 +160,13 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 			in Call (ident, arb, eL), offset
 		end
 	| NotE (_,e) -> let (e, o) = alloc_expr env offset e in Not e, o
+	| AssertE (l, n, (_,e)) ->
+		let () = if not (Hashtbl.mem sMap n)
+		then
+			(Hashtbl.add sMap n !compteurString;
+			compteurString := !compteurString + 1)
+		in let (e, o) = alloc_expr env offset e in ((Assert l n e), o)
+		
 	| MinusE (_, e) -> let (e, o) = alloc_expr env offset e in Minus e, o
 	| BinopE (o, (_, e1), (_, e2)) ->
 		let (e1, o1) = alloc_expr env offset e1 in
@@ -311,6 +318,12 @@ let rec compile_expr = function
 	| False -> pushq (imm nTypeBool) ++ pushq (imm valFalse)
 	| Nothing -> pushq (imm nTypeNothing) ++ pushq (imm 0)
 	| Bloc bloc -> compile_bloc bloc
+	| Assert (l, s, e) -> 
+		let ind = Hashtbl.find sMap s in
+		compile_expr e ++
+		popq !%rbx ++ popq !%rax ++ cmpq (imm nTypeBool) !%rbx ++ jne errorTypeE ++
+		movq (imm l) !%rdi ++ (if estMac then leaq (lab ("string"^ind)) rsi else movq (lab ("string"^ind)) !%rsi) ++
+		cmpq (imm valTrue) !%rbx ++ jne errorAssert ++ pushq (imm nTypeNothing) ++ pushq !%rax
 	| Call (ident, funcArbr, expList) ->
 		compteurCall := !compteurCall + 1;
 		let rec parcours liste =
@@ -1291,14 +1304,15 @@ let compile_program f ofile =
 		movq (imm nTypeInt) !%rax ++
 		ret ++
 
-(*)	label exitLabel ++
-		deplq (lab ".Sprint_error") rdi ++
+	label errorAssert ++
+		movq !%rdi !%rdx ++
+		deplq (lab ".Sprint_assert") rdi ++
 		call "printf" ++
 		movq !%r12 !%rsp ++
 		popq rbp ++
 		popq r12 ++ popq rbx ++
 		movq (imm 1) !%rax ++
-		ret ++*)
+		ret ++
 
 	label error0div ++
 		deplq (lab ".Sprint_0div") rdi ++
@@ -1375,7 +1389,7 @@ let compile_program f ofile =
 		(label ".Sprint_typing" ++ string "Wrong type error\n") ++
 		(label ".Sprint_call1" ++ string "No compatible function error\n") ++
 		(label ".Sprint_call2" ++ string "Too many compatible functions error\n") ++
-		(label ".Sprint_assert" ++ string "Assertion error\n") ++
+		(label ".Sprint_assert" ++ string "Assertion error in file %s on line %d\n") ++
 		(label ".Sscan_int" ++ (dquad [0])) ++ 
 		(label ".Sscan_string" ++ (dquad [0]))
    }

@@ -62,6 +62,7 @@ and exprTyper =
 	| ChaineE of string
 	| TrueE
 	| FalseE
+	| AssertE of (int * string * expressionTyper)
 	| CharE of int
 (*	| ArrayE of expressionTyper list
 	| EntierIdentE of Int64.t * pjtype * ident * bool

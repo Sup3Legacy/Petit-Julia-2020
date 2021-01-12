@@ -135,6 +135,7 @@ let rec chercheDefE (isLoc:bool) (vS:Tset.t) = function
     chercheDefE isLoc (chercheDefE isLoc (chercheDefE isLoc vS e1) e2) e3
   | Ereturn (_, None) -> vS
   | Ereturn (_, Some (_, e)) -> chercheDefE isLoc vS e
+  | EAssert (_, _, (_, e)) -> chercheDefE isLoc vS e
   | Efor (_, (_, e1), (_, e2), (_, eL)) ->
       let env1 = chercheDefE isLoc (chercheDefE isLoc vS e1) e2 in
       if false && isLoc then chercheDefB isLoc env1 eL else env1
@@ -170,7 +171,7 @@ let rec parcoursExpr (isLoc:bool) (vE:varEnv) (fE:funcEnv) (aE:argsEnv) (sE:stru
       if Tmap.mem str sE || Tmap.mem str fE || str = "print" || str = "println" || str = "_getelement" || str = "_setelement" || str = "newarray"
       then List.fold_left (fun ve (p, e) -> parcoursExpr isLoc ve fE aE sE e) vE eL
       else error ("undefined function 1 "^str) pStr
-  | Enot (_, e) | Eminus (_, e) -> parcoursExpr isLoc vE fE aE sE e
+  | Enot (_, e) | Eminus (_, e) | EAssert (_, _, (_, e)) -> parcoursExpr isLoc vE fE aE sE e
   | Ebinop (_, _, (_, e1), (_, e2)) -> parcoursExpr isLoc (parcoursExpr isLoc vE fE aE sE e1) fE aE sE e2
   | Elvalue lv -> begin
     match lv with
@@ -260,6 +261,9 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
   | Echar c -> Char64, CharE c
   | Etrue -> Bool, TrueE
   | Efalse -> Bool, FalseE
+  | EAssert (l, n, (p, e)) -> 
+    let (t,et) = (testTypageE isLoc vE fE sE aE rT b e) in
+    if compatible t Bool then Nothing, AssertE (l, n, (t, et))
   | EentierIdent (p, i, str) ->
       let var =
         try snd (Tmap.find str vE)

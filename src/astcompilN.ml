@@ -19,6 +19,7 @@ type expression =
 	| True
 	| False
 	| Nothing
+	| Assert of (int * string * expression)
 	| Bloc of bloc
 (*	| EntierIdent of Int64.t * label
 	| EntierParG of Int64.t * bloc
