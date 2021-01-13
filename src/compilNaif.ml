@@ -583,10 +583,10 @@ let rec compile_expr = function
 
 		cmpq (imm 0) !%rdx ++ jge label_get_element ++ (* Si l'indice est négatif *)
 		addq (ind ~ofs:8 rbx) !%rdx ++
+		cmpq (imm 0) !%rdx ++ jl errorOoB ++
 		label label_get_element ++
 
 		cmpq (ind ~ofs:8 rbx) !%rdx ++ jge errorOoB ++ (* On compare qu'on reste dans les bornes de l'array ;) *) (* TODO vérifier que c'est bon *)
-		
 		movq (ind ~ofs:0 rbx) !%rax ++ (* Acquisition du type *)
 		subq (imm !nTypeArray) !%rax ++
 		movq (ind ~ofs:16 ~index:rdx ~scale:8 rbx) !%rbx ++ (* Acquisition de la valeur *)
