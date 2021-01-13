@@ -413,14 +413,25 @@ let rec compile_expr = function
 		let deb = ins1 ++ ins2 ++ depilation in
 		let operation =
 		match op with
-		| Eq -> deb ++ (pushq (imm nTypeBool)) ++ (cmpq !%rax !%rcx) ++ (jne label1) ++
+		| Eq -> let (label3, label4) = getIf (), getIf () in 
+					deb ++
+					cmpq (imm nTypeBool) !%rax ++ jne label3 ++ movq (imm nTypeInt) !%rax ++ negq !%rbx ++ (label label3) ++
+					cmpq (imm nTypeBool) !%rcx ++ jne label4 ++ movq (imm nTypeInt) !%rcx ++ negq !%rdx ++ (label label4) ++
+					(pushq (imm nTypeBool)) ++ (cmpq !%rax !%rcx) ++ (jne label1) ++
 							 (cmpq !%rbx !%rdx) ++ (jne label1) ++ (pushq (imm valTrue)) ++
 							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valFalse)) ++ (label label2)
-	  | Neq -> deb ++ (pushq (imm nTypeBool)) ++ (cmpq !%rax !%rcx) ++ (jne label1) ++
+		| Neq -> let (label3, label4) = getIf (), getIf () in 
+					deb ++ 
+				  	cmpq (imm nTypeBool) !%rax ++ jne label3 ++ movq (imm nTypeInt) !%rax ++ negq !%rbx ++ (label label3) ++
+					cmpq (imm nTypeBool) !%rcx ++ jne label4 ++ movq (imm nTypeInt) !%rcx ++ negq !%rdx ++ (label label4) ++ 
+	  				(pushq (imm nTypeBool)) ++ (cmpq !%rax !%rcx) ++ (jne label1) ++
 							  (cmpq !%rbx !%rdx) ++ (jne label1) ++ (pushq (imm valFalse)) ++
 							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valTrue)) ++ (label label2)
-	  | Lo -> let (label3, labelEnd) = getIf (), getIf () in
-						ins1 ++ ins2 ++ (cmpq (imm nTypeFloat) (ind ~ofs:24 rsp)) ++ je label1 ++
+	  | Lo -> let (label5, label4, label3, labelEnd) = getIf (), getIf (), getIf (), getIf () in
+				ins1 ++ ins2 ++
+				cmpq (imm nTypeBool) (ind ~ofs:24 rsp) ++ jne label4 ++ movq (imm nTypeInt) (ind ~ofs:24 rsp) ++ negq (ind ~ofs:16 rsp) ++ (label label4) ++
+				cmpq (imm nTypeBool) (ind ~ofs:8 rsp) ++ jne label5 ++ movq (imm nTypeInt) (ind ~ofs:8 rsp) ++ negq (ind ~ofs:0 rsp) ++ (label label5) ++
+				(cmpq (imm nTypeFloat) (ind ~ofs:24 rsp)) ++ je label1 ++
 	  				(cmpq (imm nTypeInt) (ind ~ofs:24 rsp)) ++ jne errorTypeE ++
 						(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label2 ++ call "loII" ++ jmp labelEnd ++
 						(label label2) ++ (cmpq (imm nTypeFloat) (ind ~ofs:8 rsp)) ++ jne errorTypeE ++ call "loIF" ++ jmp labelEnd ++
@@ -428,33 +439,42 @@ let rec compile_expr = function
 						(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label3 ++ call "loFI" ++ jmp labelEnd ++
 						(label label3) ++ (cmpq (imm nTypeFloat) (ind ~ofs:8 rsp)) ++ jne errorTypeE ++ call "loFF" ++ jmp labelEnd ++
  	  				(label labelEnd) ++ addq (imm 32) !%rsp ++ pushq !%rax ++ pushq !%rbx
-	  | Gr -> let (label3, labelEnd) = getIf (), getIf () in
-		ins1 ++ ins2 ++ (cmpq (imm nTypeFloat) (ind ~ofs:24 rsp)) ++ je label1 ++
-		(cmpq (imm nTypeInt) (ind ~ofs:24 rsp)) ++ jne errorTypeE ++
-		(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label2 ++ call "goII" ++ jmp labelEnd ++
-		(label label2) ++ (cmpq (imm nTypeFloat) (ind ~ofs:8 rsp)) ++ jne errorTypeE ++ call "goIF" ++ jmp labelEnd ++
-		 (label label1) ++
-		(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label3 ++ call "goFI" ++ jmp labelEnd ++
-		(label label3) ++ (cmpq (imm nTypeFloat) (ind ~ofs:8 rsp)) ++ jne errorTypeE ++ call "goFF" ++ jmp labelEnd ++
-		 (label labelEnd) ++ addq (imm 32) !%rsp ++ pushq !%rax ++ pushq !%rbx
-	  | Leq -> let (label3, labelEnd) = getIf (), getIf () in
-		ins1 ++ ins2 ++ (cmpq (imm nTypeFloat) (ind ~ofs:24 rsp)) ++ je label1 ++
-		(cmpq (imm nTypeInt) (ind ~ofs:24 rsp)) ++ jne errorTypeE ++
-		(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label2 ++ call "leqII" ++ jmp labelEnd ++
-		(label label2) ++ (cmpq (imm nTypeFloat) (ind ~ofs:8 rsp)) ++ jne errorTypeE ++ call "leqIF" ++ jmp labelEnd ++
-		 (label label1) ++
-		(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label3 ++ call "leqFI" ++ jmp labelEnd ++
-		(label label3) ++ (cmpq (imm nTypeFloat) (ind ~ofs:8 rsp)) ++ jne errorTypeE ++ call "leqFF" ++ jmp labelEnd ++
-		 (label labelEnd) ++ addq (imm 32) !%rsp ++ pushq !%rax ++ pushq !%rbx
-	  | Geq -> let (label3, labelEnd) = getIf (), getIf () in
-		ins1 ++ ins2 ++ (cmpq (imm nTypeFloat) (ind ~ofs:24 rsp)) ++ je label1 ++
-		(cmpq (imm nTypeInt) (ind ~ofs:24 rsp)) ++ jne errorTypeE ++
-		(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label2 ++ call "geqII" ++ jmp labelEnd ++
-		(label label2) ++ (cmpq (imm nTypeFloat) (ind ~ofs:8 rsp)) ++ jne errorTypeE ++ call "geqIF" ++ jmp labelEnd ++
-		 (label label1) ++
-		(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label3 ++ call "geqFI" ++ jmp labelEnd ++
-		(label label3) ++ (cmpq (imm nTypeFloat) (ind ~ofs:8 rsp)) ++ jne errorTypeE ++ call "geqFF" ++ jmp labelEnd ++
-		 (label labelEnd) ++ addq (imm 32) !%rsp ++ pushq !%rax ++ pushq !%rbx
+	  | Gr -> let (label5, label4, label3, labelEnd) = getIf (), getIf (), getIf (), getIf () in
+				ins1 ++ ins2 ++
+				cmpq (imm nTypeBool) (ind ~ofs:24 rsp) ++ jne label4 ++ movq (imm nTypeInt) (ind ~ofs:24 rsp) ++ negq (ind ~ofs:16 rsp) ++ (label label4) ++
+				cmpq (imm nTypeBool) (ind ~ofs:8 rsp) ++ jne label5 ++ movq (imm nTypeInt) (ind ~ofs:8 rsp) ++ negq (ind ~ofs:0 rsp) ++ (label label5) ++
+				(cmpq (imm nTypeFloat) (ind ~ofs:24 rsp)) ++ je label1 ++
+					(cmpq (imm nTypeInt) (ind ~ofs:24 rsp)) ++ jne errorTypeE ++
+					(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label2 ++ call "goII" ++ jmp labelEnd ++
+					(label label2) ++ (cmpq (imm nTypeFloat) (ind ~ofs:8 rsp)) ++ jne errorTypeE ++ call "goIF" ++ jmp labelEnd ++
+				 (label label1) ++
+					(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label3 ++ call "goFI" ++ jmp labelEnd ++
+					(label label3) ++ (cmpq (imm nTypeFloat) (ind ~ofs:8 rsp)) ++ jne errorTypeE ++ call "goFF" ++ jmp labelEnd ++
+				(label labelEnd) ++ addq (imm 32) !%rsp ++ pushq !%rax ++ pushq !%rbx
+	  | Leq -> let (label5, label4, label3, labelEnd) = getIf (), getIf (), getIf (), getIf () in
+				ins1 ++ ins2 ++
+				cmpq (imm nTypeBool) (ind ~ofs:24 rsp) ++ jne label4 ++ movq (imm nTypeInt) (ind ~ofs:24 rsp) ++ negq (ind ~ofs:16 rsp) ++ (label label4) ++
+				cmpq (imm nTypeBool) (ind ~ofs:8 rsp) ++ jne label5 ++ movq (imm nTypeInt) (ind ~ofs:8 rsp) ++ negq (ind ~ofs:0 rsp) ++ (label label5) ++
+				(cmpq (imm nTypeFloat) (ind ~ofs:24 rsp)) ++ je label1 ++
+					(cmpq (imm nTypeInt) (ind ~ofs:24 rsp)) ++ jne errorTypeE ++
+					(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label2 ++ call "leqII" ++ jmp labelEnd ++
+					(label label2) ++ (cmpq (imm nTypeFloat) (ind ~ofs:8 rsp)) ++ jne errorTypeE ++ call "leqIF" ++ jmp labelEnd ++
+				(label label1) ++
+					(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label3 ++ call "leqFI" ++ jmp labelEnd ++
+					(label label3) ++ (cmpq (imm nTypeFloat) (ind ~ofs:8 rsp)) ++ jne errorTypeE ++ call "leqFF" ++ jmp labelEnd ++
+				(label labelEnd) ++ addq (imm 32) !%rsp ++ pushq !%rax ++ pushq !%rbx
+	  | Geq -> let (label5, label4, label3, labelEnd) = getIf (), getIf (), getIf (), getIf () in
+				ins1 ++ ins2 ++
+				cmpq (imm nTypeBool) (ind ~ofs:24 rsp) ++ jne label4 ++ movq (imm nTypeInt) (ind ~ofs:24 rsp) ++ negq (ind ~ofs:16 rsp) ++ (label label4) ++
+				cmpq (imm nTypeBool) (ind ~ofs:8 rsp) ++ jne label5 ++ movq (imm nTypeInt) (ind ~ofs:8 rsp) ++ negq (ind ~ofs:0 rsp) ++ (label label5) ++
+				(cmpq (imm nTypeFloat) (ind ~ofs:24 rsp)) ++ je label1 ++
+					(cmpq (imm nTypeInt) (ind ~ofs:24 rsp)) ++ jne errorTypeE ++
+					(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label2 ++ call "geqII" ++ jmp labelEnd ++
+					(label label2) ++ (cmpq (imm nTypeFloat) (ind ~ofs:8 rsp)) ++ jne errorTypeE ++ call "geqIF" ++ jmp labelEnd ++
+				(label label1) ++
+					(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label3 ++ call "geqFI" ++ jmp labelEnd ++
+					(label label3) ++ (cmpq (imm nTypeFloat) (ind ~ofs:8 rsp)) ++ jne errorTypeE ++ call "geqFF" ++ jmp labelEnd ++
+				(label labelEnd) ++ addq (imm 32) !%rsp ++ pushq !%rax ++ pushq !%rbx
 	  | Plus -> let (label3, labelEnd) = getIf (), getIf () in
 			ins1 ++ ins2 ++ (cmpq (imm nTypeFloat) (ind ~ofs:24 rsp)) ++ je label1 ++
 	  		(cmpq (imm nTypeInt) (ind ~ofs:24 rsp)) ++ jne errorTypeE ++
