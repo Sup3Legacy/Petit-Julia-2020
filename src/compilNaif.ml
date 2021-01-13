@@ -325,12 +325,12 @@ let rec compile_expr = function
 	| Char c -> pushq (imm nTypeChar) ++ pushq (imm c)
 	| Chaine s ->
 		let n = String.length s in
-		let n2 = (n + 3) * 8 in
+		let n2 = (n + 2) * 8 in
 		let depl = ref (movq (imm (nTypeChar + !nTypeArray)) (ind ~ofs:0 rax) ++ movq (imm n) (ind ~ofs:8 rax) ) in
 		for i = 0 to n-1 do
 			depl := !depl ++ (movq (imm (Char.code s.[i])) (ind ~ofs:(i*8+16) rax))
 		done;
-		movq (imm n2) !%rdi ++ call "malloc" ++ !depl ++ movq (imm 0) (ind ~ofs:((n+2)*8) rax) ++ pushq (imm (nTypeChar + !nTypeArray)) ++ pushq !%rax
+		movq (imm n2) !%rdi ++ call "malloc" ++ !depl ++ pushq (imm (nTypeChar + !nTypeArray)) ++ pushq !%rax
 	| True -> pushq (imm nTypeBool) ++ pushq (imm valTrue)
 	| False -> pushq (imm nTypeBool) ++ pushq (imm valFalse)
 	| Nothing -> pushq (imm nTypeNothing) ++ pushq (imm 0)
@@ -538,6 +538,26 @@ let rec compile_expr = function
 	  				ins2 ++ popq rbx ++ popq rax ++ (cmpq (imm nTypeBool) !%rax) ++ jne errorTypeE ++
 	  				pushq (imm nTypeBool) ++ pushq !%rbx ++ jmp  label2 ++ (label label1) ++ pushq (imm nTypeBool) ++ pushq (imm valTrue)
 	  				++ (label label2)
+	  | Concat -> let label1, label2, label3, label4 = getIf (), getIf (), getIf (), getIf () in
+	 		ins1 ++ ins2 ++ popq r15 ++ popq rax ++ popq r14 ++ popq r13 ++ cmpq !%rax !%r13 ++ jne errorTypeE ++ cmpq (imm !nTypeArray) !%rax ++ jl errorTypeE ++
+	  		movq (ind ~ofs:8 r14) !%rdi ++ addq (ind ~ofs:8 r15) !%rdi ++ addq (imm 2) !%rdi ++ imulq (imm 8) !%rdi ++ call "malloc" ++
+	  		movq !%r13 (ind rax) ++ movq (ind ~ofs:8 r15) !%rdx ++ movq !%rdx (ind ~ofs:8 rax) ++ movq (ind ~ofs:8 r14) !%rbx ++ addq !%rbx (ind ~ofs:8 rax) ++
+	  		imulq (imm 8) !%rbx ++ addq (imm 16) !%r14 ++ addq !%r14 !%rbx ++
+			leaq (ind ~ofs:16 rax) rcx ++
+			jmp label2 ++
+			label label1 ++
+			movq (ind r14) !%rdx ++ movq !%rdx (ind rcx) ++ addq (imm 8) !%r14 ++ addq (imm 8) !%rcx ++ (* depalcement de l'array 1 vers l'array de sortie et incrementation *)
+			label label2 ++
+			cmpq !%rbx !%r14 ++
+			jne label1 ++
+			movq (ind ~ofs:8 r15) !%rbx ++ imulq (imm 8) !%rbx ++ addq (imm 16) !%r15 ++ addq !%r15 !%rbx ++
+			jmp label4 ++
+			label label3 ++
+			movq (ind r15) !%rdx ++ movq !%rdx (ind rcx) ++ addq (imm 8) !%r15 ++ addq (imm 8) !%rcx ++ (* depalcement de l'array 1 vers l'array de sortie et incrementation *)
+			label label4 ++
+			cmpq !%rbx !%r15 ++
+			jne label3 ++
+			pushq !%r13 ++ pushq !%rax
 		in operation
 	| Ident (Tag name) ->
 		movq ((if estMac then lab else ilab) ((rectify_character name)^"_type")) !%rax ++ cmpq (imm nTypeUndef) !%rax ++
@@ -1242,16 +1262,19 @@ let compile_program f ofile =
 
 	label "print_string" ++
 		movq !%rdi !%rbx ++
+		movq (ind ~ofs:8 rbx) !%r14 ++
+		imulq (imm 8) !%r14 ++
 		addq (imm 16) !%rbx ++
+		addq !%rbx !%r14 ++
+		jmp "print_string_end" ++
 		label "print_string_begin" ++
-		cmpq (imm 0) (ind rbx) ++
-		je "print_string_end" ++
 		movq (ind rbx) !%rsi ++
 		deplq (lab ".Sprint_char") rdi ++
 		call "printf" ++
 		addq (imm 8) !%rbx ++
-		jmp "print_string_begin" ++
 		label "print_string_end" ++
+		cmpq !%rbx !%r14 ++
+		jne "print_string_begin" ++
     	ret ++
 
 	label "print_bool" ++

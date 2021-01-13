@@ -369,6 +369,9 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
         |Any, Any |Any, Int64 |Int64, Any -> Any, BinopE (o, (t1, et1), (t2, et2))
         |_, _ -> error ("found "^typeName t1^" and "^typeName t2^" which aren't good for a bin-op") p
         end
+      | Concat -> begin match t1,t2 with
+        |_,_ -> Array, BinopE (o, (t1, et1), (t2, et2))
+        end
     end
   | Elvalue lv -> begin
     match lv with
