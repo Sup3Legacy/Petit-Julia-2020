@@ -16,7 +16,7 @@ let get_package identifiant =
 
 let add_prefix_ident ident name =
   match ident with 
-  | "println" | "print" | "newarray" | "_setelement" | "_getelement" | "div" | "array_length" | "input_int" -> ident
+  | "println" | "print" | "newarray" | "div" | "array_length" | "input_int" | "char" | "sqrt" | "delay" | "timestamp" | "int" | "float" | "typeof" -> ident
   | _ -> name ^ ident
 ;;
 
