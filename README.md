@@ -12,7 +12,17 @@ Notre projet requiert l'installation, via `opam` des bibliothèques `ppx_derivin
 
 De plus, l'utilisation optimale du **REPL** nécessite l'installation du **wrapper** `rlwrap`, disponible via un gestionnaire standard de packages Linux (disponible aussi sur mac).
 
-# I] Lexer/Parser
+# I] Syntaxe
+
+- < chiffre > ::= 0-9
+- < alpha > ::= a-z | A-Z | _
+- < ident > ::= < alpha > (< alpha > | < chiffre > )<sup>*</sup> 
+- < entier > ::= < chiffre ><sup>+</sup>
+Mots clés : else elseif end false for function if mutable return struct true while **dowhile** **assert** 
+
+
+
+# II] Lexer/Parser
 
 La première étape a été de définir les **types** qui seront utilisés par les différentes étapes d'analyse. Dans un premier temps, nous avons suivi la **grammaire** donnée dans le sujet, que ce soit pour la définition de l'`ast` (les types correspondaient exactement aux **règles de grammaire**) ou bien pour le **lexer** et le **parser**.
 
@@ -25,7 +35,7 @@ Une erreur de parser affiche une erreur de syntaxe donnant la position du dernie
 Nous avons implémenté une règle dans le lexer et le parser permetant de donner aux fonction des **docstrings**, dans le même format que `Julia`. Pour l'instant, les docstringss sont reconnues et enregistrées dans l'arbre syntaxique mais nous n'avons pas encore eu le temps d'implémenter dans le **REPL** une fonctionnalité permettant d'accéder à la docstring d'une fonction (via `help [nom fonction]`, par exemple).
 
 
-# II] Typer
+# III] Typer
 
 
 Le **typeur** est une étape importante du projet et certaines décisions ont été prises par rapport à ce que l'on autorisait ou non. Ces décisions ont été prises en prenant en compte le fait que nous pouvions toujours revenir modifier certains points plus tard dans le projet si besoin.
@@ -79,7 +89,7 @@ De plus, pour chaque appel de fonction, on regarde l'ensemble des fonctions comp
 
 La principale difficulté rencontré dans le typage de Petitjulia™ se cachait dans la **portée des variables**.
 
-# III] Samenhir
+# IV] Samenhir
 
 Ce projet, si l'on se contente de rester dans le cadre restreint du sujet laisse un sentiment de vide, on a l'impression d'avoir sauté des étapes, d'avoir triché pour arriver au bout. Cette étape ainsi sautée est bien sûr le **parser**! Nous nous contentons en effet dans ce projet d'utiliser `menhir` pour faire notre parser sans comprendre réellement ce qui se passe derrière. C'est de là qu'est venue l'idée de **Samenhir** (`NDLR :` contraction de "Menhir" et de "Samuel", ce dernier étant à l'origine de cette idée et le principal responsable et développeur de cet outil qui a multiplié le temps de compilation du projet par plus de `100`!) : l'idée d'implémenter une version simplifiée de `menhir` afin de l'utiliser dans le projet.
 
@@ -116,7 +126,7 @@ Nous avons aussi la certitude que **Samenhir** n'est _pas entièrement correct_.
 
 Ces inconviénients sont faibles par rapport à la satisfaction personnelle d'utiliser un outil que l'on a développé soi-même plutôt que se reposer sur le travail de quelqu'un d'autre!
 
-# IV] Interpreter/REPL
+# V] Interpreter/REPL
 
 ## 1) Interpreter
 
@@ -172,7 +182,7 @@ Cependant, nous nous sommes souvenus que le **REPL** de `Julia` "triche" un peu,
 Nous n'avons malheureusement pas encore eu le temps d'effectuer des **tests de performances** plus poussés et plus fiables, donc ce résultat est à prendre avec un peu de recul, et cela d'autant plus que le langage Julia est beaucoup plus complexe que notre petit fragment. On peut ainsi raisonnablement s'attendre à ce que l'**interpréteur Julia** ait des étapes d'interprétation supplémentaires (Par exemple la gestion des opérateurs `+ - *` qui sont surchargés du fait de la présence de flottants dans Julia) par rapport à notre interpréteur basique. Ces étapes allongeant plus ou moins le temps pris par l'interprétation, notre succès est un peu moindre.
 
 
-# V] Automatisation du build et des tests
+# VI] Automatisation du build et des tests
 
 En l'état actuel des choses, la compilation du compilateur (`pjuliac.exe`) et du REPL (`pjuliarepl.exe`) est gérée par `dune` via un `dune-project` commun. Elle est réalisable via notre `Makefile`. Nous avons paramétré celui-ci pour **automatiser** au maximum les tests et essais des différentes parties de notre projet.
 
@@ -186,7 +196,7 @@ Nous retrouvons :
 
 Le différents tests utilisent le fichier `pjuliac.exe` qui est présent dans les fichiers construits par `dune`. Ils sont donc indépendants de l'existence ou non du fichier `pjuliac`, qu'il est donc possible de supprimer/déplacer.
 
-# VI] Conclusion partielle
+# VII] Conclusion partielle
 
 Cette première partie du projet nous aura **beaucoup occupés**, d'autant plus que nous nous sommes posé des défis supplémentaires plus ou moins conséquents!
 
@@ -195,7 +205,7 @@ Cependant, nous considérons nécessaire de continuer à travailler sur **Samenh
 
 Pour la deuxième partie du projet, nous projetons d'ajouter aussi à PetitJulia™ le support des **flottants** sur 64 bits ainsi que des **listes** (probablement tout simplement via des structures cachées derrière du sucre syntaxique); si nous en avons le temps!
 
-# VII] Corrections des problèmes du premier rendu
+# VIII] Corrections des problèmes du premier rendu
 
 -> flags
 -> multi-lignes rudimentaire du REPL
