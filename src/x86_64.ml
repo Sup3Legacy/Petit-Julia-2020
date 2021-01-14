@@ -192,6 +192,8 @@ let movss a b = ins "movss %a, %s" a () b
 
 let cmovs a b = ins "cmovs %a, %s" a () b
 
+let cmove a b = ins "cmove %s, %a" a b ()
+
 let cvtss2sd a b = ins "cvtss2sd %a, %s" a () b
 let cvtsd2ss a b = ins "cvtsd2ss %a, %s" a () b
 

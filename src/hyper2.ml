@@ -19,7 +19,7 @@ let rec build_array arr =
       | t :: q -> t, q
       | [] -> (posVide, Etrue), [])
   in
-  let name = "_temp_array" ^ (string_of_int (newArr ())) in
+  let name = ".temp_array" ^ (string_of_int (newArr ())) in
   let creation = posVide, ElvalueAffect (posVide, Lident (posVide, name), (posVide, Eapplication(posVide, "newarray", [(posVide, Eentier (Int64.of_int l)); head]))) in (* Code pour créer l'array temporaire *)
   (posVide, Ebloc1 (posVide, creation :: (
       List.mapi (fun indice x -> posVide, 

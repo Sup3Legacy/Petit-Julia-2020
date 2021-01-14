@@ -14,7 +14,7 @@ let nTypeStruct = 6
 let nTypeArray = ref 65536 (* un array d'int à n dimension aura comme type : nTypeInt + n * nTypeArray *)
 
 
-let valTrue = -1
+let valTrue = 1
 let valFalse = 0
 
 let popn n = addq (imm n) !%rsp
@@ -127,11 +127,11 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 		Flottant f, offset
 		end
 	| ChaineE s ->
-		begin
+		begin(*
 		if not (Hashtbl.mem sMap s)
 		then
 			(Hashtbl.add sMap s !compteurString;
-			compteurString := !compteurString + 1);
+			compteurString := !compteurString + 1);*)
 		Chaine s, offset
 		end
 	| TrueE -> True, offset
@@ -146,9 +146,9 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 	| CallE ((ident, iSet:(string * ISet.t)), eL) -> begin
 		let () = match ident with
 			| "div" -> CompilRef.div := true
-			| "float" -> CompilRef.div := true
-			| "char" -> CompilRef.div := true
-			| "int" -> CompilRef.div := true
+			| "float" -> CompilRef.float := true
+			| "char" -> CompilRef.char := true
+			| "int" -> CompilRef.int := true
 			| "input_int" -> CompilRef.input_int := true
 			| _ -> ()
 		in
@@ -163,7 +163,7 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 		| "print" | "_getelement" | "_setelement" | "newarray" -> Call (ident, Feuille (ident, 0), eL), offset
 		| _ ->
 			let f1 = try Tmap.find ident !functionEnv with Not_found -> failwith ("not found function "^ident) in
-			let f = List.fold_left (fun m (i,l,s) -> Imap.add i l m) Imap.empty f1 in
+			(*let f = List.fold_left (fun m (i,l,s) -> Imap.add i l m) Imap.empty f1 in*)
 			let arb:AstcompilN.functArbr = calcArb ident (List.fold_left (fun l (i,p,s) -> if ISet.mem i iSet then (p, i, 0)::l else l) [] f1)
 			in Call (ident, arb, eL), offset
 		end
@@ -403,7 +403,7 @@ let rec compile_expr = function
 	| Not expr ->
 		compile_expr expr ++ (popq rbx) ++ (popq rax) ++
 		(cmpq (imm nTypeBool) !%rax) ++ (jne errorTypeE) ++ (* Commande pour exit en cas d'erreur!*)
-		(pushq (imm nTypeBool)) ++ (notq !%rbx) ++ (pushq !%rbx)
+		(pushq (imm nTypeBool)) ++ (xorq (imm valTrue) !%rbx) ++ (pushq !%rbx)
 	| Minus expr -> compile_expr (Binop (Minus, Entier (Int64.of_int 0), expr))
 	| Binop (op, e1, e2) ->
 		let ins1 = compile_expr e1 in
@@ -413,24 +413,22 @@ let rec compile_expr = function
 		let deb = ins1 ++ ins2 ++ depilation in
 		let operation =
 		match op with
-		| Eq -> let (label3, label4) = getIf (), getIf () in 
-					deb ++
-					cmpq (imm nTypeBool) !%rax ++ jne label3 ++ movq (imm nTypeInt) !%rax ++ negq !%rbx ++ (label label3) ++
-					cmpq (imm nTypeBool) !%rcx ++ jne label4 ++ movq (imm nTypeInt) !%rcx ++ negq !%rdx ++ (label label4) ++
+		| Eq -> 	deb ++ movq (imm nTypeInt) !%rdi ++
+					cmpq (imm nTypeBool) !%rax ++ cmove rdi !%rax ++
+					cmpq (imm nTypeBool) !%rcx ++ cmove rdi !%rcx ++
 					(pushq (imm nTypeBool)) ++ (cmpq !%rax !%rcx) ++ (jne label1) ++
 							 (cmpq !%rbx !%rdx) ++ (jne label1) ++ (pushq (imm valTrue)) ++
 							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valFalse)) ++ (label label2)
-		| Neq -> let (label3, label4) = getIf (), getIf () in 
-					deb ++ 
-				  	cmpq (imm nTypeBool) !%rax ++ jne label3 ++ movq (imm nTypeInt) !%rax ++ negq !%rbx ++ (label label3) ++
-					cmpq (imm nTypeBool) !%rcx ++ jne label4 ++ movq (imm nTypeInt) !%rcx ++ negq !%rdx ++ (label label4) ++ 
+		| Neq -> 	deb ++ 
+					cmpq (imm nTypeBool) !%rax ++ cmove rdi !%rax ++
+					cmpq (imm nTypeBool) !%rcx ++ cmove rdi !%rcx ++
 	  				(pushq (imm nTypeBool)) ++ (cmpq !%rax !%rcx) ++ (jne label1) ++
 							  (cmpq !%rbx !%rdx) ++ (jne label1) ++ (pushq (imm valFalse)) ++
 							 								   (jmp label2) ++ (label label1) ++ (pushq (imm valTrue)) ++ (label label2)
 	  | Lo -> let (label5, label4, label3, labelEnd) = getIf (), getIf (), getIf (), getIf () in
 				ins1 ++ ins2 ++
-				cmpq (imm nTypeBool) (ind ~ofs:24 rsp) ++ jne label4 ++ movq (imm nTypeInt) (ind ~ofs:24 rsp) ++ negq (ind ~ofs:16 rsp) ++ (label label4) ++
-				cmpq (imm nTypeBool) (ind ~ofs:8 rsp) ++ jne label5 ++ movq (imm nTypeInt) (ind ~ofs:8 rsp) ++ negq (ind ~ofs:0 rsp) ++ (label label5) ++
+				cmpq (imm nTypeBool) (ind ~ofs:24 rsp) ++ jne label4 ++ movq (imm nTypeInt) (ind ~ofs:24 rsp) ++ (label label4) ++
+				cmpq (imm nTypeBool) (ind ~ofs:8 rsp) ++ jne label5 ++ movq (imm nTypeInt) (ind ~ofs:8 rsp) ++ (label label5) ++
 				(cmpq (imm nTypeFloat) (ind ~ofs:24 rsp)) ++ je label1 ++
 	  				(cmpq (imm nTypeInt) (ind ~ofs:24 rsp)) ++ jne errorTypeE ++
 						(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label2 ++ call "loII" ++ jmp labelEnd ++
@@ -441,8 +439,8 @@ let rec compile_expr = function
  	  				(label labelEnd) ++ addq (imm 32) !%rsp ++ pushq !%rax ++ pushq !%rbx
 	  | Gr -> let (label5, label4, label3, labelEnd) = getIf (), getIf (), getIf (), getIf () in
 				ins1 ++ ins2 ++
-				cmpq (imm nTypeBool) (ind ~ofs:24 rsp) ++ jne label4 ++ movq (imm nTypeInt) (ind ~ofs:24 rsp) ++ negq (ind ~ofs:16 rsp) ++ (label label4) ++
-				cmpq (imm nTypeBool) (ind ~ofs:8 rsp) ++ jne label5 ++ movq (imm nTypeInt) (ind ~ofs:8 rsp) ++ negq (ind ~ofs:0 rsp) ++ (label label5) ++
+				cmpq (imm nTypeBool) (ind ~ofs:24 rsp) ++ jne label4 ++ movq (imm nTypeInt) (ind ~ofs:24 rsp) ++ (label label4) ++
+				cmpq (imm nTypeBool) (ind ~ofs:8 rsp) ++ jne label5 ++ movq (imm nTypeInt) (ind ~ofs:8 rsp) ++ (label label5) ++
 				(cmpq (imm nTypeFloat) (ind ~ofs:24 rsp)) ++ je label1 ++
 					(cmpq (imm nTypeInt) (ind ~ofs:24 rsp)) ++ jne errorTypeE ++
 					(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label2 ++ call "goII" ++ jmp labelEnd ++
@@ -453,8 +451,8 @@ let rec compile_expr = function
 				(label labelEnd) ++ addq (imm 32) !%rsp ++ pushq !%rax ++ pushq !%rbx
 	  | Leq -> let (label5, label4, label3, labelEnd) = getIf (), getIf (), getIf (), getIf () in
 				ins1 ++ ins2 ++
-				cmpq (imm nTypeBool) (ind ~ofs:24 rsp) ++ jne label4 ++ movq (imm nTypeInt) (ind ~ofs:24 rsp) ++ negq (ind ~ofs:16 rsp) ++ (label label4) ++
-				cmpq (imm nTypeBool) (ind ~ofs:8 rsp) ++ jne label5 ++ movq (imm nTypeInt) (ind ~ofs:8 rsp) ++ negq (ind ~ofs:0 rsp) ++ (label label5) ++
+				cmpq (imm nTypeBool) (ind ~ofs:24 rsp) ++ jne label4 ++ movq (imm nTypeInt) (ind ~ofs:24 rsp) ++ (label label4) ++
+				cmpq (imm nTypeBool) (ind ~ofs:8 rsp) ++ jne label5 ++ movq (imm nTypeInt) (ind ~ofs:8 rsp) ++ (label label5) ++
 				(cmpq (imm nTypeFloat) (ind ~ofs:24 rsp)) ++ je label1 ++
 					(cmpq (imm nTypeInt) (ind ~ofs:24 rsp)) ++ jne errorTypeE ++
 					(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label2 ++ call "leqII" ++ jmp labelEnd ++
@@ -465,8 +463,8 @@ let rec compile_expr = function
 				(label labelEnd) ++ addq (imm 32) !%rsp ++ pushq !%rax ++ pushq !%rbx
 	  | Geq -> let (label5, label4, label3, labelEnd) = getIf (), getIf (), getIf (), getIf () in
 				ins1 ++ ins2 ++
-				cmpq (imm nTypeBool) (ind ~ofs:24 rsp) ++ jne label4 ++ movq (imm nTypeInt) (ind ~ofs:24 rsp) ++ negq (ind ~ofs:16 rsp) ++ (label label4) ++
-				cmpq (imm nTypeBool) (ind ~ofs:8 rsp) ++ jne label5 ++ movq (imm nTypeInt) (ind ~ofs:8 rsp) ++ negq (ind ~ofs:0 rsp) ++ (label label5) ++
+				cmpq (imm nTypeBool) (ind ~ofs:24 rsp) ++ jne label4 ++ movq (imm nTypeInt) (ind ~ofs:24 rsp) ++ (label label4) ++
+				cmpq (imm nTypeBool) (ind ~ofs:8 rsp) ++ jne label5 ++ movq (imm nTypeInt) (ind ~ofs:8 rsp) ++ (label label5) ++
 				(cmpq (imm nTypeFloat) (ind ~ofs:24 rsp)) ++ je label1 ++
 					(cmpq (imm nTypeInt) (ind ~ofs:24 rsp)) ++ jne errorTypeE ++
 					(cmpq (imm nTypeInt) (ind ~ofs:8 rsp)) ++ jne label2 ++ call "geqII" ++ jmp labelEnd ++
@@ -1311,6 +1309,11 @@ let compile_program f ofile =
 		label "int_2" ++
 		movq (ind ~ofs:8 rsp) !%rbx ++
 		movq (imm nTypeInt) !%rax ++
+		ret ++
+
+		label "int_3" ++
+		movq (ind ~ofs:8 rsp) !%rbx ++
+		movq (imm nTypeInt) !%rax ++
 		ret
 		else nop) ++
 
@@ -1398,6 +1401,7 @@ let compile_program f ofile =
 		movq (imm 1) !%rax ++
 		ret ++
 
+	(if !CompilRef.div then
 	label error0div ++
 		deplq (lab ".Sprint_0div") rdi ++
 		call "printf" ++
@@ -1405,8 +1409,9 @@ let compile_program f ofile =
 		popq rbp ++
 		popq r12 ++ popq rbx ++
 		movq (imm 1) !%rax ++
-		ret ++ 
-	
+		ret 
+		else nop) ++
+
 	label errorCall1 ++
 		deplq (lab ".Sprint_call1") rdi ++
 		call "printf" ++
@@ -1424,7 +1429,7 @@ let compile_program f ofile =
 		popq r12 ++ popq rbx ++
 		movq (imm 1) !%rax ++
 		ret ++ 
-	
+
 	label errorOoB ++
 		deplq (lab ".Sprint_IOoB") rdi ++ 
 		call "printf" ++

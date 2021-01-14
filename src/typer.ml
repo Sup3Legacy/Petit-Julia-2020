@@ -546,7 +546,7 @@ let resetVE (v:varEnv ref) =
 
 let resetFE (v:funcEnv ref) =
   v := Tmap.singleton "div" [(0, [Int64; Int64], Int64); (1, [Float64; Int64], Float64); (2, [Int64; Float64], Float64); (3, [Float64; Float64], Float64)];
-  v := Tmap.add "int" [(0, [Float64], Int64); (1, [Int64], Int64); (2, [Char64], Int64)] !v;
+  v := Tmap.add "int" [(0, [Float64], Int64); (1, [Int64], Int64); (2, [Char64], Int64); (3, [Bool], Int64)] !v;
   v := Tmap.add "float" [(0, [Int64], Float64); (1, [Float64], Float64)] !v;
   v := Tmap.add "input_int" [(0, [], Int64)] !v;
   v := Tmap.add "array_length" [(0, [Array], Int64)] !v;

@@ -205,6 +205,9 @@ val movss: [`L] operand -> [`L] register -> text
 
 val cmovs: [`Q] operand -> [`Q] register -> text
 
+
+val cmove: [`Q] register -> [`Q] operand -> text
+
 val cvtss2sd: [`L] operand -> [`Q] register -> text
 val cvtsd2ss: [`Q] operand -> [`L] register -> text
 
