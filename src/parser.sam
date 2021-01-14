@@ -81,8 +81,7 @@
 %left DOT
 %nonassoc calcValArray
 %left CROCHETG
-%nonassoc priomax
-%nonassoc priomin
+
 
 %start fichier
 

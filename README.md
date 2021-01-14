@@ -21,12 +21,14 @@ Mots clés : else elseif end false for function if mutable return struct true wh
 - < ident > ::= < alpha > (< alpha > | < chiffre > )<sup>*</sup> 
 - < entier > ::= < chiffre ><sup>+</sup>
 - < car > ::= tout caratère ASCII compris entre 32 et 126 autre que \ et " | \\ | \" | \n | \t
-- < chaîne > ::= " < car ><sup>*</sup> "
+- < chaîne > ::= " < car ><sup> * </sup> "
 - < entier-ident > ::= < entier > < ident >
 - < ident-parg > ::= < ident > (
 - < entier-parg > ::= < entier > (
 - < parg-ident > ::= )< ident >
-
+- < docstring > ::= """ car<sup> * </sup> """
+- < flottants > ::= ( < chiffre ><sup>+</sup> . | . < chiffre ><sup>+</sup> | < chiffre ><sup>+</sup>. < chiffre ><sup>+</sup>)((e|E)(-|+)? < chiffre ><sup>+</sup>)?
+- < char > ::= '< car >'
 
 Règles de priorité :
 
@@ -47,12 +49,22 @@ Règles de priorité :
 
 Grammaire :
 
-- < fichier > ::= < decl ><sup>*</sup> EOF
+- < fichier > ::= < decl ><sup> * </sup> EOF
 - < decl > ::= < structure > | < fonction > | < expr > ;
-- < structure > ::= mutable? struct < ident > (< param >?)<sup>*</sup><sub>;</sub> end ;
-- < fonction > ::= function < ident-parg > < param ><sup>*</sup><sub>;</sub> (:: < ident >)? < bloc > end ;
+- < structure > ::= mutable? struct < ident > (< param >?)<sup> * </sup><sub>;</sub> end ;
+- < fonction > ::= **< docstring >?** function < ident-parg > < param ><sup> * </sup><sub>;</sub> (:: < ident >)? < bloc > end ;
 - < param > ::= < ident > (:: < ident >)?
-
+- < expr > ::= < entier > | < chaîne > | true | false | **< flottant >** | ** < char > **
+		| **[< expr ><sub>,</sub><sup> * </sup> ]**
+		| < entier-ident > | < entier-parg > < bloc1 > ) | (< bloc1 >) | ( < expr >< pard-ident >
+		| < ident-parg > < expr ><sup> * </sup><sub>,</sub> ) | !< expr > | - < expr > | < expr > < operateur > < expr >
+		| < lvalue > | < lvalue > = < expr > | return < expr >? | **assert < expr >** | for < ident > = < expr > : < expr > < bloc > end
+		| while < expr > < bloc > end | **dowhile < bloc > end** | if < expr > < bloc > < else >
+- < lvalue > ::= < ident > | < expr > . < ident > | **< expr > [ < expr > ]**
+- < else > ::= end | else < bloc > end | elseif < expr > < bloc > < else >
+- < opérateur > ::= == | != | < | <= | > | >= | + | - | * | % | ^ | && | || | **@**
+- < bloc > ::= < expr > ?<sub>,</sub><sup>* </sup>
+- < bloc1 > ::= < expr > (; < bloc > )?
 
 
 
