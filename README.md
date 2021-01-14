@@ -4,7 +4,7 @@
 ### Constantin Gierczak--Galle & Samuel Vivien
 ### Cours de compilation, Jean-Christophe Filliâtre & Basile Clément, ENS Ulm, 2020
 
-## Les parties I] à VI] inclues n'ont pas été modifiées entre les deux rendus.
+## Les parties I] à VI] inclues n'ont pas été modifiées entre les deux rendus, simplement renuméroté II] à VII].
 
 # 0] Prérequis
 
@@ -14,11 +14,46 @@ De plus, l'utilisation optimale du **REPL** nécessite l'installation du **wrapp
 
 # I] Syntaxe
 
+Mots clés : else elseif end false for function if mutable return struct true while **dowhile** **assert** 
+
 - < chiffre > ::= 0-9
 - < alpha > ::= a-z | A-Z | _
 - < ident > ::= < alpha > (< alpha > | < chiffre > )<sup>*</sup> 
 - < entier > ::= < chiffre ><sup>+</sup>
-Mots clés : else elseif end false for function if mutable return struct true while **dowhile** **assert** 
+- < car > ::= tout caratère ASCII compris entre 32 et 126 autre que \ et " | \\ | \" | \n | \t
+- < chaîne > ::= " < car ><sup>*</sup> "
+- < entier-ident > ::= < entier > < ident >
+- < ident-parg > ::= < ident > (
+- < entier-parg > ::= < entier > (
+- < parg-ident > ::= )< ident >
+
+
+Règles de priorité :
+
+| opérateur | associativité |
+| :---------| :------------ |
+| assert | _ |
+| return | - |
+| = | droite |
+| \|\| | gauche |
+| && | gauche |
+| ==, !=, >, >=, <, <= | gauche |
+| +, - | gauche |
+| *, % | gauche |
+| - (unaire), ! | - |
+| ^ | droite |
+| @ (concat) | gauche |
+| . | gauche |
+
+Grammaire :
+
+- < fichier > ::= < decl ><sup>*</sup> EOF
+- < decl > ::= < structure > | < fonction > | < expr > ;
+- < structure > ::= mutable? struct < ident > (< param >?)<sup>*</sup><sub>;</sub> end ;
+- < fonction > ::= function < ident-parg > < param ><sup>*</sup><sub>;</sub> (:: < ident >)? < bloc > end ;
+- < param > ::= < ident > (:: < ident >)?
+
+
 
 
 
@@ -455,6 +490,7 @@ Le fait de pouvoir faire des assertions nous a semblé relativement important da
 * `--type_only` : arrête l'exécution après avoir typé le fichier
 * `--show_file_name` : affiche le nom du fichier si il ne plante pas à l'exécution
 * `-analytics` : affiche à l'issue de la compilation quelques informations plus ou moins utiles à propos de celle-ci, notamment le nombre des labels utilisés.
+* `-o` : permet de choisir le nom du fichier assembleur
 
 ## B] Liste des fichiers
 Ci-dessous sont listés les fichiers du projet, accompagnés d'une brève description de leur utilité.
