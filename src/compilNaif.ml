@@ -1196,7 +1196,7 @@ let compile_program f ofile =
 		movq !%r13 !%r9 ++
 		imulq (imm 2) !%r9 ++
 		 (* Nouvel index *)
-		movq (ind  ~index:r9 ~scale:8 rbp) !%rbx ++
+		movq (ind  ~index:r9 ~scale:8 rbp) !%rdi ++
 		movq (ind ~ofs:(8) ~index:r9 ~scale:8 rbp) !%rax ++
 		call "print_value" ++
 		decq !%r13 ++
@@ -1207,7 +1207,6 @@ let compile_program f ofile =
 		ret ++
 
 	label "print_value" ++ (* Prend un argument et appelle la fonction print spécialisée en fonction de son type *)
-		(movq !%rbx !%rdi) ++ (*Il doit y avoir le type dans rax et la valur dans rbx*)
 		(cmpq (imm nTypeInt) !%rax) ++
 		je "ifInt" ++
 		(cmpq (imm nTypeFloat) !%rax) ++
@@ -1218,6 +1217,9 @@ let compile_program f ofile =
 		je "ifString" ++
 		(cmpq (imm (nTypeChar)) !%rax) ++
 		je "ifChar" ++
+		(cmpq (imm !nTypeArray) !%rax) ++
+		jl errorTypeE ++
+		call "print_array" ++
 		ret ++
 		label "ifBool" ++
 		call "print_bool" ++
@@ -1259,6 +1261,7 @@ let compile_program f ofile =
 			ret ++
 
 	label "print_string" ++
+		pushq !%r14 ++ pushq !%rbx ++
 		movq !%rdi !%rbx ++
 		movq (ind ~ofs:8 rbx) !%r14 ++
 		imulq (imm 8) !%r14 ++
@@ -1273,6 +1276,7 @@ let compile_program f ofile =
 		label "print_string_end" ++
 		cmpq !%rbx !%r14 ++
 		jne "print_string_begin" ++
+		popq rbx ++ popq r14 ++
     	ret ++
 
 	label "print_bool" ++
@@ -1287,6 +1291,57 @@ let compile_program f ofile =
 		movq (imm 0) !%rax ++
 		call "printf" ++
     	ret ++
+
+    label "print_array" ++
+    	pushq !%r13 ++ pushq !%r14 ++ pushq !%r15 ++ pushq !%rbx ++
+    	movq !%rax !%r13 ++ movq !%rdi !%rbx ++ subq (imm !nTypeArray) !%r13 ++
+    	cmpq (imm (!nTypeArray + nTypeChar)) !%r13 ++
+    	je "print_string_array" ++
+    	deplq (lab ".Sprint_BL") rdi ++
+    	call "printf" ++
+    	movq (ind ~ofs:8 rbx) !%r14 ++
+    	movq (imm 0) !%r15 ++
+    	jmp "print_a_end" ++
+    	label "print_a_begin" ++
+    		cmpq (imm 0) !%r15 ++
+    		je "print_a2" ++
+    		deplq (lab ".Sprint_CS") rdi ++
+    		call "printf" ++
+    	label "print_a2" ++
+    		movq !%r13 !%rax ++
+    		movq (ind ~ofs:16 ~scale:8 ~index:r15 rbx) !%rdi ++ (* ofs(register, index, scale) *)
+    		call "print_value" ++
+    		incq !%r15 ++
+    	label "print_a_end" ++
+	    	cmpq !%r15 !%r14 ++
+	    	jne "print_a_begin" ++
+	    	deplq (lab ".Sprint_BR") rdi ++
+	    	call "printf" ++
+	    	popq rbx ++ popq r15 ++ popq r14 ++ popq r13 ++
+	    	ret ++ 
+    	label "print_string_array" ++
+    	deplq (lab ".Sprint_BLS") rdi ++
+    	call "printf" ++
+    	movq (ind ~ofs:8 rbx) !%r14 ++
+    	movq (imm 0) !%r15 ++
+    	jmp "print_sa_end" ++
+    	label "print_sa_begin" ++
+    		cmpq (imm 0) !%r15 ++
+    		je "print_sa2" ++
+    		deplq (lab ".Sprint_CSS") rdi ++
+    		call "printf" ++
+    	label "print_sa2" ++
+    		movq !%r13 !%rax ++
+    		movq (ind ~ofs:16 ~scale:8 ~index:r15 rbx) !%rdi ++ (* ofs(register, index, scale) *)
+    		call "print_value" ++
+    		incq !%r15 ++
+    	label "print_sa_end" ++
+	    	cmpq !%r15 !%r14 ++
+	    	jne "print_sa_begin" ++
+	    	deplq (lab ".Sprint_BRS") rdi ++
+	    	call "printf" ++
+	    	popq rbx ++ popq r15 ++ popq r14 ++ popq r13 ++
+	    	ret ++ 
 
     label "array_length_0" ++
     	movq (ind ~ofs:8 rsp) !%rax ++
@@ -1471,7 +1526,12 @@ let compile_program f ofile =
 		(label ".Sprint_char" ++ string "%c") ++
 		(label ".Sprint_true" ++ string "true") ++
 		(label ".Sprint_false" ++ string "false") ++
-(*		(label ".Sprint_error" ++ string "Type failure\n") ++*)
+		(label ".Sprint_BL" ++ string "[") ++
+		(label ".Sprint_CS" ++ string ", ") ++
+		(label ".Sprint_BR" ++ string "]") ++
+		(label ".Sprint_BLS" ++ string "[\"") ++
+		(label ".Sprint_CSS" ++ string "\", \"") ++
+		(label ".Sprint_BRS" ++ string "\"]") ++
 		(label ".Sprint_0div" ++ string "Division by zero error\n") ++
 		(label ".Sprint_IOoB" ++ string "Index out of bound error\n") ++
 		(label ".Sprint_undef" ++ string "Undef error\n") ++
