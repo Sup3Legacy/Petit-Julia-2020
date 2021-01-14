@@ -33,7 +33,6 @@ type pjtype = (* types de petitjulia *)
  	| Int64
  	| Float64
  	| Bool
-	| String
 	| Array
 	| Char64
  	| S of string

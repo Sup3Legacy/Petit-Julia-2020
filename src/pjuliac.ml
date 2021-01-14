@@ -7,6 +7,7 @@ let parse_only = ref false;;
 let type_only = ref false;;
 let show_fName = ref false;;
 let analytics = ref false;;
+let output_file = ref "";;
 
 let gVenv = ref (Tmap.empty : varEnv)
 let () = Typer.resetVE gVenv
@@ -20,7 +21,7 @@ let () = Typer.resetAE gAenv
 module Sset = Set.Make(String)
 let afficheL l =
   let conversionTokenType s = match s with
-    |"INT"|"CHAINE"|"IDENT"|"NOT"|"FALSE"|"TRUE"|"FOR"|"IF"|"WHILE"|"RETURN"
+    |"INT"|"CHAINE"|"IDENT"|"NOT"|"FALSE"|"TRUE"|"FOR"|"IF"|"WHILE"|"DOWHILE"|"ASSERT"|"RETURN"
 |"ENTIER_IDENT"|"IDENT_PARG"|"ENTIER_PARG"|"PARG_IDENT"|"separated_list_COMMA_expr"
 |"expr_wMin_"|"expr_w_Ret"|"expr"|"whileExp"|"lvalue"|"lvalue_wMin_"|"bloc"
 |"expr_bloc"|"bloc1"|"CROCHETG"|"FLOAT" -> "value"
@@ -54,6 +55,7 @@ let handle () =
   try
     let e = DepManager.get_parsed_file lb
     in
+    if !output_file = "" then output_file := (((Filename.chop_suffix !Hyper.file ".jl")) ^ ".s");
     if !parse_only then begin
       if !affiche then print_endline (show_fichier e)
       else if !show_fName then print_endline !(Hyper.file); (* On peut switch entre afficher le nom (ie. compil réussie) et afficher l'arbre généré *)
@@ -64,7 +66,7 @@ let handle () =
       if !show_fName then print_endline !(Hyper.file); (* On peut switch entre afficher le nom (ie. compil réussie) et afficher l'arbre généré *)
       exit 0;
       end
-    else CompilNaif.compile_program fichierType (((Filename.chop_suffix !Hyper.file ".jl")) ^ ".s");
+    else CompilNaif.compile_program fichierType !output_file;
     if !affiche then print_endline (show_fichier e)
     else if !show_fName then print_endline !(Hyper.file);
     (* CompilNaif.compile_program fichierType (!Hyper.file ^ ".s"); *)
@@ -131,6 +133,7 @@ let handle () =
 
 
 let set_filename n =
+  if not (Filename.check_suffix n ".jl") then (print_string "Need to give a .jl file\n"; exit 1);
   Hyper.file := n
 ;;
 
@@ -142,7 +145,8 @@ let main () =
     ("--parse-only", Arg.Set parse_only, "Stop after parsing");
     ("--type-only", Arg.Set type_only, "Stop after typing");
     ("-show-file-name", Arg.Set show_fName, "Print the name of the file to compile");
-    ("-analytics", Arg.Set analytics, "Prints some basic analytics after compilation")
+    ("-analytics", Arg.Set analytics, "Prints some basic analytics after compilation");
+    ("-o", Arg.Set_string output_file, "Prints some basic analytics after compilation")
     ] in
     Arg.parse speclist set_filename "file to process.";
     handle ();

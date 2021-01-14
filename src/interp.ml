@@ -106,6 +106,7 @@ let rec print_value pile = function
       res := !res ^ "}";
       !res
     end
+  | Varray _ -> failwith "not implemented"
 ;;
 
 (* Environnements : variables, fonctions et structures *)
@@ -137,7 +138,7 @@ let rec compatible pList expr =
   | Param (_, _, _, Nothing) :: q, _ -> false
   | Param (_, _, _, Int64) :: q1, Vint _ :: q2 -> compatible q1 q2
   | Param (_, _, _, Bool) :: q1, Vbool _ :: q2 -> compatible q1 q2
-  | Param (_, _, _, String) :: q1, Vstring _ :: q2 -> compatible q1 q2
+  | Param (_, _, _, Array) :: q1, Vstring _ :: q2 -> compatible q1 q2
   | Param (_, _, _, S s1) :: q1, Vstruct s2 :: q2 ->
     let (i, _, _, _) = s2 in (s1 = i) && (compatible q1 q2)
   | _, _ ->false
@@ -149,7 +150,7 @@ let compatible_un t1 t2 =
   | Nothing, _ -> false
   | Int64, Vint _ -> true
   | Bool, Vbool _ -> true
-  | String, Vstring _ -> true
+  | Array, Vstring _ -> true
   | S s1, Vstruct s2 ->
     let (i, _, _, _) = s2 in (s1 = i)
   | _, _ ->false
@@ -366,6 +367,7 @@ let rec interp_expression e vI fI sI =
     let res =
       match lval with
       | Lident (p, i) -> Imap.find i !vI
+      | Larray _ -> failwith "not implemented"
       | Lindex (e, p, i) ->
         let vali = interp_expression e vI fI sI in
         match vali with
@@ -377,6 +379,7 @@ let rec interp_expression e vI fI sI =
     let () =
     match lval with
     | Lident (p, i) -> vI := Imap.add i ep !vI
+    | Larray _ -> failwith "not implemented"
     | Lindex (e, p, i) -> (* Si on affecte le champ d'une structure *)
       begin
       let res = interp_expression e vI fI sI in
@@ -416,11 +419,15 @@ let rec interp_expression e vI fI sI =
       let _ = (interp_declaration_list liste vI fI sI false) in ();
     done;
     Vnothing
-  | Eif (exp, (p, expList), els) ->
+  | Eif (exp, (p, expList), els) -> begin
     match (interp_expression exp vI fI sI) with
     | Vbool true -> interp_expression_list_one expList vI fI sI
     | Vbool false -> interp_else els vI fI sI
     | _ -> interp_error "Need a bool in condition of if statement"
+    end
+  | Echar _ -> failwith "not implemented"
+  | EAssert _ -> failwith "not implemented"
+  | EdoWhile _ -> failwith "not implemented"
 and interp_else els vI fI sI =
     match els with
     | Iend -> Vnothing

@@ -144,7 +144,7 @@ fonction<Ast.declaration>:
         | (p, "Int64") -> Int64, p
         | (p, "Float64") -> Float64, p
         | (p, "Bool") -> Bool, p
-        | (p, "String") -> String, p
+        | (p, "String") -> Array, p
         | (p, "Any") -> Any, p
         | (p, "Nothing") -> Nothing, p
         | (p, "Array") -> Array, p
@@ -168,7 +168,7 @@ fonction<Ast.declaration>:
         | (p, "Int64") -> Int64, p
         | (p, "Float64") -> Float64, p
         | (p, "Bool") -> Bool, p
-        | (p, "String") -> String, p
+        | (p, "String") -> Array, p
         | (p, "Any") -> Any, p
         | (p, "Nothing") -> Nothing, p
         | (p, "Array") -> Array, p
@@ -192,7 +192,7 @@ fonction<Ast.declaration>:
         | (p, "Int64") -> Int64, p
         | (p, "Float64") -> Float64, p
         | (p, "Bool") -> Bool, p
-        | (p, "String") -> String, p
+        | (p, "String") -> Array, p
         | (p, "Any") -> Any, p
         | (p, "Nothing") -> Nothing, p
         | (p, "Array") -> Array, p
@@ -216,7 +216,7 @@ fonction<Ast.declaration>:
         | (p, "Int64") -> Int64, p
         | (p, "Float64") -> Float64, p
         | (p, "Bool") -> Bool, p
-        | (p, "String") -> String, p
+        | (p, "String") -> Array, p
         | (p, "Any") -> Any, p
         | (p, "Nothing") -> Nothing, p
         | (p, "Array") -> Array, p
@@ -245,7 +245,7 @@ param<Ast.param>:
         | (p, "Float64") -> Float64, p
         | (p, "Int64") -> Int64, p
         | (p, "Bool") -> Bool, p
-        | (p, "String") -> String, p
+        | (p, "String") -> Array, p
         | (p, "Any") -> Any, p
         | (p, "Nothing") -> Nothing, p
         | (p, "Array") -> Array, p
@@ -262,7 +262,7 @@ param<Ast.param>:
       | Some "Float64" -> Param (p1, id, p1, Float64)
       | Some "Int64" -> Param (p1, id, p1, Int64)
       | Some "Bool" -> Param (p1, id, p1, Bool)
-      | Some "String" -> Param (p1, id, p1, String)
+      | Some "String" -> Param (p1, id, p1, Array)
       | Some "Any" -> Param (p1, id, p1, Any)
       | Some "Nothing" -> Param (p1, id, p1, Nothing)
       | Some "Array" -> Param (p1, id, p1, Array)

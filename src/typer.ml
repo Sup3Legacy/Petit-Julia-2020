@@ -35,7 +35,7 @@ let error (msg:string) (p:Ast.position) = raise (Ast.Typing_Error_Msg_Pos (msg,p
 
 (* teste si le type t existe bien *)
 let exists (t:Astype.pjtype) (env:structEnv):bool = match t with
-  | Any | Nothing | Int64 | Float64 | Bool | String | Char64 -> true
+  | Any | Nothing | Int64 | Float64 | Bool | Char64 -> true
   | S s -> Tmap.mem s env
   | Array -> true
 
@@ -48,7 +48,6 @@ let typeName (t:Astype.pjtype):string = match t with
   | Float64 -> "Float64"
   | Nothing -> "Nothing"
   | Bool -> "Bool"
-  | String -> "String"
   | S s -> "Struct \""^s^"\""
   | Array -> "Array"
   | Any -> "Any"
@@ -56,7 +55,7 @@ let typeName (t:Astype.pjtype):string = match t with
 
 (* teste la correction d'une déclaration de structure et la rajoute aux différents environnements *)
 let parcoursStruct (sE:structEnv) (aE:argsEnv) (fE:funcEnv) (b,p,str,l):(structEnv * argsEnv * funcEnv) =
-  if str = "print" || str = "println" || str = "div" || str = "array_length" || str = "input_int" || str = "input_string" || str = "int_of_float" || str = "sqrt" || str = "delay" || str = "timestamp" then
+  if str = "print" || str = "println" || str = "div" then
     error (str^" is not an allowed structuture name") p
   else
     if Tmap.mem str sE then error ("already defined structuture of name :"^str) p
@@ -83,7 +82,7 @@ let parcoursStruct (sE:structEnv) (aE:argsEnv) (fE:funcEnv) (b,p,str,l):(structE
 
 (* teste la correction d'une déclaration de fonction et la rajoute à l'environnement des fonctions *)
 let parcoursFonction (vE:varEnv) (fE:funcEnv) (sE:structEnv) (posStr, nameFunc, pL, posT, pjT, _):funcEnv =
-  if nameFunc = "print" || nameFunc = "println" || nameFunc = "div" || nameFunc = "array_length" || nameFunc = "input_int" || nameFunc = "input_string" || nameFunc = "int_of_float" || nameFunc = "sqrt" || nameFunc = "delay" || nameFunc = "timestamp"
+  if nameFunc = "print" || nameFunc = "println" || nameFunc = "div"
   then error ("reserved name "^nameFunc) posStr
   else
     if Tmap.mem nameFunc vE
@@ -137,13 +136,10 @@ let rec chercheDefE (isLoc:bool) (vS:Tset.t) = function
   | Ereturn (_, Some (_, e)) -> chercheDefE isLoc vS e
   | EAssert (_, _, (_, e)) -> chercheDefE isLoc vS e
   | Efor (_, (_, e1), (_, e2), (_, eL)) ->
-      let env1 = chercheDefE isLoc (chercheDefE isLoc vS e1) e2 in
-      if false && isLoc then chercheDefB isLoc env1 eL else env1
+      let env1 = chercheDefE isLoc (chercheDefE isLoc vS e1) e2 in env1
   | Ewhile ((_, e), (_, eL)) ->
-      let env1 = chercheDefE isLoc vS e in
-      if false && isLoc then chercheDefB isLoc env1 eL else env1
-  | EdoWhile ((_, eL)) ->
-    let env1 = chercheDefB isLoc vS eL in vS
+      let env1 = chercheDefE isLoc vS e in env1
+  | EdoWhile ((_, eL)) -> vS
   | Eif ((_, e), (_, eL), els) ->
       let env1 = chercheDefE isLoc vS e in
       let env2 = chercheDefB isLoc env1 eL in
@@ -215,13 +211,7 @@ let rec parcoursExpr (isLoc:bool) (vE:varEnv) (fE:funcEnv) (aE:argsEnv) (sE:stru
           Tmap.filter (fun k t -> not (Tset.mem k newdef)) env1)
       in let _ = parcoursBloc true env2 fE aE sE eL
       in env2
-  | EdoWhile ((_, eL)) -> 
-      let env1 = if isLoc then vE
-        else (let newdef = chercheDefB isLoc Tset.empty eL in
-          Tmap.filter (fun k t -> not (Tset.mem k newdef)) vE)
-      in
-      let env2 = parcoursBloc true env1 fE aE sE eL in
-      vE
+  | EdoWhile ((_, eL)) -> vE
   | Eif ((_, e), (_, eL), els) ->
       let env1 = parcoursExpr isLoc vE fE aE sE e in
       let env2 = parcoursBloc isLoc env1 fE aE sE eL in
@@ -257,7 +247,7 @@ let rec parcours1 (vEnv:varEnv) (fEnv:funcEnv) (sEnv:structEnv) (aEnv:argsEnv) =
 let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:argsEnv) (rT:Astype.pjtype) (b:bool):Ast.expr -> expressionTyper = function
   | Eentier i -> Int64, EntierE i
   | Eflottant f -> Float64, FlottantE f
-  | Echaine str -> String, ChaineE str
+  | Echaine str -> Array, ChaineE str
   | Echar c -> Char64, CharE c
   | Etrue -> Bool, TrueE
   | Efalse -> Bool, FalseE
@@ -414,11 +404,7 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
         let t1, e1 = testTypageE isLoc vE fE sE aE rT b e1 in
         let t2, e2 = testTypageE isLoc vE fE sE aE rT b e2 in
         if compatible t2 Int64 then
-          if t1 = String then 
-            if compatible t Char64 then 
-              Char64, LvalueAffectE (ArrayL ((t1, e1), (t2, e2)), (t, et))              
-            else error ("type incompatibility "^typeName t^" not compatible with Char") pe
-          else if compatible t1 Array then
+          if compatible t1 Array then
             t, LvalueAffectE (ArrayL ((t1, e1), (t2, e2)), (t, et))
           else error ("type incompatibility "^typeName t1^" not compatible with array") p1
         else error ("type incompatibility "^typeName t2^" not compatible with int") p2

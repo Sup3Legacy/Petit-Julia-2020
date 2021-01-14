@@ -408,11 +408,15 @@ Quelques petites remarques sur le fonctionnement des tableaux :
 
 ## int
 
-Cette fonction convertit son argument (entier ou flottant) vers un entier, éventuellement en arondissant à l'entier inférieur.
+Cette fonction convertit son argument (entier, flottant, booléen ou charactère) vers un entier, éventuellement en arondissant à l'entier inférieur.
 
 ## float
 
 Cette fonction convertit son argument (entier ou flottant) vers le flottant correspondant
+
+## char
+
+Cette fonction convertit son argument (entier ou charactère) vers le charactère correspondant
 
 ## sqrt
 
@@ -424,7 +428,7 @@ Cette fonction permet de lire un entier sur l'éntrée standard.
 
 ## delay
 
-Cette fonction déclenche une pause de l'exécution du programme. L'argument est en secondes. /!\ la compatibilité n'est pas tout à fait bonne, comme cette fonction utilise un *syscall*. Elle a été testée est est fonctionnelle sous Ubuntu 20 mais ne semble pas marcher sur MacOS.
+Cette fonction déclenche une pause de l'exécution du programme. L'argument est en secondes. /!\ la compatibilité n'est pas tout à fait bonne, comme cette fonction utilise un *syscall*. Elle a été testée est est fonctionnelle sous Ubuntu 20 mais ne semble pas marcher sur MacOS car les syscall n'y sont pas les même.
 
 ## timestamp
 
@@ -439,6 +443,8 @@ Cette fonction renvoie le type de son argument, sous forme d'un entier.
 ## ... docstrings et utilisation dans le REPL
 
 ## ... assert
+
+Le fait de pouvoir faire des assertions nous a semblé relativement important dans les fonctionnalités à rajouter au langage. Si une assertion plante alors le programme termine sont exécution en indiquant la ligne et le fichier où l'assertion se trouvait.
 
 # ... Annexes
 

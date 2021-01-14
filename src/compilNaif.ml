@@ -277,7 +277,6 @@ let int_of_type t = match t with
   	| Int64 -> nTypeInt
  	| Float64 -> nTypeFloat
 	| Bool -> nTypeBool
-	| String -> nTypeChar + !nTypeArray
 	| Array -> !nTypeArray
 	| Char64 -> nTypeChar
  	| S s -> numStruct s
