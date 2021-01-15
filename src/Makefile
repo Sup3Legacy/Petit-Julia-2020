@@ -1,30 +1,29 @@
 all:pjuliac.exe pjuliarepl.exe
-	echo "Built everything! \n"
+	@echo "                      \nBuilt everything!\n"
 
 compil: pjuliac.exe
-	./pjuliac test.jl
+	@./pjuliac test.jl
 
 repl: pjuliarepl.exe
-	clear
-	rlwrap -f pjulia-words -c -pCyan ./pjuliarepl
+	@clear
+	@rlwrap -f pjulia-words -c -pCyan ./pjuliarepl
 
 pjuliac.exe:
-	dune build pjuliac.exe
-	cp _build/default/pjuliac.exe pjuliac
+	@dune build pjuliac.exe
+	@cp _build/default/pjuliac.exe pjuliac
 
 pjuliarepl.exe :
-	dune build pjuliarepl.exe
-	cp _build/default/pjuliarepl.exe pjuliarepl
+	@dune build pjuliarepl.exe
+	@cp _build/default/pjuliarepl.exe pjuliarepl
 
 clean:
 	rm -f pjuliac
 	rm -f pjuliarepl
-	rm -f out.s
 	dune clean
 
 explain:
-	menhir --base /tmp/parser --dump --explain parser.mly
-	cat /tmp/parser.conflicts
+	@menhir --base /tmp/parser --dump --explain parser.mly
+	@cat /tmp/parser.conflicts
 
 testExec:
 	for g in ../test/exec/*.jl; do ./_build/default/pjuliac.exe -show-file-name $$g; done
