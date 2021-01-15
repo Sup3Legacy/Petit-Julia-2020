@@ -8,13 +8,13 @@
 
 # 0] Prérequis
 
-Notre projet requiert l'installation, via `opam` des bibliothèques `ppx_deriving`, `Core_kernel`, `Core`, `Yojson`, `cohttp-lwt-unix` et `cohttp-async`. Le packet `lwt_ssl` doit aussi être installé via le gestionnaire de paquets de son choix.
+Notre projet requiert l'installation, via `opam` des bibliothèques `ppx_deriving`, `Core_kernel`, `Core`, `Yojson`, `cohttp-lwt-unix` et `cohttp-async`. Le paquet `lwt_ssl` doit aussi être installé via le gestionnaire de paquets de son choix.
 
 De plus, l'utilisation optimale du **REPL** nécessite l'installation du **wrapper** `rlwrap`, disponible via un gestionnaire standard de packages Linux (disponible aussi sur mac).
 
 # I] Syntaxe
 
-Mots clés : else elseif end false for function if mutable return struct true while **dowhile** **assert** 
+Mots-clés : else elseif end false for function if mutable return struct true while **dowhile** **assert** 
 
 - < chiffre > ::= 0-9
 - < alpha > ::= a-z | A-Z | _
@@ -363,7 +363,7 @@ println(package2::package1::succ(5))
 println(package2::bar)
 ```
 
-L'AST généré par depManager lors de la compilation de `test.jl` correspond à un fichier d'origine de la forme (en supposant que '.' doit accepté dans les identifiants) :
+L'AST généré par depManager lors de la compilation de `test.jl` correspond à un fichier d'origine ressemblant à  (ici, les '.' ne correspondent pas à des champs de structures, mais font partie des identifiants. Par exmeple, `package2.package1.n` est ici un identifiant) :
 
 ```julia
 #test.jl 
@@ -384,7 +384,7 @@ package2.package1.varGlob = 69
 
 #package2 importé depuis test
 function foo(package2.n :: Int64) :: Int64
-	return n
+	return package2.n
 end;
 package2.bar = 42
 
@@ -397,16 +397,16 @@ On peut remarquer une chose : on ne peut pas importer plusieurs fois le même pa
 
 # ... génération de code du projet de base (donc sans flottants ni arrays)
 
-Toutes les valeurs sont composé de deux champs de 64 bits chacuns le premier pour le type, et le second pour la valeur en elle même. Les valeurs trop grande tel que les structures sont composé d'un pointeur vers un emplacement dans la mémoire qui contient toute l'information. Les types `undef` et `nothing` sont aussi implémenté sur 128 bits pour simplifier leur utilisation.
+Toutes les valeurs sont composées de deux champs de 64 bits : le premier pour le type, et le second pour la valeur en elle-même. Les valeurs "grandes", telles que les structures, sont composées d'un pointeur vers un emplacement dans la mémoire qui contient toute l'information. Les types `undef` et `nothing` sont aussi implémentés sur 128 bits pour simplifier leur utilisation.
 
-Les variables globales sont défini dans `.data` et nommé `nom_val` et `nom_type`.
-Les variables locales sont placé dans la pile. Avec une adresse relative par rapport à `%rbp`. Et tous les emplacement de variable locale qui seront utile sont crée à l'appel d'un fonction et au début du code ce qui permet de ne pas avoir à créer d'emplacements quand on rentre dans une boucle for,while ou dowhile.
+Les variables globales sont définies dans `.data` et nommées `nom_val` et `nom_type`.
+Les variables locales sont placées dans la pile et adressées avec une adresse relative par rapport à `%rbp`. Tous les emplacement de variables locales utilisés par une fonctions seront tous créés à l'appel de cette fonction, ce qui permet de ne pas avoir à créer d'emplacements quand on rentre dans une boucle for, while ou dowhile.
 
-Nous avons décidé de ne pas utiliser les conventions d'appel car le code n'est pas appelé depuis l'extérieure. Cependant la fonction `print_value` ainsi que les fonction associé respectent les convention d'appel pour résoudre les problèmes autour des print récursifs. Cependant nous avons eu conscience pendant toute l'implémentation de ces conventions car elle nous ont permis de pouvoir manipuler `printf` et `malloc` sans devoir sauver tous nos registres.
+Nous avons décidé de ne pas utiliser les conventions d'appel car le code n'est pas appelé depuis l'extérieur. Cependant, la fonction `print_value` ainsi que les fonctions associées respectent les conventions d'appel pour résoudre les problèmes autour des print récursifs. De plus nous avons gardé ces conventions dans un coin de notre tête car elles nous ont permis de pouvoir manipuler `printf` et `malloc` sans devoir sauvegarder tous nos registres.
 
-Toutes les fonctions ont été renomé en leur rajoutant un numéro `nom_id` ce qui permet de faire de la surcharge. De plus nous sommes plutôt confiant sur l'impossibilité à l'utilisateur de réussir à créer une collision entre les noms qu'il arrive à définir et ceux utiliser par le compilateur.
+Toutes les fonctions ont été renomées sous la forme `nom_id` ce qui permet de les surcharger (diapatch multiple : chaque id est un numéro correspondant à l'instance de fonction surchargée). De plus nous sommes plutôt confiants sur l'impossibilité à l'utilisateur de réussir à créer une collision entre les identifiants qu'il peut définir et ceux utilisés par le compilateur.
 
-Nous n'avons malheureusement pas de GC. Ce qui nous fait parfois une consommation de mémoire importante. Mais l'utilisation intensive de la pile pour stocker les variables nous permet de ne pas trop manger dans le tas.
+Nous n'avons malheureusement pas de GC, de qui implique parfois une consommation de mémoire importante. Cependant, l'utilisation intensive de la pile pour stocker les variables nous permet de ne pas trop allouer de mémoire inutile sur le tas, lorsque le programme utilise surtout de "petites" données, i.e. entiers, flottants et booléens.
 
 
 # ... Nos ajouts à x86-64.ml
@@ -445,7 +445,7 @@ Nous nous donnons une structure :
 mutable struct List head :: Any; tail :: List end;
 ```
 
-Cette structure implémente une liste chaînée (comme c'est le cas dans un des tests fournis). Nous avons implémenté en Julia les primitives `list_length`, `get_element` et `set_element` (de bêtes fonctiosn récursives) et nous avons ajouté au parser quelques règles pour pouvoir utiliser du sucre syntaxique : `a[i]` est remplacé au moment de l'analyse syntaxique par `get_element(a, i)`, et de même pour la mutation `a[i] = b`, remplacée par `set_element(a, i, b)`. Enfin, `[A, b, c, ...]` est remplacé par `List(a, List(b, List(c, ...)))`.
+Cette structure implémente une liste chaînée (comme c'est le cas dans un des tests fournis). Nous avons implémenté en Julia les primitives `list_length`, `get_element` et `set_element` (de bêtes fonctions récursives) et nous avons ajouté au parser quelques règles pour pouvoir utiliser du sucre syntaxique : `a[i]` est remplacé au moment de l'analyse syntaxique par `get_element(a, i)`, et de même pour la mutation `a[i] = b`, remplacée par `set_element(a, i, b)`. Enfin, `[A, b, c, ...]` est remplacé par `List(a, List(b, List(c, ...)))`.
 
 Cette première implémentation avait le bon goût d'être très simple à mettre en place (juste quelques règles à ajouter au parser ainsi que des primitives basiques en pJulia). Cependant, elle posait un défaut conséquent : Il n'était pas vraiment possible de faire des listes ayant un type fixé. Deuxièmement, et principalement, notre but était de faire des tableaux, pas des listes. On avait là une pseudo-structure de tableau qui était en fait exactement une liste chaînée, avec les avantages mais aussi les incovénients (particulièrement l'accès en temps linéaire au lie ude constant) qui viennent avec. Nous avons donc totalement refondu cette implémentation.
 
@@ -476,10 +476,10 @@ Plusieurs possibilités ont été évoquées :
 Nous avons alors décidé de partir sur une solution intermédiaire : Lors du parsing, tous les tableaux ont un unique type `Array`. Cependant, à l'exécution, les tableaux ont un type bien défini ressemblant à `Int64 Array Array`. En effet, le type d'un tableau est de la forme `i + n * a`, où `n` est la dimension du tableau, `a` l'entier associé au type `Array` et `i` l'entier associé au type de élémentaire contenu dans le tableau (pour `Int64 Array Array`, c'est `Int64`). Ainsi, on peut vérifier à l'exécution que les mutations et accès des éléments d'un tableaux sont licites.
 
 Quelques petites remarques sur le fonctionnement des tableaux :
-- il est possible d'accéder à un élément d'un tablerau via un indice négatif : `a[-1]` renvoie le dernier élément du tableau, etc.
+- il est possible d'accéder à un élément d'un tableau via un indice négatif : `a[-1]` renvoie le dernier élément du tableau, `a[-2]` le pénultième, etc.
 - lorsqu'un tableau est multi-dimensionnel, on peut accéder à ses éléments via cette syntaxe : `a[i][j]...[z]`.
 - Comme dans d'autres languages, l'initialisation d'un tableau avec une valeur ne duplique pas cette dernière. Par exemple, `newarray(2, newarray(2, 0))` renvoie un tableau dont les deux éléments pointent vers le même tableau. Pour créer un tableau en profondeur, il est préférable d'utiliser la fonction `make_matrix(d, lengths, init_value)`, dans le package `matrix` (initialise un tableau multi-dimensionnel de dimension `d` où la `i`-ème dimension a une taille `lengths[i]` et dont la valeur initiale de base (la plus en profondeur) est `init_value`)
-- L'opérateur @ permet de faire des concaténations
+- L'opérateur `@` permet de faire des concaténations. La concaténation de deux tableaux produit un nouveau tableau, sans les détruire.
 
 
 # ... extension strings et chars
