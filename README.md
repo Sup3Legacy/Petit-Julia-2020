@@ -54,19 +54,17 @@ Grammaire :
 - < structure > ::= mutable? struct < ident > (< param >?)<sup> * </sup><sub>;</sub> end ;
 - < fonction > ::= **< docstring >?** function < ident-parg > < param ><sup> * </sup><sub>;</sub> (:: < ident >)? < bloc > end ;
 - < param > ::= < ident > (:: < ident >)?
-- < expr > ::= < entier > |< chaîne > | true | false | **< flottant >** | ** < char > **
-
-		| **[< expr ><sub>,</sub><sup> * </sup> ]** | < entier-ident > | < entier-parg > < bloc1 > )
-
-		| (< bloc1 >) | ( < expr >< pard-ident > | < ident-parg > < expr ><sup> * </sup><sub>,</sub> ) 
-
-		| !< expr > | - < expr > | < expr > < operateur > < expr > | < lvalue > 
-
-		| < lvalue > = < expr > | return < expr >? | **assert < expr >** 
-
-		| for < ident > = < expr > : < expr > < bloc > end
+- < expr > ::= 
+		| : ------: | : ----- : | :---:|
+		| < entier > |< chaîne > | true | 
+		| false | **< flottant >** | ** < char > ** |
+		| **[< expr ><sub>,</sub><sup> * </sup> ]** | < entier-ident > | < entier-parg > < bloc1 > ) |
+		| (< bloc1 >) | ( < expr >< pard-ident > | < ident-parg > < expr ><sup> * </sup><sub>,</sub> ) |
+		| !< expr > | - < expr > | < expr > < operateur > < expr > | < lvalue >  |
+		| < lvalue > = < expr > | return < expr >? | **assert < expr >**  |
+		| for < ident > = < expr > : < expr > < bloc > end | while < expr > < bloc > end | **dowhile < bloc > end** | 
 		
-		| while < expr > < bloc > end | **dowhile < bloc > end** | if < expr > < bloc > < else >
+		| if < expr > < bloc > < else > | | |
 
 - < lvalue > ::= < ident > | < expr > . < ident > | **< expr > [ < expr > ]**
 - < else > ::= end | else < bloc > end | elseif < expr > < bloc > < else >
