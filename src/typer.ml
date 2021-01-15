@@ -199,18 +199,16 @@ let rec parcoursExpr (isLoc:bool) (vE:varEnv) (fE:funcEnv) (aE:argsEnv) (sE:stru
       let env1 = parcoursExpr isLoc vE fE aE sE e1 in
       let env2 = parcoursExpr isLoc env1 fE aE sE e2 in
       let env3 = Tmap.add str (true,Int64) env2 in
-      let env4 = if isLoc then env3
-        else (let newdef = chercheDefB isLoc Tset.empty eL in
-          Tmap.filter (fun k t ->not (Tset.mem k newdef)) env3)
+      let env4 = let newdef = chercheDefB isLoc Tset.empty eL in
+          Tset.fold (fun x m -> if Tmap.mem x m then m else Tmap.add x (true, Any) m)  newdef (Tmap.filter (fun k (b,t) -> b || not (Tset.mem k newdef)) env3)
       in let _ = parcoursBloc true env4 fE aE sE eL
       in env2
   | Ewhile ((_, e), (_, eL)) ->
       let env1 = parcoursExpr isLoc vE fE aE sE e in
-      let env2 = if isLoc then env1
-        else (let newdef = chercheDefB isLoc Tset.empty eL in
-          Tmap.filter (fun k t -> not (Tset.mem k newdef)) env1)
+      let env2 = let newdef = chercheDefB isLoc Tset.empty eL in
+          Tset.fold (fun x m -> if Tmap.mem x m then m else Tmap.add x (true, Any) m)  newdef (Tmap.filter (fun k (b,t) -> b || not (Tset.mem k newdef)) env1)
       in let _ = parcoursBloc true env2 fE aE sE eL
-      in env2
+      in env1
   | EdoWhile ((_, eL)) -> vE
   | Eif ((_, e), (_, eL), els) ->
       let env1 = parcoursExpr isLoc vE fE aE sE e in
@@ -365,7 +363,7 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
     end
   | Elvalue lv -> begin
     match lv with
-      |Lident (p,str) -> let t = snd (try Tmap.find str vE with Not_found -> assert false) in t, LvalueE (IdentL (t, str, fst (Tmap.find str vE)))
+      |Lident (p,str) -> let t = snd (try Tmap.find str vE with Not_found -> print_int p.ldeb; print_newline ();assert false) in t, LvalueE (IdentL (t, str, fst (Tmap.find str vE)))
       |Lindex ((_, e), p, n) ->
         let (b, t2, nm) = try Tmap.find n aE with Not_found -> assert false in
         let (t3, et3) = testTypageE isLoc vE fE sE aE rT b e in
@@ -422,7 +420,9 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
   | Efor (i, (p1, e1), (p2, e2), (pb, eL)) ->
     let vE1 = parcoursExpr isLoc vE fE aE sE e1 in
     let vE2 = parcoursExpr isLoc vE1 fE aE sE e2 in
-    let vE3 = parcoursBloc true (Tmap.add i (true, Int64) vE2) fE aE sE eL in
+    let vE3 = let newdef = chercheDefB isLoc Tset.empty eL in
+          Tset.fold (fun x m -> if Tmap.mem x m then m else Tmap.add x (true, Any) m)  newdef (Tmap.filter (fun k (b,t) -> b || not (Tset.mem k newdef)) vE2) in
+    let vE3 = Tmap.add i (true, Int64) vE3 in
     let v = Tmap.map (fun (_,t) -> t) (Tmap.filter (fun k (b,t) -> if Tmap.mem k vE then b != fst (try Tmap.find k vE with Not_found -> assert false) else true) vE3) in
     let (t1, et1) = testTypageE isLoc vE1 fE sE aE rT b e1 in
     if compatible t1 Int64
@@ -433,7 +433,8 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
       else error ("expected an Int64 but got an "^typeName t2) p2
     else error ("expected an Int64 but got an "^typeName t1) p1
   | Ewhile ((pe, e), (pb, eL)) ->
-    let vE2 = parcoursBloc true vE fE aE sE eL in
+    let vE2 = let newdef = chercheDefB true Tset.empty eL in
+          Tset.fold (fun x m -> if Tmap.mem x m then m else Tmap.add x (true, Any) m) newdef (Tmap.filter (fun k (b,t) -> b || not (Tset.mem k newdef)) vE) in
     let (t, et) = testTypageE isLoc vE2 fE sE aE rT b e in
     let v = Tmap.map (fun (_,t) -> t) (Tmap.filter (fun k (b,t) -> if Tmap.mem k vE then b != fst (try Tmap.find k vE with Not_found -> assert false) else true) vE2) in
     if compatible Bool t
@@ -481,7 +482,7 @@ let rec lastInstruction v = function
 let testTypageF (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:argsEnv) (posN, str, pL, posT, pjT, (pb, eL)) (fonctions:funcMap) =
   let listP = List.fold_right (fun (Param (_, str, _, t)) l -> (str, t)::l) pL [] in
   let newdef = chercheDefB true Tset.empty eL in
-  let vE0 = Tmap.filter (fun k _ -> not (Tset.mem k newdef)) vE in
+  let vE0 = Tset.fold (fun x m -> if Tmap.mem x m then m else Tmap.add x (true, Any) m)  newdef (Tmap.filter (fun k t ->not (Tset.mem k newdef)) vE) in
   let vE1 = List.fold_left (fun m (str, t) -> Tmap.add str (true, t) m) vE0 listP in
   let vE2 = try parcoursBloc true vE1 fE aE sE eL with Not_found -> assert false in
   let vE3 = List.fold_left (fun m (str, t) -> Tmap.add str (true, t) m) vE2 listP in
