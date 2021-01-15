@@ -62,7 +62,7 @@ Grammaire :
 		| while < expr > < bloc > end | **dowhile < bloc > end** | if < expr > < bloc > < else >
 - < lvalue > ::= < ident > | < expr > . < ident > | **< expr > [ < expr > ]**
 - < else > ::= end | else < bloc > end | elseif < expr > < bloc > < else >
-- < opérateur > ::= == | != | < | <= | > | >= | + | - | * | % | ^ | && | || | **@**
+- < opérateur > ::= == | != | < | <= | > | >= | + | - | * | % | ^ | && | || | ** @ **
 - < bloc > ::= < expr > ?<sub>,</sub><sup>* </sup>
 - < bloc1 > ::= < expr > (; < bloc > )?
 
@@ -257,6 +257,19 @@ Pour la deuxième partie du projet, nous projetons d'ajouter aussi à PetitJulia
 -> flags
 -> multi-lignes rudimentaire du REPL
 
+-> Typeur
+La puissance du typeur à été diminuer car il plantait sur des codes tels que 
+```julia
+function f()
+	for i = 1:3
+		y = 0
+	end
+	println(y)
+	y = 0
+end
+```
+À cause de celà, il n'y a plus qu'un seul test dans `exec-fail/undef*.jl` qui plante au typage.
+
 # ... 
 
 # ... pPkg, depManager, namespace et pjulia-packages
@@ -377,6 +390,18 @@ On peut remarquer une chose : on ne peut pas importer plusieurs fois le même pa
 
 # ... génération de code du projet de base (donc sans flottants ni arrays)
 
+Toutes les valeurs sont composé de deux champs de 64 bits chacuns le premier pour le type, et le second pour la valeur en elle même. Les valeurs trop grande tel que les structures sont composé d'un pointeur vers un emplacement dans la mémoire qui contient toute l'information. Les types `undef` et `nothing` sont aussi implémenté sur 128 bits pour simplifier leur utilisation.
+
+Les variables globales sont défini dans `.data` et nommé `nom_val` et `nom_type`.
+Les variables locales sont placé dans la pile. Avec une adresse relative par rapport à `%rbp`. Et tous les emplacement de variable locale qui seront utile sont crée à l'appel d'un fonction et au début du code ce qui permet de ne pas avoir à créer d'emplacements quand on rentre dans une boucle for,while ou dowhile.
+
+Nous avons décidé de ne pas utiliser les conventions d'appel car le code n'est pas appelé depuis l'extérieure. Cependant la fonction `print_value` ainsi que les fonction associé respectent les convention d'appel pour résoudre les problèmes autour des print récursifs. Cependant nous avons eu conscience pendant toute l'implémentation de ces conventions car elle nous ont permis de pouvoir manipuler `printf` et `malloc` sans devoir sauver tous nos registres.
+
+Toutes les fonctions ont été renomé en leur rajoutant un numéro `nom_id` ce qui permet de faire de la surcharge. De plus nous sommes plutôt confiant sur l'impossibilité à l'utilisateur de réussir à créer une collision entre les noms qu'il arrive à définir et ceux utiliser par le compilateur.
+
+Nous n'avons malheureusement pas de GC. Ce qui nous fait parfois une consommation de mémoire importante. Mais l'utilisation intensive de la pile pour stocker les variables nous permet de ne pas trop manger dans le tas.
+
+
 # ... Nos ajouts à x86-64.ml
 Nous avons ajouté quelques fonctionnalités à la bibliothèque `x86-64.ml` :
 - la détection automatique du type d'OS : Linux ou MacOS. Elle sert dans certains cas de figure, par exemple pour `lab`.
@@ -425,11 +450,11 @@ Premièrement, nous nous sommes donné une primitive, `newarray(len, val)`, qui 
 
 ```julia
 (
-_temp_array = newarray(len, a) #len est la longueur du tableau représenté par le sucre syntaxique
-_temp_array[1] = b
-_temp_array[2] = c
+.temp_array = newarray(len, a) #len est la longueur du tableau représenté par le sucre syntaxique
+.temp_array[1] = b
+.temp_array[2] = c
 ...;
-_temp_array
+.temp_array
 )
 ```
 
@@ -447,11 +472,23 @@ Quelques petites remarques sur le fonctionnement des tableaux :
 - il est possible d'accéder à un élément d'un tablerau via un indice négatif : `a[-1]` renvoie le dernier élément du tableau, etc.
 - lorsqu'un tableau est multi-dimensionnel, on peut accéder à ses éléments via cette syntaxe : `a[i][j]...[z]`.
 - Comme dans d'autres languages, l'initialisation d'un tableau avec une valeur ne duplique pas cette dernière. Par exemple, `newarray(2, newarray(2, 0))` renvoie un tableau dont les deux éléments pointent vers le même tableau. Pour créer un tableau en profondeur, il est préférable d'utiliser la fonction `make_matrix(d, lengths, init_value)`, dans le package `matrix` (initialise un tableau multi-dimensionnel de dimension `d` où la `i`-ème dimension a une taille `lengths[i]` et dont la valeur initiale de base (la plus en profondeur) est `init_value`)
+- L'opérateur @ permet de faire des concaténations
 
 
 # ... extension strings et chars
 
+Afin de pouvoir manipuler les string plus librement il a été décidé de les convertir en tableau de caractère. Cela a multiplié la consommation en mémoire des string par 8. Cependant cela nous permet d'avoir accès à tous les avantages qu'un tableau nous fournissait : 
+- concaténation
+- mutabilité
+- récupération d'une valeur à un indice précis
+- calcul de la longeur
+
+Il a aussi été décidé que les types String et le type Array seraient les mêmes à l'intérieur du typeur notamment pour la surcharge de fonction.
+
+
 # ... extensions des primitives (input_int, delay, timestamp, typeof, int, float, input_string, etc.) + erreurs
+
+La liste de toutes les primitives avec leurs types possible est défini en bas du typeur dans la fonction `resetFE`.
 
 ## int
 
