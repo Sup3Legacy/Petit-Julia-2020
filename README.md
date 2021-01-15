@@ -326,7 +326,7 @@ gol::run()
 
 ```
 
-Lors de la compilation, les `::` sont remplacés par des `__`, pour que le fichier ASM soit accepté par `gcc`.
+Lors de la compilation, les `::` sont remplacés par des `.`, pour que le fichier ASM soit accepté par `gcc`.
 
 ## depManager
 
@@ -363,34 +363,34 @@ println(package2::package1::succ(5))
 println(package2::bar)
 ```
 
-L'AST généré par depManager lors de la compilation de `test.jl` correspond à un fichier d'origine de la forme :
+L'AST généré par depManager lors de la compilation de `test.jl` correspond à un fichier d'origine de la forme (en supposant que '.' doit accepté dans les identifiants) :
 
 ```julia
 #test.jl 
 
 #package1 importé depuis test
-function succ(package1__n :: Int64) :: Int64
-	#On peut voir ici qu'à tous les identifiants a été ajouté "package1__"
-	return package1__n + 1
+function succ(package1.n :: Int64) :: Int64
+	#On peut voir ici qu'à tous les identifiants a été ajouté "package1."
+	return package1.n + 1
 end;
-package1__varGlob = 69
+package1.varGlob = 69
 
 #package1 importé depuis package2, lui-même importé depuis test
-function succ(package2__package1__n :: Int64) :: Int64
-	#on a déjà ajouté "package1__" puis "package2__"
-	return package2__package1__n + 1
+function succ(package2.package1.n :: Int64) :: Int64
+	#on a déjà ajouté "package1." puis "package2."
+	return package2.package1.n + 1
 end;
-package2__package1__varGlob = 69
+package2.package1.varGlob = 69
 
 #package2 importé depuis test
-function foo(package2__n :: Int64) :: Int64
+function foo(package2.n :: Int64) :: Int64
 	return n
 end;
-package2__bar = 42
+package2.bar = 42
 
-println(package1__succ(5), package1__varGlob)
-println(package2__package1__succ(5))
-println(package2__bar)
+println(package1.succ(5), package1.varGlob)
+println(package2.package1.succ(5))
+println(package2.bar)
 ```
 
 On peut remarquer une chose : on ne peut pas importer plusieurs fois le même paquet depuis un même fichier. Cependant, on peut importer un même paquet depuis un fichier, tout en l'important aussi depusi un fichier lui-même importé. On se retrouve alors avec deux copies _a priori_ identique du paquet, donc seuls les identifiants diffèrent. Cela ajoute une masse parfois importante aux exécutables, mais cela permet d'isoler le comportement des différents modules du programmes. De plus nous étions satisfaits de ce système basique qui permet déjà de faire des choses intéressantes!
@@ -497,37 +497,21 @@ Il a aussi été décidé que les types String et le type Array seraient les mê
 
 La liste de toutes les primitives avec leurs types possible est défini en bas du typeur dans la fonction `resetFE`.
 
-## int
+* `int` : Cette fonction convertit son argument (entier, flottant, booléen ou charactère) vers un entier, éventuellement en arondissant à l'entier inférieur.
 
-Cette fonction convertit son argument (entier, flottant, booléen ou charactère) vers un entier, éventuellement en arondissant à l'entier inférieur.
+* `float` : Cette fonction convertit son argument (entier ou flottant) vers le flottant correspondant
 
-## float
+* `char` : Cette fonction convertit son argument (entier ou charactère) vers le charactère correspondant
 
-Cette fonction convertit son argument (entier ou flottant) vers le flottant correspondant
+* `sqrt` : Cette fonction renvoie la racine carrée (sous forme d'un flottant) de son argument entier ou flottant
 
-## char
+* `input_int` : Cette fonction permet de lire un entier sur l'éntrée standard.
 
-Cette fonction convertit son argument (entier ou charactère) vers le charactère correspondant
+* `delay` : Cette fonction déclenche une pause de l'exécution du programme. L'argument est en secondes. /!\ la compatibilité n'est pas tout à fait bonne, comme cette fonction utilise un *syscall*. Elle a été testée est est fonctionnelle sous Ubuntu 20 mais ne semble pas marcher sur MacOS car les syscall n'y sont pas les même.
 
-## sqrt
+* `timestamp` : Cette fonction renvoie le timestamp actuel de la machine, lu sur le registre TSC.
 
-Cette fonction renvoie la racine carrée (sous forme d'un flottant) de son argument entier ou flottant
-
-## input_int
-
-Cette fonction permet de lire un entier sur l'éntrée standard.
-
-## delay
-
-Cette fonction déclenche une pause de l'exécution du programme. L'argument est en secondes. /!\ la compatibilité n'est pas tout à fait bonne, comme cette fonction utilise un *syscall*. Elle a été testée est est fonctionnelle sous Ubuntu 20 mais ne semble pas marcher sur MacOS car les syscall n'y sont pas les même.
-
-## timestamp
-
-Cette fonction renvoie le timestamp actuel de la machine, lu sur le registre TSC.
-
-## typeof
-
-Cette fonction renvoie le type de son argument, sous forme d'un entier.
+* `typeof` : Cette fonction renvoie le type de son argument, sous forme d'un entier.
 
 # ... Ajouts divers
 
@@ -536,6 +520,21 @@ Cette fonction renvoie le type de son argument, sous forme d'un entier.
 ## ... assert
 
 Le fait de pouvoir faire des assertions nous a semblé relativement important dans les fonctionnalités à rajouter au langage. Si une assertion plante alors le programme termine sont exécution en indiquant la ligne et le fichier où l'assertion se trouvait.
+
+# ... Contenu de la bibliothèque standard
+
+Les paquets annotés "**(cf démo)**" seront présentés durant la démonstration en visio.
+
+* `acker` : Implémentation de la fonction d'Ackerman
+* `arithlib` : Fonctions arithmétiques
+* `asciiFluid` : Implémentation d'[ASCIIfluid](https://youtu.be/QMYfkOtYYlg) **(cf démo)**
+* `brainfuck` : Interpréteur Brainfuck **(cf démo)**
+* `gol` : Jeu de la vie **(cf démo)**
+* `list` : Implémentation d'une structure de liste chaînée et quelques primitives
+* `matrix` : Primitives utiles pour les tableaux
+* `pi` : Autour du nombre Pi **(cf démo)**
+* `random` : Génération pseudo-aléatoire de nombres entiers et de flottants
+* `tester` : Fichier pour tester le bon fonctionnement de notre production de code
 
 # ... Annexes
 
