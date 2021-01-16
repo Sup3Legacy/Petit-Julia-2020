@@ -547,7 +547,8 @@ Ce projet a été pour nous l'occasion de découvrir le domaine de la programmat
 
 Cependant, il y a quelques éléments supplémentaires que nous aurions aimé ajouter à notre compilateur mais qui n'ont pas pu ̂étre réalisés par manque de temps : 
 
-* Support de LLVM : cela aurait permis de gagner en performance et en portabilité
+* Affichage de structures : le temps nous a tout simplement manqué et nous avons trouvé plus intéressant d'implémenter l'affichage de tableaux.
+* Support de LLVM : cela aurait permis de gagner en performance et en portabilité. Cependant nous ne connaissions pas du tout le fonctionnement de cette plateforme et il nous aurait fallu du temps pour comprendre son fonctionnement!
 * GC : un GC, même basique, aurait fait de notre compilateur un vrai compilateur utilisable en pratique. En effet, même si la consommation de mémoire des exécutables générés par notre compilateur sur les exemples fournis reste raisonnable, il nous paraît évident que certaines situation ferait exploser cette consommation du fait de l'absence de GC. Par exemple si une fonction instantiant une structure était appelée un grand nombre de fois.
 * Nous avions évoqué la possibilité de faire une compilatation JIT. Nous nous sommes rendus compte que c'est une chose difficilement faisable en OCaml (ou bien nous n'avons pas trouvé les bonnes ressources) autrement que via la plateforme LLVM, que nous n'avions déjà pas le temps d'utiliser dans notre projet.
 
