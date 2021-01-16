@@ -260,12 +260,13 @@ Pour la deuxième partie du projet, nous projetons d'ajouter aussi à PetitJulia
 
 # VIII] Corrections des problèmes du premier rendu
 
--> flags
--> multi-lignes rudimentaire du REPL
+Nous avons corrigé les flags qui étaient mal écrits lors du premier rendu.
 
--> Typeur
+Nous avons aussi ajouté le support du multi-ligne au REPL : lorsque l'on entre quelque chose sur la ligne de commande, le REPL attend d'avoir vu passer deux `\n` successifs avant d'envoyer la commande à l'interpréteur. Ainsi, il est maintenant possible d'entrer du code sur plusieurs lignes, tant qu'il n'y a pas de ligne vide dans ce code.
 
-La puissance du typeur à été diminuer car il plantait sur des codes tels que 
+L'inconvénient est cependant qu'il faut toujours penser à **faire deux retours à la ligne, même lorsque la commande ne fait qu'une seule ligne!**
+
+La puissance du typeur a été diminuée car il rejetait des codes tels que 
 ```julia
 function f()
 	for i = 1:3
@@ -275,17 +276,17 @@ function f()
 	y = 0
 end
 ```
-À cause de celà, il n'y a plus qu'un seul test dans `exec-fail/undef*.jl` qui plante au typage.
+Du fait de cela, il n'y a plus qu'un seul test dans `exec-fail/undef*.jl` qui plante au typage (par rapport aux quatre tests de `exec-fail/undef*.jl` qui étaient rejetés par notre typeur au premier rendu).
 
 # ... 
 
 # ... pPkg, depManager, namespace et pjulia-packages
 
-Durant le travail sur ce projet, il nous a semblé intéressant d'implémenter non seulement un compilateur, mais aussi un environnement de développement 'complet' pour notre language. C'est pour ça que nous avons mis en place un système de packages permettant, comme dans beaucoup d'autres languages, de scinder les composantes d'un projet en plusieurs fichiers, ou bien d'utiliser des fonctions pré-implémentées.
+Durant le travail sur ce projet, il nous a semblé intéressant d'implémenter non seulement un compilateur, mais aussi un environnement de développement 'complet' pour notre language. C'est pour ça que nous avons mis en place un système de paquets permettant, comme dans beaucoup d'autres languages, de scinder les composantes d'un projet en plusieurs fichiers, ou bien d'utiliser des fonctions pré-implémentées.
 
 ## pjulia-packages
 
-Nous avons créé un [repo Github](https://github.com/Sup3Legacy/pjulia-packages) contenant quelques modules de base (par exemple `matrix`, qui contient des méthodes utiles pour utiliser des matrices). Ce repo contient de plus un répertoire des paquets disponibles, sous la forme d'un fichier JSON avec des enregistrements de la forme :
+Nous avons créé un [repo Github](https://github.com/Sup3Legacy/pjulia-packages) contenant quelques modules de base (par exemple `matrix`, qui contient des méthodes utiles pour exploiter le potentiel des matrices). Ce repo contient de plus un répertoire des paquets disponibles, sous la forme d'un fichier JSON avec des enregistrements comme ceci :
 
 ```json
 {
@@ -299,7 +300,7 @@ Nous avons créé un [repo Github](https://github.com/Sup3Legacy/pjulia-packages
 
 ## pPkg
 
-De même que Julia a son gestionnaire de paquets : `Pkg`, nous avons doté petit-Julia de `pPkg`. Il s'agit d'un tout petit gestionnaire de paquets très basique incorporé dans notre REPL et avec lequel il est possible d'interragir via quelques commandes dans la console de ce dernier :
+De même que Julia a son gestionnaire de paquets : `Pkg`, nous avons doté petit-Julia de `pPkg`. Il s'agit d'un tout petit gestionnaire de paquets très basique incorporé dans notre REPL et avec lequel il est possible d'interagir via quelques commandes dans la console de ce dernier :
 - `#update` : cette commande télécharge la liste des paquets disponibles (`index.json`).
 - `#install package` : cette commande installe le paquet `package`. Les paquets sont installés dans un sous-répertoire `/packages`. (Si cette commande jette une erreur, il faut possiblement ajouter ce sous-dossier à la main). /!\ pour cela, il faut avoir au préalable téléchargé la liste des paquets avec `#update`
 - `#remove package` : cette commande supprime le paquet `package`, s'il existe.
@@ -311,7 +312,7 @@ NB :
 ## Namespace
 
 Une fois un gestionnaire de paquets basique mis en place, nous avons réfléchi à la façon d'importer les paquets pour les utiliser dans des programmes pJulia. Après plusieurs tests plus ou moins ratés, nous avons statué sur ceci :
-- L'importation d'un paquet se fait avec l'expression `include("package.jl")` (il ne faut pas oublier le `.jl`). Tous les `include` doivent être mis tout en haut du fichier, avant tout autre expression ou déclaration. Les paquets doivent être dans le sous-répertoire `/packages`
+- L'importation d'un paquet se fait avec l'expression `include("package.jl")` (il ne faut pas oublier le `.jl`). Tous les `include` doivent être mis tout en haut du fichier, avant tout autre expression ou déclaration. /!\ Les paquets doivent être dans le sous-répertoire `/packages`.
 - L'utilisation des fonctions ou variables globales définies dans un paquet, nous utilisons cette syntaxe : `package::fonction(a, package::variable)`.
 
 Petit exemple :
@@ -322,17 +323,23 @@ include("gol.jl")
 include("random.jl")
 
 a = matrix::make_matrix(2, [2, 2], 0)
+somme_de_a = matrix::sum_matrix(a)
+println(somme_de_a)
 gol::run()
-
 ```
 
-Lors de la compilation, les `::` sont remplacés par des `.`, pour que le fichier ASM soit accepté par `gcc`.
+Nous avons opté pour la syntaxe `package::objet` plutôt que `package.objet` pour plusieurs raisons : 
+
+* Cela simplifie beaucoup l'analyse du fichier, en évitant la confusion avec les expressions `structure.champ`.
+* Il s'agit d'une syntaxe qui nous semble jolie et qui est utilisée dans plusieurs autres langages de programmation (notamment Rust).
+
+NB : Lors de la compilation, les `::` sont remplacés par des `.`, pour que le fichier ASM soit accepté par `gcc`. En effet, d'expérience, `gcc` apprécie très peu de voir des caractères `:` à une place inattendue! /!\ Cela est fait après le parsing, donc il n'y a pas de risque de confusion avec 
 
 ## depManager
 
 Le composant central de notre système de paquets est `depManager.ml`, s'intégrant entre le parsing et le typage.
 
-Lorsque depManager rencontre un appel à `include`, il charge le fichier correspondant, le parse (enfin le fait parser par le parseur), et modifie tous les identifiants (sauf primitives) apparaissant dans l'arbre syntaxique du paquet pour correspondre au nom par lequel on appelle ces fonctions et variables globales. Enfin, il ajoute cet arbre de syntaxe abstraite à l'arbre du fichier principal. Par exemple, si on se donne les fichiers :
+Lorsque depManager rencontre un appel à `include`, il charge le fichier correspondant, le parse, et modifie tous les identifiants (sauf primitives) apparaissant dans l'arbre syntaxique du paquet pour correspondre au nom par lequel on appelle ces fonctions et variables globales. Pour finir, il ajoute cet arbre de syntaxe abstraite au début l'arbre du fichier principal. Par exemple, si on se donne les fichiers :
 
 ```julia
 #package1.jl
@@ -363,37 +370,37 @@ println(package2::package1::succ(5))
 println(package2::bar)
 ```
 
-L'AST généré par depManager lors de la compilation de `test.jl` correspond à un fichier d'origine ressemblant à  (ici, les '.' ne correspondent pas à des champs de structures, mais font partie des identifiants. Par exmeple, `package2.package1.n` est ici un identifiant) :
+L'AST généré par depManager lors de la compilation de `test.jl` correspond à un fichier d'origine ressemblant à  :
 
 ```julia
 #test.jl 
 
 #package1 importé depuis test
-function succ(package1.n :: Int64) :: Int64
+function succ(package1__n :: Int64) :: Int64
 	#On peut voir ici qu'à tous les identifiants a été ajouté "package1."
-	return package1.n + 1
+	return package1__n + 1
 end;
-package1.varGlob = 69
+package1__varGlob = 69
 
 #package1 importé depuis package2, lui-même importé depuis test
-function succ(package2.package1.n :: Int64) :: Int64
+function succ(package2__package1__n :: Int64) :: Int64
 	#on a déjà ajouté "package1." puis "package2."
-	return package2.package1.n + 1
+	return package2__package1__n + 1
 end;
-package2.package1.varGlob = 69
+package2__package1__varGlob = 69
 
 #package2 importé depuis test
-function foo(package2.n :: Int64) :: Int64
-	return package2.n
+function foo(package2__n :: Int64) :: Int64
+	return package2__n
 end;
-package2.bar = 42
+package2__bar = 42
 
-println(package1.succ(5), package1.varGlob)
-println(package2.package1.succ(5))
-println(package2.bar)
+println(package1__succ(5), package1__varGlob)
+println(package2__package1__succ(5))
+println(package2__bar)
 ```
 
-On peut remarquer une chose : on ne peut pas importer plusieurs fois le même paquet depuis un même fichier. Cependant, on peut importer un même paquet depuis un fichier, tout en l'important aussi depusi un fichier lui-même importé. On se retrouve alors avec deux copies _a priori_ identique du paquet, donc seuls les identifiants diffèrent. Cela ajoute une masse parfois importante aux exécutables, mais cela permet d'isoler le comportement des différents modules du programmes. De plus nous étions satisfaits de ce système basique qui permet déjà de faire des choses intéressantes!
+On peut remarquer une chose : on ne peut pas importer plusieurs fois le même paquet depuis un même fichier. Cependant, on peut importer un même paquet depuis un fichier, tout en l'important aussi depusi un fichier lui-même importé. On se retrouve alors avec deux copies _a priori_ identique du paquet, donc seuls les identifiants diffèrent. Cela ajoute une masse parfois importante aux exécutables, mais cela permet d'isoler le comportement des différents modules du programmes. De plus ce système évite tout risque de collision de nom entre les paquets (on peut iamginer importer plusieurs paquets, chacun implémentant une méthode `new`).
 
 # ... génération de code du projet de base (donc sans flottants ni arrays)
 
@@ -418,7 +425,7 @@ Nous avons ajouté quelques fonctionnalités à la bibliothèque `x86-64.ml` :
 
 # ... extension flottants
 
-La gestion des flottants est une extension que nous avions prévu d'apporter au compilateur depuis la première phase de réflexion.
+La gestion des flottants est une extension que nous avions prévu d'apporter au compilateur depuis la première phase de travail sur le projet.
 
 ## ... Modifications lexer/typer
 
@@ -428,8 +435,9 @@ Nous avons en même temps ajouté à l'AST un constructeur Flottant ainsi que le
 
 ## ... Modification production de code
 
-Là encore, il n'y eu besoin que de compléter ce que nous avions déjà mis en place pour les entiers : chaque opérateur (`+, -, *, ^, <, >, <=, >=`) est découpé en 4, en fonction de la combinaison Entier-Entier/Entier-Flottant/... qu'il a en argument. Lorsque nécessaire, les entiers sont convertis en flottants au moyen de l'instruction `cvtsi2sdq` (cf la liste de nos ajouts à `x86-64.ml`)
+Là encore, il n'y eu besoin que de compléter ce que nous avions déjà mis en place pour les entiers : chaque opérateur (`+, -, *, ^, <, >, <=, >=`) est découpé en 4, en fonction de la combinaison Entier-Entier/Entier-Flottant/... qu'il a en argument. Lorsque nécessaire, les entiers sont convertis en flottants au moyen de l'instruction `cvtsi2sdq` (cf la liste de nos ajouts à `x86-64.ml`).
 
+Un point à remarquer : il n'est pas possible de déclarer des immédiats flottants, donc les constantes flottantes sont remplacées par des variables globales, définies à la compilation dans le segment `data`.
 
 # ... extension arrays
 
@@ -484,32 +492,33 @@ Quelques petites remarques sur le fonctionnement des tableaux :
 
 # ... extension strings et chars
 
-Afin de pouvoir manipuler les string plus librement il a été décidé de les convertir en tableau de caractère. Cela a multiplié la consommation en mémoire des string par 8. Cependant cela nous permet d'avoir accès à tous les avantages qu'un tableau nous fournissait : 
+Afin de pouvoir manipuler les string plus librement il a été décidé de les convertir en tableau de caractère. Cela a multiplié la consommation en mémoire des string par 8 (chaque caractère prend un mot de 8 octets au lieu d'un seul octet comme le prévoit la norme UTF-8). Cependant cela nous permet d'avoir accès à tous les avantages qu'un tableau nous fournit : 
 - concaténation
 - mutabilité
 - récupération d'une valeur à un indice précis
 - calcul de la longeur
 
-Il a aussi été décidé que les types String et le type Array seraient les mêmes à l'intérieur du typeur notamment pour la surcharge de fonction.
+Il a aussi été décidé que les types String et le type Array seraient les mêmes à l'intérieur du typeur, notamment pour la surcharge de fonction.
 
+Remarque : Comme nous utilisons nos propres chaînes de caractères, les chaînes définies à la compilation ne sont plus déclarées dans le segment `data` mais sont construites caractère par caractère dans le code. Cela présente l'inconvénient de générer des fichiers ASM absolument monstrueux lorsque de grosses chaînes de caractères sont définies dans un programme (cf les exemples dans le packaghe `brainfuck`). Cependant, les avantages apportés par notre implémentation nous semblent très rentables!
 
 # ... extensions des primitives (input_int, delay, timestamp, typeof, int, float, input_string, etc.) + erreurs
 
 La liste de toutes les primitives avec leurs types possible est défini en bas du typeur dans la fonction `resetFE`.
 
-* `int` : Cette fonction convertit son argument (entier, flottant, booléen ou charactère) vers un entier, éventuellement en arondissant à l'entier inférieur.
+* `int` : Cette fonction convertit son argument (entier, flottant, booléen ou caractère) vers un entier, éventuellement en arondissant à l'entier inférieur.
 
 * `float` : Cette fonction convertit son argument (entier ou flottant) vers le flottant correspondant
 
-* `char` : Cette fonction convertit son argument (entier ou charactère) vers le charactère correspondant
+* `char` : Cette fonction convertit son argument (entier ou caractère) vers le caractère correspondant
 
 * `sqrt` : Cette fonction renvoie la racine carrée (sous forme d'un flottant) de son argument entier ou flottant
 
 * `input_int` : Cette fonction permet de lire un entier sur l'éntrée standard.
 
-* `delay` : Cette fonction déclenche une pause de l'exécution du programme. L'argument est en secondes. /!\ la compatibilité n'est pas tout à fait bonne, comme cette fonction utilise un *syscall*. Elle a été testée est est fonctionnelle sous Ubuntu 20 mais ne semble pas marcher sur MacOS car les syscall n'y sont pas les même.
+* `delay` : Cette fonction déclenche une pause de l'exécution du programme. L'argument est en secondes. /!\ la compatibilité n'est pas tout à fait bonne, comme cette fonction utilise un *syscall*. Elle a été testée et est fonctionnelle sous Ubuntu 20 mais ne semble pas marcher sur MacOS car les syscall n'y sont pas les même.
 
-* `timestamp` : Cette fonction renvoie le timestamp actuel de la machine, lu sur le registre TSC.
+* `timestamp` : Cette fonction renvoie le timestamp actuel de la machine, lu sur le registre TSC. Cela peut être utile pour des fonctions de monitoring et/ou mesure de performances.
 
 * `typeof` : Cette fonction renvoie le type de son argument, sous forme d'un entier.
 
@@ -517,13 +526,37 @@ La liste de toutes les primitives avec leurs types possible est défini en bas d
 
 ## ... docstrings et utilisation dans le REPL
 
+Nous avons ajouté le support des docstrings à petitJulia : chaque fonction peut être précédée d'une docstring, entre `"""`. Elle est conservée sous la forme d'une chaîne de caractère dans l'AST et est affichée lorsque l'utilisateur entre `? nom_fonction` dans le REPL.
+
 ## ... assert
 
-Le fait de pouvoir faire des assertions nous a semblé relativement important dans les fonctionnalités à rajouter au langage. Si une assertion plante alors le programme termine sont exécution en indiquant la ligne et le fichier où l'assertion se trouvait.
+Comme nous avons rajouté un certain nombre de fonctionnalités à notre langage, il nous a semblé important de pouvoir faire des tests automatisés pour s'assurer, à tout moment, que toutes nos fonctionnalités marchent correctement. C'est pourquoi nous avons implémenté un méchanisme d'assertions. Une assertion est déclarée dans un programme par le mot-clé `assert` suivi d'une expression. À l'exécution, si l'expression s'évalue à `true`, rien ne se passe. Autrement, le programme échoue et affiche une `assertionError`, contenant le nom du fichier où l'assertion a échoué ainsi que sa ligne (le nom et la ligne sont ajoutés dans l'AST au moment du parsing puis "hardcoded" dans l'exécutable).
 
-# ... Contenu de la bibliothèque standard
+Nous avons ajouté dans la bibliothèque standard un paquet `tester` qui contient quelques tests (encore incomplet, il contient surtout les tests des différents comparaisons entier/entier, entier/flottant, flottant/flottant et de quelques opérations sur les arrays)
 
-Les paquets annotés "**(cf démo)**" seront présentés durant la démonstration en visio.
+## ... analytics
+
+Nous avons ajouté au compilateur un petit compteur de performances : lorsque le drapeau `-analytics` est passé à `pjuliac`, le compilateur affiche à l'issue de al compilation quelques éléments d'analyse de performances très simples : le nombre de labels utilisés, se lon leur type (`for`, `while` ou `if`), le nombre d'instructions `call` et le nombre d'appels à `malloc` présents dans le fichier généré. Nous aimerions également ajouter dans le futur le temps et la mémoire qui ont été nécessaires lors de la compilation.
+
+
+# ... Conclusion
+
+
+
+# ... Annexes
+
+## A] Drapeaux de pjuliac
+
+* `-print_abstract` : affiche la syntaxe abstraite du fichier en utilisant `ppx_deriving`
+* `--parse_only` : arrête l'exécution après avoir parsé le fichier
+* `--type_only` : arrête l'exécution après avoir typé le fichier
+* `--show_file_name` : affiche le nom du fichier si il ne plante pas à l'exécution
+* `-analytics` : affiche à l'issue de la compilation quelques informations plus ou moins utiles à propos de cette dernière.
+* `-o` : permet de choisir le nom du fichier assembleur
+
+# B] Contenu de la bibliothèque standard
+
+Voilà la liste des paquets disponiblessur le repo `pjulia-packages`, téléchargeables vie pPkg. Les paquets annotés "**(cf démo)**" seront présentés durant la démonstration en visio (donc il peut être préférable de ne pas trop se divulgâcher ces surprises!).
 
 * `acker` : Implémentation de la fonction d'Ackerman
 * `arithlib` : Fonctions arithmétiques
@@ -536,18 +569,8 @@ Les paquets annotés "**(cf démo)**" seront présentés durant la démonstratio
 * `random` : Génération pseudo-aléatoire de nombres entiers et de flottants
 * `tester` : Fichier pour tester le bon fonctionnement de notre production de code
 
-# ... Annexes
 
-## A] Drapeaux de pjuliac
-
-* `-print_abstract` : affiche la syntaxe abstraite du fichier
-* `--parse_only` : arrête l'exécution après avoir parsé le fichier
-* `--type_only` : arrête l'exécution après avoir typé le fichier
-* `--show_file_name` : affiche le nom du fichier si il ne plante pas à l'exécution
-* `-analytics` : affiche à l'issue de la compilation quelques informations plus ou moins utiles à propos de celle-ci, notamment le nombre des labels utilisés.
-* `-o` : permet de choisir le nom du fichier assembleur
-
-## B] Liste des fichiers
+## C] Liste des fichiers
 Ci-dessous sont listés les fichiers du projet, accompagnés d'une brève description de leur utilité.
 
 * `acker.jl` : définition de la fonction ackermann en PetitJulia™.
