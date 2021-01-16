@@ -532,16 +532,16 @@ Nous avons ajouté au compilateur un petit compteur de performances : lorsque le
 
 # XVI] État de l'interpréteur
 
-Étant bien occupés par la compilation, nous n'avons pas eu le temsp de retravailler l'interpréteur. Il n'a donc pas été modifié depuis le premier rendu et ne supporte donc pas tous nos ajouts (tableaux, nouvelles chaînes de caractères, primitives, etc.). Cependant, il supporte partiellement les flottants.
+Étant bien occupés par la compilation, nous n'avons pas eu le temps de retravailler l'interpréteur. Il n'a donc pas été modifié depuis le premier rendu et ne supporte donc pas tous nos ajouts (tableaux, nouvelles chaînes de caractères, primitives, etc.). Cependant, il supporte partiellement les flottants.
 
-Nous avons préféré nous concentrer sur la compilation; En effet, il nous semblait plus intéressant (et c'est un plus grand défi) d'ajouter les nouvelles fonctionnalité aux compilateur en priorité, la mise à jour de l'interpréteur étant en soi une tâche assez facile, mais qui prend du temps que nous avons plutôt consacré au paufinement du fonctionnement du compilateur!
+Nous avons préféré nous concentrer sur la compilation. En effet, il nous semblait plus intéressant (et c'est un plus grand défi) d'ajouter les nouvelles fonctionnalités au compilateur en priorité, la mise à jour de l'interpréteur étant en soi une tâche assez facile, mais qui prend du temps, et nous avons préféré consacrer ce temps au paufinement du fonctionnement du compilateur!
 
 
 # XVII] Conclusion
 
 Ce projet a été pour nous l'occasion de découvrir le domaine de la programmation bas-niveau et de la compilation. 
 
-. . .
+L'étape de la génération de code a été très intéressante et l'occasion de tester "pour de vrai" les capacités de notre compilateur. Nous nous sommes pris au jeu d'ajouter à petitJulia le plus possible de fonctionnalités plus ou moins utiles ou anecdotiques! 
 
 Cependant, il y a quelques éléments supplémentaires que nous aurions aimé ajouter à notre compilateur mais qui n'ont pas pu ̂étre réalisés par manque de temps : 
 
