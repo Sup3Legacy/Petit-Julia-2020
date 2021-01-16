@@ -333,7 +333,7 @@ Nous avons opté pour la syntaxe `package::objet` plutôt que `package.objet` po
 * Cela simplifie beaucoup l'analyse du fichier, en évitant la confusion avec les expressions `structure.champ`.
 * Il s'agit d'une syntaxe qui nous semble jolie et qui est utilisée dans plusieurs autres langages de programmation (notamment Rust).
 
-NB : Lors de la compilation, les `::` sont remplacés par des `.`, pour que le fichier ASM soit accepté par `gcc`. En effet, d'expérience, `gcc` apprécie très peu de voir des caractères `:` à une place inattendue! /!\ Cela est fait après le parsing, donc il n'y a pas de risque de confusion avec 
+NB : Lors de la compilation, les `::` sont remplacés par des `.`, pour que le fichier ASM soit accepté par `gcc`. En effet, d'expérience, `gcc` apprécie très peu de voir des caractères `:` à une place inattendue! **/!\\** Cela est fait après le parsing, donc il n'y a pas de risque de confusion avec `structure.champ`.
 
 ## depManager
 
@@ -411,7 +411,7 @@ Les variables locales sont placées dans la pile et adressées avec une adresse 
 
 Nous avons décidé de ne pas utiliser les conventions d'appel car le code n'est pas appelé depuis l'extérieur. Cependant, la fonction `print_value` ainsi que les fonctions associées respectent les conventions d'appel pour résoudre les problèmes autour des print récursifs. De plus nous avons gardé ces conventions dans un coin de notre tête car elles nous ont permis de pouvoir manipuler `printf` et `malloc` sans devoir sauvegarder tous nos registres.
 
-Toutes les fonctions ont été renomées sous la forme `nom_id` ce qui permet de les surcharger (diapatch multiple : chaque id est un numéro correspondant à l'instance de fonction surchargée). De plus nous sommes plutôt confiants sur l'impossibilité à l'utilisateur de réussir à créer une collision entre les identifiants qu'il peut définir et ceux utilisés par le compilateur.
+Toutes les fonctions ont été renomées sous la forme `nom_id` ce qui permet de les surcharger (dispatch multiple : chaque id est un numéro correspondant à l'instance de fonction surchargée). De plus nous sommes plutôt confiants sur l'impossibilité à l'utilisateur de réussir à créer une collision entre les identifiants qu'il peut définir et ceux utilisés par le compilateur.
 
 Nous n'avons malheureusement pas de GC, de qui implique parfois une consommation de mémoire importante. Cependant, l'utilisation intensive de la pile pour stocker les variables nous permet de ne pas trop allouer de mémoire inutile sur le tas, lorsque le programme utilise surtout de "petites" données, i.e. entiers, flottants et booléens.
 
@@ -419,9 +419,9 @@ Nous n'avons malheureusement pas de GC, de qui implique parfois une consommation
 # ... Nos ajouts à x86-64.ml
 Nous avons ajouté quelques fonctionnalités à la bibliothèque `x86-64.ml` :
 - la détection automatique du type d'OS : Linux ou MacOS. Elle sert dans certains cas de figure, par exemple pour `lab`.
-- les registres flottants SMID 64 bits : les registres `%xmm0` à `xmm15`.
+- les registres flottants SSE 64 bits : les registres `%xmm0` à `%xmm15`.
 - des opérations sur les flottants : par exemple `cvtsi2sdq`, instruction de conversion d'entier vers flottant, ainsi que les instruction de comparaison de flottants
-- des instructions spéciales comme par exemple `rdtsc` pour la lecture du registrer de timestamp ou bien `syscall`
+- des instructions spéciales comme par exemple `rdtsc` pour la lecture du registre de timestamp ou bien `syscall` pour réaliser des appels système.
 
 # ... extension flottants
 

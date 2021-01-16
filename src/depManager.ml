@@ -1,4 +1,10 @@
-(* Gère les dépendances des fichiers. *)
+(*
+###########################################################
+#                                                         #
+#               Gestionnaire de dépendances               #
+#                                                         #
+###########################################################
+*)
 
 open Ast
 open Astype
@@ -7,20 +13,20 @@ module Import_packages_set = Set.Make(String) (* Ensemble des packages déjà im
 
 let currentPackages = ref Import_packages_set.empty;;
 
-let get_package identifiant =
+let get_package (identifiant : string) =
   let file = open_in (PPkg.get_package_path identifiant) in (* À améliorer *)
   let lb = Lexing.from_channel file in
   let e = Parser.fichier Lexer.token lb in
   match e with DeclarationList l -> l
 ;;
 
-let add_prefix_ident ident name =
+let add_prefix_ident (ident : string) (name : string) =
   match ident with 
   | "println" | "print" | "newarray" | "div" | "array_length" | "input_int" | "char" | "sqrt" | "delay" | "timestamp" | "int" | "float" | "typeof" -> ident
   | _ -> name ^ ident
 ;;
 
-let rec add_prefix_expr e name =
+let rec add_prefix_expr (e : expression) (name : string) =
   let (p, e1) = e in 
   let e2 =  
   (match e1 with
@@ -49,23 +55,23 @@ let rec add_prefix_expr e name =
   | Eif (e, b, e_) -> Eif (add_prefix_expr e name, add_prefix_bloc b name, add_prefix_else_ e_ name)
   )
   in (p, e2)
-and add_prefix_lvalue lval name =
+and add_prefix_lvalue (lval : lvalue) (name : string) =
   match lval with
   | Lident (p, id) -> Lident (p, add_prefix_ident id name)
   | Lindex (e, p, id) -> Lindex (add_prefix_expr e name, p, add_prefix_ident id name)
   | Larray (e1, e2) -> Larray (add_prefix_expr e1 name, add_prefix_expr e2 name)
 [@@deriving show]
-and add_prefix_else_ else_ name =
+and add_prefix_else_ (else_ : else_) (name : string) =
   match else_ with
   | Iend -> Iend
   | Ielse b -> Ielse (add_prefix_bloc b name)
   | Ielseif (e, b, e_) -> Ielseif (add_prefix_expr e name, add_prefix_bloc b name, add_prefix_else_ e_ name)
-and add_prefix_bloc b name =
+and add_prefix_bloc (b : bloc) (name : string) =
   match b with 
   | (pos, liste) -> (pos, List.map (fun x -> add_prefix_expr x name) liste)
 ;;
 
-let add_prefix_param param name =
+let add_prefix_param (param : param) (name : string) =
   match param with
   | Param (pos1, id, pos2, S id_) ->
     Param (pos1, add_prefix_ident id name, pos2, S (add_prefix_ident id_ name))
@@ -73,21 +79,21 @@ let add_prefix_param param name =
       Param (pos1, add_prefix_ident id name, pos2, type_)
 ;;
 
-let add_prefix_fonction fonc name =
+let add_prefix_fonction (fonc : declaration) (name : string) =
   match fonc with
   | Dfonction (pos1, id, paramList, pos2, type_, bloc, docstring) ->
     Dfonction (pos1, add_prefix_ident id name, List.map (fun x -> add_prefix_param x name) paramList, pos2, type_, add_prefix_bloc bloc name, docstring)
   | _ as s -> s (* Juste pour avoir la paix avec le détecteur de pattern non complet *)
 ;;
 
-let add_prefix_struct struct_ name =
+let add_prefix_struct (struct_ : declaration) (name : string) =
   match struct_ with
   | Dstruct (boo, pos, id, paramList) ->
     Dstruct (boo, pos, add_prefix_ident id name, List.map (fun x -> add_prefix_param x name) paramList)
   | _ as s -> s (* Juste pour avoir la paix avec le détecteur de pattern non complet *)
 ;;
 
-let rec add_prefix decl_list name =
+let rec add_prefix (decl_list : declaration list) (name : string) =
   match decl_list with 
   | Dexpr s :: q -> (Dexpr (add_prefix_expr s name)):: (add_prefix q name)
   | Dstruct _ as s :: q -> (add_prefix_struct s name) :: (add_prefix q name)
@@ -95,7 +101,7 @@ let rec add_prefix decl_list name =
   | [] -> []
 ;;
 
-let rec handle_dep decl_list =
+let rec handle_dep (decl_list : declaration list) =
   match decl_list with
   | Dexpr(pos1, Eapplication (pos2, ident, [(pos3, Echaine pack_name)])) :: q when ident = "include"->
     ((if false && Import_packages_set.mem pack_name !currentPackages then (* Cela n'a plus lieu d'être, avec le système de namespace *)
@@ -108,7 +114,6 @@ let rec handle_dep decl_list =
             let ajout =
               try
                 begin
-                  let n = String.length pack_name in
                   Parser.file_name := pack_name;
                   let a = handle_dep (get_package pack_name) in
                   currentPackages := Import_packages_set.add pack_name !currentPackages;
@@ -118,10 +123,6 @@ let rec handle_dep decl_list =
                 end
               with a ->
                 raise a
-                begin
-                  print_endline ("Unable to import package : " ^ pack_name);
-                  []
-                end
             in ajout
           end) @ (handle_dep q))
   | Dexpr _ as t :: q -> t :: (handle_dep q)
@@ -130,12 +131,12 @@ let rec handle_dep decl_list =
   | [] -> []
 ;;
 
-let add_dependencies parsed_file =
+let add_dependencies (parsed_file : fichier) =
   let liste = match parsed_file with DeclarationList l -> l in
   DeclarationList (handle_dep liste)
 ;;
 
-let get_parsed_file lb =
+let get_parsed_file (lb : Lexing.lexbuf) =
   let e = Parser.fichier Lexer.token lb in
   add_dependencies e
 ;;

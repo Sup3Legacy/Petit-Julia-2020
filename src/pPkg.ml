@@ -1,4 +1,10 @@
-
+(*
+###########################################################
+#                                                         #
+#                  Gestionnaire de paquets                #
+#                                                         #
+###########################################################
+*)
 open Yojson
 open Lwt
 open Cohttp
@@ -30,7 +36,7 @@ exception Error404
 
 let packagesMap = (ref PackMap.empty : package ref);;
 
-let get_package_path filename =
+let get_package_path (filename : string) =
   package_path ^ filename
 ;;
 
@@ -60,7 +66,7 @@ let get_packages_list json_file =
   packagesMap := construit PackMap.empty packages names;
 ;;
 
-let download name =
+let download (name : string) =
   let download_procedure  =
     Client.get (Uri.of_string name) >>= fun (resp, body) ->
     body |> Cohttp_lwt.Body.to_string >|= fun body ->
@@ -84,7 +90,7 @@ let update () =
   print_endline "Downloaded, Imma parse it";
 ;;
 
-let download_package request_name =
+let download_package (request_name : string) =
   let index =
   Yojson.Basic.from_file (get_package_path "index.json")
   in
@@ -109,7 +115,7 @@ let download_package request_name =
   with _ -> failwith "Failed downloading requested package"
 ;;
 
-let remove_package name =
+let remove_package (name : string) =
   let index =
   Yojson.Basic.from_file (get_package_path "index.json")
   in
