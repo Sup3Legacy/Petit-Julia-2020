@@ -15,7 +15,6 @@ open Ast
 open Astype
 open Typer
 open Hyper
-open Utilities
 open Astinterp
 
 let interp_error s = raise (Ast.Interp_Error_Msg s);;

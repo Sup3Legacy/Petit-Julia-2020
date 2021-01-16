@@ -1,6 +1,5 @@
 open Ast
 open Astype
-open Ollvm_test
 
 let affiche = ref false;;
 let parse_only = ref false;;
