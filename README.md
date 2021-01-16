@@ -12,6 +12,8 @@ Notre projet requiert l'installation, via `opam` des bibliothèques `ppx_derivin
 
 De plus, l'utilisation optimale du **REPL** nécessite l'installation du **wrapper** `rlwrap`, disponible via un gestionnaire standard de packages Linux (disponible aussi sur mac).
 
+L'interpréteur n'est pas à jour et ne supporte pas certaines fonctionnalités supportées par le compilateur. cf plus bas.
+
 # I] Syntaxe
 
 Mots-clés : else elseif end false for function if mutable return struct true while **dowhile** **assert** 
@@ -278,13 +280,11 @@ end
 ```
 Du fait de cela, il n'y a plus qu'un seul test dans `exec-fail/undef*.jl` qui plante au typage (par rapport aux quatre tests de `exec-fail/undef*.jl` qui étaient rejetés par notre typeur au premier rendu).
 
-# ... 
-
-# ... pPkg, depManager, namespace et pjulia-packages
+# IX] pPkg, depManager, namespace et pjulia-packages
 
 Durant le travail sur ce projet, il nous a semblé intéressant d'implémenter non seulement un compilateur, mais aussi un environnement de développement 'complet' pour notre language. C'est pour ça que nous avons mis en place un système de paquets permettant, comme dans beaucoup d'autres languages, de scinder les composantes d'un projet en plusieurs fichiers, ou bien d'utiliser des fonctions pré-implémentées.
 
-## pjulia-packages
+## 1) pjulia-packages
 
 Nous avons créé un [repo Github](https://github.com/Sup3Legacy/pjulia-packages) contenant quelques modules de base (par exemple `matrix`, qui contient des méthodes utiles pour exploiter le potentiel des matrices). Ce repo contient de plus un répertoire des paquets disponibles, sous la forme d'un fichier JSON avec des enregistrements comme ceci :
 
@@ -298,7 +298,7 @@ Nous avons créé un [repo Github](https://github.com/Sup3Legacy/pjulia-packages
 }
 ```
 
-## pPkg
+## 2) pPkg
 
 De même que Julia a son gestionnaire de paquets : `Pkg`, nous avons doté petit-Julia de `pPkg`. Il s'agit d'un tout petit gestionnaire de paquets très basique incorporé dans notre REPL et avec lequel il est possible d'interagir via quelques commandes dans la console de ce dernier :
 - `#update` : cette commande télécharge la liste des paquets disponibles (`index.json`).
@@ -309,7 +309,7 @@ NB :
 * le temps nous a manqué pour ajouter à pPkg la gestion des dépendances et des versions. Il n'en tient donc pas compte.
 * pPkg utilise plusieurs modules, notamment pour faire des requêtes HTTPS ou bien parser les fichiers JSON. Ces modules étant capricieux et n'ayant de notre côté pas eu beaucoup de temps pour les stabiliser, pPkg a parfois tendance à avoir des comportements plus ou moins indéfinis.
 
-## Namespace
+## 3) Namespace
 
 Une fois un gestionnaire de paquets basique mis en place, nous avons réfléchi à la façon d'importer les paquets pour les utiliser dans des programmes pJulia. Après plusieurs tests plus ou moins ratés, nous avons statué sur ceci :
 - L'importation d'un paquet se fait avec l'expression `include("package.jl")` (il ne faut pas oublier le `.jl`). Tous les `include` doivent être mis tout en haut du fichier, avant tout autre expression ou déclaration. /!\ Les paquets doivent être dans le sous-répertoire `/packages`.
@@ -335,7 +335,7 @@ Nous avons opté pour la syntaxe `package::objet` plutôt que `package.objet` po
 
 NB : Lors de la compilation, les `::` sont remplacés par des `.`, pour que le fichier ASM soit accepté par `gcc`. En effet, d'expérience, `gcc` apprécie très peu de voir des caractères `:` à une place inattendue! **/!\\** Cela est fait après le parsing, donc il n'y a pas de risque de confusion avec `structure.champ`.
 
-## depManager
+## 4) depManager
 
 Le composant central de notre système de paquets est `depManager.ml`, s'intégrant entre le parsing et le typage.
 
@@ -402,7 +402,7 @@ println(package2__bar)
 
 On peut remarquer une chose : on ne peut pas importer plusieurs fois le même paquet depuis un même fichier. Cependant, on peut importer un même paquet depuis un fichier, tout en l'important aussi depusi un fichier lui-même importé. On se retrouve alors avec deux copies _a priori_ identique du paquet, donc seuls les identifiants diffèrent. Cela ajoute une masse parfois importante aux exécutables, mais cela permet d'isoler le comportement des différents modules du programmes. De plus ce système évite tout risque de collision de nom entre les paquets (on peut iamginer importer plusieurs paquets, chacun implémentant une méthode `new`).
 
-# ... génération de code du projet de base (donc sans flottants ni arrays)
+# X] génération de code du projet de base (donc sans flottants ni arrays)
 
 Toutes les valeurs sont composées de deux champs de 64 bits : le premier pour le type, et le second pour la valeur en elle-même. Les valeurs "grandes", telles que les structures, sont composées d'un pointeur vers un emplacement dans la mémoire qui contient toute l'information. Les types `undef` et `nothing` sont aussi implémentés sur 128 bits pour simplifier leur utilisation.
 
@@ -415,35 +415,27 @@ Toutes les fonctions ont été renomées sous la forme `nom_id` ce qui permet de
 
 Nous n'avons malheureusement pas de GC, de qui implique parfois une consommation de mémoire importante. Cependant, l'utilisation intensive de la pile pour stocker les variables nous permet de ne pas trop allouer de mémoire inutile sur le tas, lorsque le programme utilise surtout de "petites" données, i.e. entiers, flottants et booléens.
 
-
-# ... Nos ajouts à x86-64.ml
-Nous avons ajouté quelques fonctionnalités à la bibliothèque `x86-64.ml` :
-- la détection automatique du type d'OS : Linux ou MacOS. Elle sert dans certains cas de figure, par exemple pour `lab`.
-- les registres flottants SSE 64 bits : les registres `%xmm0` à `%xmm15`.
-- des opérations sur les flottants : par exemple `cvtsi2sdq`, instruction de conversion d'entier vers flottant, ainsi que les instruction de comparaison de flottants
-- des instructions spéciales comme par exemple `rdtsc` pour la lecture du registre de timestamp ou bien `syscall` pour réaliser des appels système.
-
-# ... extension flottants
+# XI] extension flottants
 
 La gestion des flottants est une extension que nous avions prévu d'apporter au compilateur depuis la première phase de travail sur le projet.
 
-## ... Modifications lexer/typer
+## 1) Modifications lexer/typer
 
 Nous avons ajouté au lexer une règle pour accepter des constantes flottantes : `(chiffre+'.' | '.'chiffre+ | chiffre+'.'chiffre+)(('e'|'E')('-'|'+')?chiffre+)?`
 
 Nous avons en même temps ajouté à l'AST un constructeur Flottant ainsi que les règles de typage dans le typer. Par exemple, un opérateur arithmétique prenant en argument au moins une valeur flottante renverra un flottant.
 
-## ... Modification production de code
+## 2) Modification production de code
 
 Là encore, il n'y eu besoin que de compléter ce que nous avions déjà mis en place pour les entiers : chaque opérateur (`+, -, *, ^, <, >, <=, >=`) est découpé en 4, en fonction de la combinaison Entier-Entier/Entier-Flottant/... qu'il a en argument. Lorsque nécessaire, les entiers sont convertis en flottants au moyen de l'instruction `cvtsi2sdq` (cf la liste de nos ajouts à `x86-64.ml`).
 
 Un point à remarquer : il n'est pas possible de déclarer des immédiats flottants, donc les constantes flottantes sont remplacées par des variables globales, définies à la compilation dans le segment `data`.
 
-# ... extension arrays
+# XII] extension arrays
 
 Un ajout que nous aouhaitions faire dans notre projet était les tableaux. En effet, des structures utilisées astucieusement permettent de se passer de tableaux, mais il est toujours plus agréable d'utiliser des vrais tableaux, avec tout le sucre syntaxique qui facilite la vie du programmeur (par exemple l'accès et la modification d'une cellule avec `a[i]`).
 
-## ... première itération aved des structs
+## 1) première itération aved des structs
 
 La première implémentation que nous avons essayée était une implémentation simple à mettre en place :
 
@@ -457,7 +449,7 @@ Cette structure implémente une liste chaînée (comme c'est le cas dans un des 
 
 Cette première implémentation avait le bon goût d'être très simple à mettre en place (juste quelques règles à ajouter au parser ainsi que des primitives basiques en pJulia). Cependant, elle posait un défaut conséquent : Il n'était pas vraiment possible de faire des listes ayant un type fixé. Deuxièmement, et principalement, notre but était de faire des tableaux, pas des listes. On avait là une pseudo-structure de tableau qui était en fait exactement une liste chaînée, avec les avantages mais aussi les incovénients (particulièrement l'accès en temps linéaire au lie ude constant) qui viennent avec. Nous avons donc totalement refondu cette implémentation.
 
-## ... deuxième itération, plus propre
+## 2) deuxième itération, plus propre
 
 Notre but dans cette refonte a été de faire des arrays en bonne et due forme : taille et type fixes, accès en temps constant aux éléments. Nous avons gardé le même sucre syntaxique, étant la syntaxe universelle pour la définition, l'accès et la mutation de tableaux.
 
@@ -490,7 +482,7 @@ Quelques petites remarques sur le fonctionnement des tableaux :
 - L'opérateur `@` permet de faire des concaténations. La concaténation de deux tableaux produit un nouveau tableau, sans les détruire.
 
 
-# ... extension strings et chars
+# XIII] extension strings et chars
 
 Afin de pouvoir manipuler les string plus librement il a été décidé de les convertir en tableau de caractère. Cela a multiplié la consommation en mémoire des string par 8 (chaque caractère prend un mot de 8 octets au lieu d'un seul octet comme le prévoit la norme UTF-8). Cependant cela nous permet d'avoir accès à tous les avantages qu'un tableau nous fournit : 
 - concaténation
@@ -502,7 +494,7 @@ Il a aussi été décidé que les types String et le type Array seraient les mê
 
 Remarque : Comme nous utilisons nos propres chaînes de caractères, les chaînes définies à la compilation ne sont plus déclarées dans le segment `data` mais sont construites caractère par caractère dans le code. Cela présente l'inconvénient de générer des fichiers ASM absolument monstrueux lorsque de grosses chaînes de caractères sont définies dans un programme (cf les exemples dans le packaghe `brainfuck`). Cependant, les avantages apportés par notre implémentation nous semblent très rentables!
 
-# ... extensions des primitives (input_int, delay, timestamp, typeof, int, float, input_string, etc.) + erreurs
+# XIV] extensions des primitives (input_int, delay, timestamp, typeof, int, float, input_string, etc.) + erreurs
 
 La liste de toutes les primitives avec leurs types possible est défini en bas du typeur dans la fonction `resetFE`.
 
@@ -522,24 +514,30 @@ La liste de toutes les primitives avec leurs types possible est défini en bas d
 
 * `typeof` : Cette fonction renvoie le type de son argument, sous forme d'un entier.
 
-# ... Ajouts divers
+# XV] Ajouts divers
 
-## ... docstrings et utilisation dans le REPL
+## 1) docstrings et utilisation dans le REPL
 
 Nous avons ajouté le support des docstrings à petitJulia : chaque fonction peut être précédée d'une docstring, entre `"""`. Elle est conservée sous la forme d'une chaîne de caractère dans l'AST et est affichée lorsque l'utilisateur entre `? nom_fonction` dans le REPL.
 
-## ... assert
+## 2) assert
 
 Comme nous avons rajouté un certain nombre de fonctionnalités à notre langage, il nous a semblé important de pouvoir faire des tests automatisés pour s'assurer, à tout moment, que toutes nos fonctionnalités marchent correctement. C'est pourquoi nous avons implémenté un méchanisme d'assertions. Une assertion est déclarée dans un programme par le mot-clé `assert` suivi d'une expression. À l'exécution, si l'expression s'évalue à `true`, rien ne se passe. Autrement, le programme échoue et affiche une `assertionError`, contenant le nom du fichier où l'assertion a échoué ainsi que sa ligne (le nom et la ligne sont ajoutés dans l'AST au moment du parsing puis "hardcoded" dans l'exécutable).
 
 Nous avons ajouté dans la bibliothèque standard un paquet `tester` qui contient quelques tests (encore incomplet, il contient surtout les tests des différents comparaisons entier/entier, entier/flottant, flottant/flottant et de quelques opérations sur les arrays)
 
-## ... analytics
+## 3) analytics
 
 Nous avons ajouté au compilateur un petit compteur de performances : lorsque le drapeau `-analytics` est passé à `pjuliac`, le compilateur affiche à l'issue de al compilation quelques éléments d'analyse de performances très simples : le nombre de labels utilisés, se lon leur type (`for`, `while` ou `if`), le nombre d'instructions `call` et le nombre d'appels à `malloc` présents dans le fichier généré. Nous aimerions également ajouter dans le futur le temps et la mémoire qui ont été nécessaires lors de la compilation.
 
+# XVI] État de l'interpréteur
 
-# ... Conclusion
+Étant bien occupés par la compilation, nous n'avons pas eu le temsp de retravailler l'interpréteur. Il n'a donc pas été modifié depuis le premier rendu et ne supporte donc pas tous nos ajouts (tableaux, nouvelles chaînes de caractères, primitives, etc.). Cependant, il supporte partiellement les flottants.
+
+Nous avons préféré nous concentrer sur la compilation; En effet, il nous semblait plus intéressant (et c'est un plus grand défi) d'ajouter les nouvelles fonctionnalité aux compilateur en priorité, la mise à jour de l'interpréteur étant en soi une tâche assez facile, mais qui prend du temps que nous avons plutôt consacré au paufinement du fonctionnement du compilateur!
+
+
+# XVII] Conclusion
 
 Ce projet a été pour nous l'occasion de découvrir le domaine de la programmation bas-niveau et de la compilation. 
 
@@ -550,9 +548,15 @@ Cependant, il y a quelques éléments supplémentaires que nous aurions aimé aj
 * Affichage de structures : le temps nous a tout simplement manqué et nous avons trouvé plus intéressant d'implémenter l'affichage de tableaux.
 * Support de LLVM : cela aurait permis de gagner en performance et en portabilité. Cependant nous ne connaissions pas du tout le fonctionnement de cette plateforme et il nous aurait fallu du temps pour comprendre son fonctionnement!
 * GC : un GC, même basique, aurait fait de notre compilateur un vrai compilateur utilisable en pratique. En effet, même si la consommation de mémoire des exécutables générés par notre compilateur sur les exemples fournis reste raisonnable, il nous paraît évident que certaines situation ferait exploser cette consommation du fait de l'absence de GC. Par exemple si une fonction instantiant une structure était appelée un grand nombre de fois.
-* Nous avions évoqué la possibilité de faire une compilatation JIT. Nous nous sommes rendus compte que c'est une chose difficilement faisable en OCaml (ou bien nous n'avons pas trouvé les bonnes ressources) autrement que via la plateforme LLVM, que nous n'avions déjà pas le temps d'utiliser dans notre projet.
+* Nous avions évoqué la possibilité de faire un compilateur JIT. Nous nous sommes rendus compte que c'est une chose difficilement faisable en OCaml (ou bien nous n'avons pas trouvé les bonnes ressources) autrement que via la plateforme LLVM, que nous n'avions déjà pas le temps d'utiliser dans notre projet.
+* La mise à jour de l'interpréteur. Cf plus haut
+* Opérateurs `+=`, `-=` et `*=`. Ces opérateurs peuvent être utiles pour factoriser un peu du code!
+* L'opérateur `/` pour la division, en plus de `div`.
+* Pourquoi pas les entiers et flottants sur 128 bits et les caractères non UTF-8.
 
-# ... Annexes
+# XVIII] Annexes
+
+
 
 ## A] Drapeaux de pjuliac
 
@@ -578,14 +582,22 @@ Voilà la liste des paquets disponiblessur le repo `pjulia-packages`, téléchar
 * `random` : Génération pseudo-aléatoire de nombres entiers et de flottants
 * `tester` : Fichier pour tester le bon fonctionnement de notre production de code
 
+# C] Nos ajouts à x86-64.ml
+Nous avons ajouté quelques fonctionnalités à la bibliothèque `x86-64.ml` :
+* la détection automatique du type d'OS : Linux ou MacOS. Elle sert dans certains cas de figure, par exemple pour `lab`.
+* les registres flottants SSE 64 bits : les registres `%xmm0` à `%xmm15`.
+* des opérations sur les flottants : par exemple `cvtsi2sdq`, instruction de conversion d'entier vers flottant, ainsi que les instruction de comparaison de flottants
+* des instructions spéciales comme par exemple `rdtsc` pour la lecture du registre de timestamp ou bien `syscall` pour réaliser des appels système.
 
-## C] Liste des fichiers
+
+## D] Liste des fichiers
 Ci-dessous sont listés les fichiers du projet, accompagnés d'une brève description de leur utilité.
 
-* `acker.jl` : définition de la fonction ackermann en PetitJulia™.
 * `ast.ml` : déclaration des types récursifs de l'arbre abstrait du programme.
 * `astinterp.ml` : déclaration des types utilisés lors de l'interprétation.
 * `astype.ml` : déclaration des types utilisés lors du typage.
+* `compilNaif.ml` : génération de code
+* `compilRef.ml` : déclaration de variables utiles lors de la génération de code
 * `dune` : déclaration des directives de compilation (utilsé pour intégrer Samenhir!).
 * `dune-project` : déclarations annexes de `dune`.
 * `hyper.ml` : fichier contenant le code `OCaml` utilisé par le Lexer.
@@ -607,6 +619,5 @@ Ci-dessous sont listés les fichiers du projet, accompagnés d'une brève descri
 * `samenhirAst.ml` : définission des types et structures utiles à Samenhir.
 * `samenhirLexer.ml` : lexer de Samenhir (donné à ocamllex).
 * `samenhirParserBuilder.ml` : constructeur du parseur de Samenhir.
-* `test.jl` : petit fichier servant à tester notre compilateur (pratique car directement dans notre environnement de compilation).
 * `typer.ml` : fichier principal de typage
-* `x86_65.ml` : fichier contenant les déclarations de base nécessaires à la génération de code `x86_64`, détecte automatiquement si l'ordinateur est un mac ou non.
+* `x86_64.ml` : fichier contenant les déclarations de base nécessaires à la génération de code `x86_64`, détecte automatiquement si l'ordinateur est un mac ou non.
