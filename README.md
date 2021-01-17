@@ -252,6 +252,7 @@ Nous n'avons malheureusement pas encore eu le temps d'effectuer des **tests de p
 En l'état actuel des choses, la compilation du compilateur (`pjuliac.exe`) et du REPL (`pjuliarepl.exe`) est gérée par `dune` via un `dune-project` commun. Elle est réalisable via notre `Makefile`. Nous avons paramétré celui-ci pour **automatiser** au maximum les tests et essais des différentes parties de notre projet.
 
 Nous retrouvons :
+
 - `make` : construit les deux fichiers, de plus pour le confort de l'utilisateur un exécutable `pjuliac` est mis dans le **répertoire courant**. Cependant cet exécutable est supprimé par la commande `make clean`. Pensez donc à le déplacer avant si vous voulez le garder après avoir nettoyé le reste du projet.
 - ` make clean` : efface les fichiers engendrés par la compilation du projet.
 - `make repl`/`make compil` : construit et exécute le fichier (le `pjuliarepl.exe` ou `pjuliac.exe`).
@@ -497,6 +498,7 @@ Quelques petites remarques sur le fonctionnement des tableaux :
 # XIII] extension strings et chars
 
 Afin de pouvoir manipuler les **strings** plus librement, il a été décidé de les convertir en **tableaux de caractères**. Cela a multiplié la consommation en mémoire des strings par **8** (chaque caractère prend un mot de 8 octets au lieu d'un seul octet comme le prévoit la norme UTF-8). Cependant cela nous permet d'avoir accès à tous les avantages qu'un tableau nous fournit : 
+
 - concaténation
 - mutabilité
 - récupération d'une valeur à un indice précis
@@ -504,47 +506,47 @@ Afin de pouvoir manipuler les **strings** plus librement, il a été décidé de
 
 Il a aussi été décidé que les types String et le type Array seraient les mêmes à l'intérieur du typeur, notamment pour la surcharge de fonction.
 
-**Remarque :** Comme nous utilisons nos propres chaînes de caractères, les chaînes définies à la compilation ne sont plus déclarées dans le segment `data` mais sont construites caractère par caractère dans le code. Cela présente l'inconvénient de générer des fichiers ASM absolument monstrueux lorsque de grosses chaînes de caractères sont définies dans un programme (cf les exemples dans le packaghe `brainfuck`). Cependant, les avantages apportés par notre implémentation nous semblent très rentables!
+**Remarque :** Comme nous utilisons nos propres chaînes de caractères, les chaînes définies à la compilation ne sont plus déclarées dans le segment `data` mais sont construites *caractère par caractère* dans le code. Cela présente l'inconvénient de générer des fichiers ASM absolument monstrueux lorsque de grosses chaînes de caractères sont définies dans un programme (cf les exemples dans le packaghe `brainfuck`). Cependant, les avantages apportés par notre implémentation nous semblent très **rentables**!
 
 # XIV] extensions des primitives (input_int, delay, timestamp, typeof, int, float, input_string, etc.) + erreurs
 
 La liste de toutes les primitives avec leurs types possible est défini en bas du typeur dans la fonction `resetFE`.
 
-* `int` : Cette fonction convertit son argument (entier, flottant, booléen ou caractère) vers un entier, éventuellement en arrondissant à l'entier inférieur.
+* `int` : Cette fonction convertit son argument (entier, flottant, booléen ou caractère) vers un **entier**, éventuellement en arrondissant à l'entier inférieur.
 
-* `float` : Cette fonction convertit son argument (entier ou flottant) vers le flottant correspondant
+* `float` : Cette fonction convertit son argument (entier ou flottant) vers le **flottant** correspondant
 
-* `char` : Cette fonction convertit son argument (entier ou caractère) vers le caractère correspondant
+* `char` : Cette fonction convertit son argument (entier ou caractère) vers le **caractère** correspondant
 
-* `sqrt` : Cette fonction renvoie la racine carrée (sous forme d'un flottant) de son argument entier ou flottant
+* `sqrt` : Cette fonction renvoie la **racine carrée** (sous forme d'un flottant) de son argument entier ou flottant
 
-* `input_int` : Cette fonction permet de lire un entier sur l'entrée standard.
+* `input_int` : Cette fonction permet de **lire un entier** sur l'entrée standard.
 
-* `delay` : Cette fonction déclenche une pause de l'exécution du programme. L'argument est en secondes. /!\ la compatibilité n'est pas tout à fait bonne, comme cette fonction utilise un *syscall*. Elle a été testée et est fonctionnelle sous Ubuntu 20 mais ne semble pas marcher sur MacOS car les syscall n'y sont pas les même.
+* `delay` : Cette fonction déclenche une **pause de l'exécution** du programme. L'argument est en secondes. /!\ la compatibilité n'est pas tout à fait bonne, comme cette fonction utilise un *syscall*. Elle a été testée et est fonctionnelle sous Ubuntu 20 mais ne semble pas marcher sur MacOS car les syscall n'y sont pas les même.
 
-* `timestamp` : Cette fonction renvoie le timestamp actuel de la machine, lu sur le registre TSC. Cela peut être utile pour des fonctions de monitoring et/ou mesure de performances.
+* `timestamp` : Cette fonction renvoie le **timestamp actuel** de la machine, lu sur le registre **TSC**. Cela peut être utile pour des fonctions de monitoring et/ou mesure de performances.
 
-* `typeof` : Cette fonction renvoie le type de son argument, sous forme d'un entier.
+* `typeof` : Cette fonction renvoie le **type** de son argument, sous forme d'un entier.
 
 # XV] Ajouts divers
 
 ## 1) docstrings et utilisation dans le REPL
 
-Nous avons ajouté le support des docstrings à petitJulia™ : chaque fonction peut être précédée d'une docstring, entre `"""`. Elle est conservée sous la forme d'une chaîne de caractère dans l'AST et est affichée lorsque l'utilisateur entre `? nom_fonction` dans le REPL.
+Nous avons ajouté le support des **docstrings** à petitJulia™ : chaque fonction peut être précédée d'une docstring, entre `"""`. Elle est conservée sous la forme d'une chaîne de caractère dans l'AST et est affichée lorsque l'utilisateur entre `? nom_fonction` dans le **REPL**.
 
 ## 2) assert
 
-Comme nous avons rajouté un certain nombre de fonctionnalités à notre langage, il nous a semblé important de pouvoir faire des tests automatisés pour s'assurer, à tout moment, que toutes nos fonctionnalités marchent correctement. C'est pourquoi nous avons implémenté un méchanisme d'assertions. Une assertion est déclarée dans un programme par le mot-clé `assert` suivi d'une expression. À l'exécution, si l'expression s'évalue à `true`, rien ne se passe. Autrement, le programme échoue et affiche une `assertionError`, contenant le nom du fichier où l'assertion a échoué ainsi que sa ligne (le nom et la ligne sont ajoutés dans l'AST au moment du parsing puis "hardcoded" dans l'exécutable).
+Comme nous avons rajouté un certain nombre de fonctionnalités à notre langage, il nous a semblé important de pouvoir faire des **tests automatisés** pour s'assurer, à tout moment, que toutes nos fonctionnalités marchent correctement. C'est pourquoi nous avons implémenté un méchanisme d'**assertions**. Une assertion est déclarée dans un programme par le mot-clé `assert` suivi d'une expression. À l'exécution, si l'expression s'évalue à `true`, rien ne se passe. Autrement, le programme **échoue** et affiche une `assertionError`, contenant le **nom du fichier** où l'assertion a échoué ainsi que sa **ligne** (le nom et la ligne sont ajoutés dans l'AST au moment du parsing puis "hardcoded" dans l'exécutable).
 
-Nous avons ajouté dans la bibliothèque standard un paquet `tester` qui contient quelques tests (encore incomplet, il contient surtout les tests des différentes comparaisons entier/entier, entier/flottant, flottant/flottant et de quelques opérations sur les arrays)
+Nous avons ajouté dans la bibliothèque standard un paquet `tester` qui contient quelques tests (encore incomplet, il contient surtout les tests des différentes comparaisons entier/entier, entier/flottant, flottant/flottant et de quelques opérations sur les arrays).
 
 ## 3) analytics
 
-Nous avons ajouté au compilateur un petit compteur de performances : lorsque le drapeau `-analytics` est passé à `pjuliac`, le compilateur affiche à l'issue de la compilation quelques éléments d'analyse de performances très simples : le nombre de labels utilisés, selon leur type (`for`, `while` ou `if`), le nombre d'instructions `call` et le nombre d'appels à `malloc` présents dans le fichier généré. Nous aimerions également ajouter dans le futur le temps et la mémoire qui ont été nécessaires lors de la compilation.
+Nous avons ajouté au compilateur un **petit compteur de performances** : lorsque le drapeau `-analytics` est passé à `pjuliac`, le compilateur affiche à l'issue de la compilation quelques éléments d'analyse de performances très simples : le nombre de **labels** utilisés, selon leur type (`for`, `while` ou `if`), le nombre d'instructions `call` et le nombre d'appels à `malloc` présents dans le fichier généré. Nous aimerions également ajouter dans le futur le **temps** et la **mémoire** qui ont été nécessaires lors de la compilation.
 
 # XVI] Extension opérateurs
 
-Nous avons pensé que petitJulia™ manquait d'opérateurs, comme par exemple les opérateurs `AND`, `OR`, `SHIFT`, bit-à-bit. Nous avons donc ajouté `|`, `&`, `/`, `<<`, `>>`, correspondant aux opérateurs OR, AND, XOR, SHIFT_LEFT, SHIFT_RIGHT.
+Nous avons pensé que petitJulia™ manquait d'**opérateurs**, comme par exemple les opérateurs `AND`, `OR`, `SHIFT`, bit-à-bit. Nous avons donc ajouté `|`, `&`, `/`, `<<`, `>>`, correspondant aux opérateurs OR, AND, XOR, SHIFT_LEFT, SHIFT_RIGHT.
 
 De plus, nous avons ajouté les opérateurs de mise à jour (*update operators*, en anglais) : `+=`, `-=`, `*=`, `|=`, `&=`, `/=`, `<<=` et `>>=`.
 
@@ -552,28 +554,31 @@ De plus, nous avons ajouté les opérateurs de mise à jour (*update operators*,
 
 # XVII] État de l'interpréteur
 
-Étant bien occupés par la compilation, nous n'avons pas eu le temps de retravailler l'interpréteur. Il n'a donc pas été modifié depuis le premier rendu et ne supporte donc pas tous nos ajouts (tableaux, nouvelles chaînes de caractères, primitives, opérateurs étendus, etc.). Cependant, il supporte partiellement les flottants.
+Étant bien occupés par la compilation, nous n'avons pas eu le temps de retravailler l'**interpréteur**. Il n'a donc pas été modifié depuis le premier rendu et **ne supporte donc pas tous nos ajouts** (tableaux, nouvelles chaînes de caractères, primitives, opérateurs étendus, etc.). Cependant, il supporte partiellement les flottants.
 
 Nous avons préféré nous concentrer sur la compilation. En effet, il nous semblait plus intéressant (et c'est un plus grand défi) d'ajouter de nouvelles fonctionnalités au compilateur en priorité, la mise à jour de l'interpréteur étant en soi une tâche assez facile, mais qui prend du temps, et nous avons préféré consacrer ce temps au paufinement du fonctionnement du compilateur!
+
+
+**NB :** Pour importer des fichiers dans le **REPL**, il faut utiliser, comme dans le cas d'un programme compilé, la syntaxe `include("....jl")`. Cela n'a cependant pas été beaucoup testé, comme nous avons mis en pause le développement du **REPL**.
 
 
 # XVIII] Conclusion
 
 ## 1) Partie commune
 
-Ce projet a été pour nous l'occasion de découvrir le domaine de la programmation bas-niveau et de la compilation. 
+Ce projet a été pour nous l'occasion de découvrir le domaine de la **programmation bas-niveau** et de la **compilation**. 
 
-L'étape de la génération de code a été très intéressante et l'occasion de tester "pour de vrai" les capacités de notre compilateur. Nous nous sommes pris au jeu d'ajouter à petitJulia™ le plus possible de fonctionnalités plus ou moins utiles ou anecdotiques! 
+L'étape de la génération de code a été très intéressante et l'occasion de tester "pour de vrai" les capacités de notre compilateur. Nous nous sommes pris au jeu d'ajouter à petitJulia™ **le plus possible de fonctionnalités** plus ou moins utiles ou anecdotiques! 
 
 Cependant, il y a quelques éléments supplémentaires que nous aurions aimé ajouter à notre compilateur mais qui n'ont pas pu être réalisés par manque de temps : 
 
-* Affichage de structures : le temps nous a tout simplement manqué et nous avons trouvé plus intéressant d'implémenter l'affichage de tableaux (au vu des choses que nous voulions encore implémenter, nous avons du faire un choix).
-* Support de LLVM : cela aurait permis de gagner en performance et en portabilité. Cependant nous ne connaissions pas du tout le fonctionnement de cette plateforme et il nous aurait fallu du temps pour comprendre son fonctionnement!
-* GC : un GC, même basique, aurait fait de notre compilateur un vrai compilateur utilisable en pratique. En effet, même si la consommation de mémoire des exécutables générés par notre compilateur sur les exemples fournis reste raisonnable, il nous paraît évident que certaines situation ferait exploser cette consommation du fait de l'absence de GC. Par exemple si une fonction instantiant une structure était appelée un grand nombre de fois.
-* Nous avions évoqué la possibilité de faire un compilateur JIT. Nous nous sommes rendus compte que c'est une chose difficilement faisable en OCaml (ou bien nous n'avons pas trouvé les bonnes ressources) autrement que via la plateforme LLVM, que nous n'avions déjà pas le temps d'utiliser dans notre projet.
-* La mise à jour de l'interpréteur. Cf plus haut.
-* Pourquoi pas les entiers et flottants sur 128 bits et les caractères non UTF-8.
-* Une documentation avec l'outil `ocamldoc`.
+* **Affichage de structures** : le temps nous a tout simplement manqué et nous avons trouvé plus intéressant d'implémenter l'affichage de tableaux (au vu des choses que nous voulions encore implémenter, nous avons du faire un choix).
+* **Support de LLVM** : cela aurait permis de gagner en performance et en portabilité. Cependant nous ne connaissions pas du tout le fonctionnement de cette plateforme et il nous aurait fallu du temps pour comprendre son fonctionnement!
+* **GC** : un GC, même basique, aurait fait de notre compilateur un vrai compilateur utilisable en pratique. En effet, même si la consommation de mémoire des exécutables générés par notre compilateur sur les exemples fournis reste raisonnable, il nous paraît évident que certaines situation ferait exploser cette consommation du fait de l'absence de GC. Par exemple si une fonction instantiant une structure était appelée un grand nombre de fois.
+* Nous avions évoqué la possibilité de faire un **compilateur JIT**. Nous nous sommes rendus compte que c'est une chose difficilement faisable en OCaml (ou bien nous n'avons pas trouvé les bonnes ressources) autrement que via la plateforme LLVM, que nous n'avions déjà pas le temps d'utiliser dans notre projet.
+* La mise à jour de l'**interpréteur**. Cf plus haut.
+* Pourquoi pas les entiers et flottants sur **128 bits** et les caractères non UTF-8.
+* Une **documentation** avec l'outil `ocamldoc`.
 
 
 ## 2) Constantin
@@ -613,7 +618,9 @@ Voilà la liste des paquets disponiblessur le repo `pjulia-packages`, téléchar
 * `tester` : Fichier pour tester le bon fonctionnement de notre production de code
 
 ## C] Nos ajouts à x86-64.ml
+
 Nous avons ajouté quelques fonctionnalités à la bibliothèque `x86-64.ml` :
+
 * la détection automatique du type d'OS : Linux ou MacOS. Elle sert dans certains cas de figure, par exemple pour `lab`.
 * les registres flottants SSE 64 bits : les registres `%xmm0` à `%xmm15`.
 * des opérations sur les flottants : par exemple `cvtsi2sdq`, instruction de conversion d'entier vers flottant, ainsi que les instruction de comparaison de flottants
@@ -622,6 +629,7 @@ Nous avons ajouté quelques fonctionnalités à la bibliothèque `x86-64.ml` :
 
 
 ## D] Liste des fichiers
+
 Ci-dessous sont listés les fichiers du projet, accompagnés d'une brève description de leur utilité.
 
 * `ast.ml` : déclaration des types récursifs de l'arbre abstrait du programme.
