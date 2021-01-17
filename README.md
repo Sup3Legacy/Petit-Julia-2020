@@ -4,7 +4,7 @@
 ### Constantin Gierczak--Galle & Samuel Vivien
 ### Cours de compilation, Jean-Christophe Filliâtre & Basile Clément, ENS Ulm, 2020
 
-## Les parties I] à VI] inclues n'ont pas été modifiées entre les deux rendus, simplement renuméroté II] à VII].
+## Les parties I] à VI] inclues n'ont pas été modifiées entre les deux rendus, simplement renumérotées II] à VII].
 
 **Les derniers calculs estiment à environ 1h la durée de compilation du compilateur. Vous avez deux options devans vous :**
 
