@@ -36,7 +36,7 @@ Règles de priorité :
 
 | opérateur | associativité |
 | :---------| :------------ |
-| assert | _ |
+| **assert** | _ |
 | return | - |
 | = | droite |
 | \|\| | gauche |
@@ -46,19 +46,19 @@ Règles de priorité :
 | *, % | gauche |
 | - (unaire), ! | - |
 | ^ | droite |
-| @ (concat) | gauche |
+| **@** (concat) | gauche |
 | . | gauche |
 
 Grammaire :
 
-- < fichier > ::= < decl ><sup> * </sup> EOF
-- < decl > ::= < structure > | < fonction > | < expr > ;
-- < structure > ::= mutable? struct < ident > (< param >?)<sup> * </sup><sub>;</sub> end ;
-- < fonction > ::= **< docstring >?** function < ident-parg > < param ><sup> * </sup><sub>;</sub> (:: < ident >)? < bloc > end ;
-- < param > ::= < ident > (:: < ident >)?
-- < expr > ::=  \| < entier > \|< chaîne > \| true \| false \| **< flottant >**
+- < fichier > **::=** < decl ><sup> * </sup> EOF
+- < decl > **::=** < structure > | < fonction > | < expr > ;
+- < structure > **::=** mutable? struct < ident > (< param >?)<sup> * </sup><sub>;</sub> end ;
+- < fonction > **::=** **< docstring >?** function < ident-parg > < param ><sup> * </sup><sub>;</sub> (:: < ident >)? < bloc > end ;
+- < param > **::=** < ident > (:: < ident >)?
+- < expr > **::=**  \| < entier > \|< chaîne > \| true \| false \| **< flottant >**
 
- 	\| ** < char > ** \| **[< expr ><sub>,</sub><sup> * </sup> ]** \| < entier-ident > 
+ 	\| **< char >** \| **[< expr ><sub>,</sub><sup> * </sup> ]** \| < entier-ident > 
 
  	\| < entier-parg > < bloc1 > ) \| (< bloc1 >) \| ( < expr >< pard-ident > 
  
@@ -70,11 +70,11 @@ Grammaire :
 
 	\| while < expr > < bloc > end \| **dowhile < bloc > end** \| if < expr > < bloc > < else >
 
-- < lvalue > ::= < ident > | < expr > . < ident > | **< expr > [ < expr > ]**
-- < else > ::= end | else < bloc > end | elseif < expr > < bloc > < else >
-- < opérateur > ::= == | != | < | <= | > | >= | + | - | * | % | ^ | && | || | ** @ **
-- < bloc > ::= < expr > ?<sub>,</sub><sup>* </sup>
-- < bloc1 > ::= < expr > (; < bloc > )?
+- < lvalue > **::=** < ident > | < expr > . < ident > | **< expr > [ < expr > ]**
+- < else > **::=** end | else < bloc > end | elseif < expr > < bloc > < else >
+- < opérateur > **::=** == | != | < | <= | > | >= | + | - | * | % | ^ | && | || | **@**
+- < bloc > **::=** < expr > ?<sub>,</sub><sup>* </sup>
+- < bloc1 > **::=** < expr > (; < bloc > )?
 
 
 
