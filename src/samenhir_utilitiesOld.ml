@@ -539,13 +539,7 @@ let pp_declarationTypes (fmt:Format.formatter) p =
 	Format.fprintf fmt "\t|Tok of token\n";
 	let t = findType p.gR.startR p.gR.raw_rules in 
 	Format.fprintf fmt "exception Output of (%s)\n" t;
-	Format.fprintf fmt "exception FailureParse of rulesType list\n";
-	Format.fprintf fmt "
-type actionTypes =
-	|Action of int
-	|Shift of int
-	|Success
-";;
+	Format.fprintf fmt "exception FailureParse of rulesType list\n"
 
 let pp_tokenDecl fmt liste = 
 	Format.fprintf fmt "type token =\n";
@@ -569,16 +563,6 @@ let pp_end fin fmt startS =
 	with Output a -> a
 		|a -> raise a
 " fin startS startS;;
-
-let pp_mainEnd fmt fin startS =
-	Format.fprintf fmt "let %s lexer lexbuf =
-	let newTok = (fun () -> lexer lexbuf) in
-	try match actionAll newTok %i (newTok ()) [] [%i] with 
-		|%s a -> a
-		| _ -> assert false
-	with Output a -> a
-		| _ -> raise (Samenhir_Parsing_Error [\"Try something else\"])
-" fin startS startS (String.uppercase_ascii fin);;
 
 (* affichage des actions de réduction *)
 let pp_reduce b i fmt (raw_prod,cons) =
@@ -659,66 +643,6 @@ let pp_action fmt starter pos t a rMap tokenTypeMap =
 		end;
 	Format.fprintf fmt "\n"
 
-let compteurReduce = ref 0
-let hash = Hashtbl.create 1024
-
-let pp_action_affiche fmt num t action (rMap:(raw_production * string) Rmap.t) tokenTypeMap = 
-	let t2 = if t = endString then "EOF" else t in
-	if Tmap.mem t tokenTypeMap then
-		Format.fprintf fmt "\t|%i, %s _ -> " num t2
-	else Format.fprintf fmt "\t|%i, %s -> " num t2;
-	match action with
-		| SUCCESS -> Format.fprintf fmt "Success\n"
-		| SHIFT i -> Format.fprintf fmt "Shift %i\n" i
-		| REDUCE r -> begin
-			if Hashtbl.mem hash r then
-				let (i, _) = Hashtbl.find hash r in Format.fprintf fmt "Action %i\n" i
-			else begin
-				let i = !compteurReduce in 
-				compteurReduce := i +1;
-				let red = Rmap.find r rMap in
-				Hashtbl.add hash r (i, red);
-				Format.fprintf fmt "Action %i\n" i
-			end
-		end
-;;
-
-let pp_action_table fmt action rMap tokenTypeMap =
-	Format.fprintf fmt "let actionTable state nexToken = match state, nexToken with\n";
-	Imap.iter (fun i -> Tmap.iter (fun n act -> pp_action_affiche fmt i n act rMap tokenTypeMap)) action;
-	Format.fprintf fmt "\t| i, _ -> raise (Samenhir_Parsing_Error [\"string_of_int i\"])\n\n"
-;;
-
-let pp_reduce_action fmt tokenTypeMap (n,_,_) (num, (raw_prod, cons)) =
-	let rec aux1 l = if l==[] then "","tlE" else  
-		let s1,s2 = aux1 (List.tl l) in
-		match List.hd l with
-			|TerminalR t -> ((s1^"Tok ("^(String.uppercase_ascii t)^(if Tmap.mem t tokenTypeMap then " _" else "")^")::"),("_::"^s2))
-			|AssocTerminal (s, t) -> ((s1^"Tok ("^String.uppercase_ascii t^" "^s^")::"),("_::"^s2))
-			|NonTerminalR t -> ((s1^(String.uppercase_ascii t)^(if Tmap.mem t tokenTypeMap then " _" else "")^"::"),("_::"^s2))
-			|AssocNonTerminal (s,t) -> ((s1^(String.uppercase_ascii t)^" "^s^"::"),("_::"^s2))
-	in let s1,s2 = aux1 raw_prod in
-	Format.fprintf fmt "\t|%i, %stlP, %s -> (%s (%s))::tlP,tlE\n" num s1 s2 (String.uppercase_ascii n) cons
-;;
-
-let pp_reduce_table fmt tokenTypeMap = 
-	Format.fprintf fmt "and reduce (num:int) (listE:int list) (pile:rulesType list) = match num, pile, listE with\n";
-	Hashtbl.iter (pp_reduce_action fmt tokenTypeMap) hash;
-	Format.fprintf fmt "\t| i, _, _ ->(print_int i;print_newline ();print_int (List.length listE);print_newline ();print_int (List.length pile);print_newline (); assert false)\n\n"
-;;
-
-let pp_mainProgram fmt = Format.fprintf fmt "
-let rec actionAll newToken etat nexToken pile lEtat = (*print_string \"etat : \";print_int etat;print_newline ();*)match actionTable etat nexToken with
-	|Success -> begin match pile with
-		|[x] -> x
-		|_ -> assert false end
-	|Action i ->begin let pile2, letat2 = reduce i (etat::lEtat) pile in 
-		let i2 = goto letat2 pile2 in
-		actionAll newToken i2 nexToken pile2 letat2 end
-	|Shift i -> begin actionAll newToken i (newToken ()) (Tok nexToken::pile) (etat::lEtat) end
-;;\n\n
-"
-
 (* affiche la liste de string *)
 let rec afficheListStr fmt = function
 	|[] -> ()
@@ -737,15 +661,9 @@ let pp_actionStates fmt startR i actionT ruleMap tokenTypeMap goto =
 let pp_goto fmt i t target =
 	Format.fprintf fmt "|%i,\"%s\"->_sam%i\n" i t target
 
-let pp_mainGoto fmt i t target =
-	Format.fprintf fmt "|%i, %s _ -> %i\n" i (String.uppercase_ascii t) target
-
 (* affiche toutes les transitions du goto à partir d'un état *)
 let pp_gotoStates fmt i gotoT ruleMap = 
 	Ntmap.iter (pp_goto fmt i) gotoT
-
-let pp_gotoStates2 fmt i gotoT ruleMap = 
-	Ntmap.iter (pp_mainGoto fmt i) gotoT
 
 (* affiche tout le programme *)
 let pp_buildProg fmt program = 
@@ -757,22 +675,6 @@ let pp_buildProg fmt program =
 	Format.fprintf fmt "and goto i readRule = match i,readRule with\n";
 	Imap.iter (fun i got ->if Ntmap.cardinal got > 0 then pp_gotoStates fmt i got rMap) program.gotoTab;
 	Format.fprintf fmt "|_,_-> assert false\n\n%a\n" (pp_end program.gR.startR) program.startLTable;
-	Format.pp_print_flush fmt ()
-;;
-
-let pp_main fmt program = 
-	pp_header fmt program.head;
-	Format.fprintf fmt "\n\n%a\n%a\n" pp_tokenDecl program.tokenList pp_declarationTypes program;
-	let tokenTypeMap = List.fold_left (fun m (t,dT) -> if dT = None then m else Tmap.add t dT m) Tmap.empty program.tokenList in
-	let rMap = List.fold_left (fun m (nm,tipe, rawProd, opt, cons) -> Rmap.add (nm,unRawProd rawProd, opt) (rawProd,cons) m) Rmap.empty program.gR.raw_rules in
-	pp_action_table fmt program.actionTab rMap tokenTypeMap;
-	pp_reduce_table fmt tokenTypeMap;
-	Format.fprintf fmt "and goto i readRule = match List.hd i,List.hd readRule with\n";
-	Imap.iter (fun i got ->if Ntmap.cardinal got > 0 then pp_gotoStates2 fmt i got rMap) program.gotoTab;
-	Format.fprintf fmt "|_, %s t when 1 = List.length readRule -> raise (Output t)\n" (String.uppercase_ascii program.gR.startR);
-	Format.fprintf fmt "|_,_-> assert false;;\n\n";
-	pp_mainProgram fmt;
-	pp_mainEnd fmt program.gR.startR program.startLTable;
 	Format.pp_print_flush fmt ()
 ;;
 

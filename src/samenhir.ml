@@ -13,11 +13,12 @@
 open SamenhirAst
 
 let file = ref "";;
-
+let v2 = ref false;;
 
 let main () =
 	let spectlist = ["-explain", Arg.Set Samenhir_utilities.explain, "build file of states";
-	"-print", Arg.Set Samenhir_utilities.print_all, "show info to debug Samenhir"]
+	"-print", Arg.Set Samenhir_utilities.print_all, "show info to debug Samenhir";
+	"-v2", Arg.Set v2, "use v2 version"]
 	in
 	Arg.parse spectlist (fun f -> file := f) "";
 	if !file = "" then
@@ -38,7 +39,7 @@ let main () =
 			let table = Samenhir_utilities.buildTable (Samenhir_utilities.unrawGrammar parsed.g) parsed.prio in
 			let p = {gR = parsed.g; startLTable = table.startLine; gotoTab = table.goto; actionTab = table.action; tokenList = parsed.tokenList; head = parsed.header} in
 			let out = open_out outfile in
-			let _ = Samenhir_utilities.pp_buildProg (Format.formatter_of_out_channel out) p in
+			let _ = (if !v2 then Samenhir_utilities.pp_main else Samenhir_utilities.pp_buildProg) (Format.formatter_of_out_channel out) p in
 			let () = close_out out in
 			let out = open_out (outfile^"i") in
 			let _ = Samenhir_utilities.pp_mli (Format.formatter_of_out_channel out) p in

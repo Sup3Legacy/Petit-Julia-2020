@@ -9,4 +9,6 @@ val buildTable : SamenhirAst.grammar -> SamenhirAst.priority -> SamenhirAst.pars
 
 val pp_buildProg: Format.formatter -> SamenhirAst.program -> unit
 
+val pp_main: Format.formatter -> SamenhirAst.program -> unit
+
 val pp_mli : Format.formatter -> SamenhirAst.program -> unit
