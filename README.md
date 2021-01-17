@@ -547,7 +547,7 @@ Ce projet a été pour nous l'occasion de découvrir le domaine de la programmat
 
 L'étape de la génération de code a été très intéressante et l'occasion de tester "pour de vrai" les capacités de notre compilateur. Nous nous sommes pris au jeu d'ajouter à petitJulia le plus possible de fonctionnalités plus ou moins utiles ou anecdotiques! 
 
-Cependant, il y a quelques éléments supplémentaires que nous aurions aimé ajouter à notre compilateur mais qui n'ont pas pu ̂étre réalisés par manque de temps : 
+Cependant, il y a quelques éléments supplémentaires que nous aurions aimé ajouter à notre compilateur mais qui n'ont pas pu être réalisés par manque de temps : 
 
 * Affichage de structures : le temps nous a tout simplement manqué et nous avons trouvé plus intéressant d'implémenter l'affichage de tableaux.
 * Support de LLVM : cela aurait permis de gagner en performance et en portabilité. Cependant nous ne connaissions pas du tout le fonctionnement de cette plateforme et il nous aurait fallu du temps pour comprendre son fonctionnement!
@@ -562,6 +562,8 @@ Cependant, il y a quelques éléments supplémentaires que nous aurions aimé aj
 ## 2) Constantin
 
 ## 3) Samuel
+
+Ce projet fut pour moi à la fois un grand plaisir et une grande frustration. On a pus faire tellement de choses mais il en reste tellement à faire. J'aurais bien aimé rajouter au compilateur un GC, notre propre générateur d'analyseur lexicale ainsi qu'un compilateur optimisant plutôt que le notre qui n'est pas du tout optimisé et ne prend pas en compte les type calculé par le typeur. Il y a aussi une envie de refaire samenhir pour réussir à obtenir un code encore plus optimisé en terme de taille. Et aussi diminuer le temps de compilation. Malheureusement le temps nous as manqué. Notamment à cause des projets dans les autres cours d'informatique.
 
 
 # XVIII] Annexes
