@@ -252,6 +252,7 @@ Nous n'avons malheureusement pas encore eu le temps d'effectuer des **tests de p
 En l'état actuel des choses, la compilation du compilateur (`pjuliac.exe`) et du REPL (`pjuliarepl.exe`) est gérée par `dune` via un `dune-project` commun. Elle est réalisable via notre `Makefile`. Nous avons paramétré celui-ci pour **automatiser** au maximum les tests et essais des différentes parties de notre projet.
 
 Nous retrouvons :
+
 - `make` : construit les deux fichiers, de plus pour le confort de l'utilisateur un exécutable `pjuliac` est mis dans le **répertoire courant**. Cependant cet exécutable est supprimé par la commande `make clean`. Pensez donc à le déplacer avant si vous voulez le garder après avoir nettoyé le reste du projet.
 - ` make clean` : efface les fichiers engendrés par la compilation du projet.
 - `make repl`/`make compil` : construit et exécute le fichier (le `pjuliarepl.exe` ou `pjuliac.exe`).
@@ -497,6 +498,7 @@ Quelques petites remarques sur le fonctionnement des tableaux :
 # XIII] extension strings et chars
 
 Afin de pouvoir manipuler les **strings** plus librement, il a été décidé de les convertir en **tableaux de caractères**. Cela a multiplié la consommation en mémoire des strings par **8** (chaque caractère prend un mot de 8 octets au lieu d'un seul octet comme le prévoit la norme UTF-8). Cependant cela nous permet d'avoir accès à tous les avantages qu'un tableau nous fournit : 
+
 - concaténation
 - mutabilité
 - récupération d'une valeur à un indice précis
@@ -616,7 +618,9 @@ Voilà la liste des paquets disponiblessur le repo `pjulia-packages`, téléchar
 * `tester` : Fichier pour tester le bon fonctionnement de notre production de code
 
 ## C] Nos ajouts à x86-64.ml
+
 Nous avons ajouté quelques fonctionnalités à la bibliothèque `x86-64.ml` :
+
 * la détection automatique du type d'OS : Linux ou MacOS. Elle sert dans certains cas de figure, par exemple pour `lab`.
 * les registres flottants SSE 64 bits : les registres `%xmm0` à `%xmm15`.
 * des opérations sur les flottants : par exemple `cvtsi2sdq`, instruction de conversion d'entier vers flottant, ainsi que les instruction de comparaison de flottants
@@ -625,6 +629,7 @@ Nous avons ajouté quelques fonctionnalités à la bibliothèque `x86-64.ml` :
 
 
 ## D] Liste des fichiers
+
 Ci-dessous sont listés les fichiers du projet, accompagnés d'une brève description de leur utilité.
 
 * `ast.ml` : déclaration des types récursifs de l'arbre abstrait du programme.
