@@ -6,6 +6,14 @@
 
 ## Les parties I] à VI] inclues n'ont pas été modifiées entre les deux rendus, simplement renuméroté II] à VII].
 
+**Les derniers calculs estiment à environ 1h la durée de compilation du compilateur. Vous avez deux options devans vous :**
+
+Il y a dans notre rendu deux fichier dune : dune-lent et dune-lourd. Vous pouvez remplacer le fichier dune par l'un ou l'autre. 
+* Dune-lourd fait compiler le compilateur en environ 50minutes pour un exécutable de 70Mo
+* Dune-lent fait compiler le compilateur en plus d'une heure et demi pour un exécutable de 8.8Mo
+
+La différence est l'utilisation ou non du flag `-v2` de Samenhir qui permet de produire un code plus court mais composé d'un énorme dispatch, que donc ocamlc met plus de temps à compiler.
+
 # 0] Prérequis
 
 Notre projet requiert l'installation, via `opam` des bibliothèques `ppx_deriving`, `Core_kernel`, `Core`, `Yojson`, `cohttp-lwt-unix` et `cohttp-async`. Le paquet `lwt_ssl` doit aussi être installé via le gestionnaire de paquets de son choix.
@@ -614,11 +622,14 @@ Nous avons ajouté quelques fonctionnalités à la bibliothèque `x86-64.ml` :
 Ci-dessous sont listés les fichiers du projet, accompagnés d'une brève description de leur utilité.
 
 * `ast.ml` : déclaration des types récursifs de l'arbre abstrait du programme.
+* `astcompilN.ml`: déclaration des types pour la production de code.
 * `astinterp.ml` : déclaration des types utilisés lors de l'interprétation.
 * `astype.ml` : déclaration des types utilisés lors du typage.
 * `compilNaif.ml` : génération de code
-* `compilRef.ml` : déclaration de variables utiles lors de la génération de code
+* `compilRef.ml` : déclaration de variables utiles lors de la génération de code afin de diminuer la taille du fichier assembleur
+* `depManager.ml` : gestionnaire des dépendances pour les `include(...)`
 * `dune` : déclaration des directives de compilation (utilsé pour intégrer Samenhir!).
+* `dune-lent` et `dune-lourd`: les deux version du dune pour que vous n'ayez pas besoin de le modifier suivant vos préférences
 * `dune-project` : déclarations annexes de `dune`.
 * `hyper.ml` : fichier contenant le code `OCaml` utilisé par le Lexer.
 * `hyper2.ml` : quelques fonctions utilisées dans le Parser.
@@ -628,16 +639,15 @@ Ci-dessous sont listés les fichiers du projet, accompagnés d'une brève descri
 * `logo.png` : logo de PetitJulia™
 * `Makefile` : fichier principal de compilation. Il contient plein d'options.
 * `parser.sam` : parser pour Samenhir.
-* `parserExemple.sam` : exemple de petit parser si vous avez envie de voir la syntaxe demandé par Samenhir.
-* `parserMenhir.mly` : ancien parser qu'utilisait l'outils Menhir.
 * `pjuliac.ml` : fichier principal du compilateur. Il peut prendre plusieurs flags.
 * `pjuliarepl.ml` : fichier principal du REPL. Il peut être utilisé tel quel ou bien avec `rlwrap` via le script ci-dessous!
 * `pjuliarepl-rlwrap.sh` : petit script `bash` pour lancer le REPL en utilisant `rlwrap` avec les options que nous avons choisies
 * `pjulia-words` : fichier contenant les mots-clé du langage, pour la complétion automatique dans le REPL
+* `pPkg.ml` : gestionnaire de paquets
 * `samenhir.ml` : fichier servant d'interface de Samenhir.
 * `samenhir-utilities.ml` : le corps et l'âme de Samenhir.
 * `samenhirAst.ml` : définission des types et structures utiles à Samenhir.
 * `samenhirLexer.ml` : lexer de Samenhir (donné à ocamllex).
 * `samenhirParserBuilder.ml` : constructeur du parseur de Samenhir.
 * `typer.ml` : fichier principal de typage
-* `x86_64.ml` : fichier contenant les déclarations de base nécessaires à la génération de code `x86_64`, détecte automatiquement si l'ordinateur est un mac ou non.
+* `x86_64.ml` : fichier contenant les déclarations de base nécessaires à la génération de code `x86_64`, détecte automatiquement si l'ordinateur est un mac ou non. Il y a aussi quelques modifications qui ont été apporté notamment pour tout ce qui est de la gestion des flottants
