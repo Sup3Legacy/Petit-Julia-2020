@@ -19,6 +19,14 @@
 %token <Ast.position> CURLYG
 %token <Ast.position> CURLYD
 %token <Ast.position> AFFECT
+%token <Ast.position> PLUS_AFFECT
+%token <Ast.position> TIMES_AFFECT
+%token <Ast.position> MINUS_AFFECT
+%token <Ast.position> OR_AFFECT
+%token <Ast.position> AND_AFFECT
+%token <Ast.position> XOR_AFFECT
+%token <Ast.position> SHIFT_LEFT_AFFECT
+%token <Ast.position> SHIFT_RIGHT_AFFECT
 %token <Ast.position> OR
 %token <Ast.position> AND
 %token <Ast.position> EQ
@@ -36,6 +44,11 @@
 %token <Ast.position> DOT
 %token <Ast.position> ASSERT
 %token <Ast.position> CONCAT
+%token <Ast.position> BIT_OR
+%token <Ast.position> BIT_AND
+%token <Ast.position> BIT_XOR
+%token <Ast.position> SHIFT_LEFT
+%token <Ast.position> SHIFT_RIGHT
 
 %token <Ast.position> ELSE
 %token <Ast.position> ELSEIF
@@ -67,6 +80,19 @@
 %nonassoc ASSERT
 %nonassoc RETURN
 %right AFFECT
+%right PLUS_AFFECT
+%right TIMES_AFFECT
+%right MINUS_AFFECT
+%right OR_AFFECT
+%right AND_AFFECT
+%right XOR_AFFECT
+%right SHIFT_LEFT_AFFECT
+%right SHIFT_RIGHT_AFFECT
+%left BIT_OR
+%left BIT_AND
+%left BIT_XOR
+%left SHIFT_LEFT
+%left SHIFT_RIGHT
 %left OR
 %left AND
 %left EQ NEQ
@@ -295,6 +321,11 @@ expr_wMin_<Ast.expression>:
   | pe1 = expr_wMin_ p = AND pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, And, pe1, pe2)) }
   | pe1 = expr_wMin_ p = OR pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, Or, pe1, pe2)) }
   | pe1 = expr_wMin_ p = CONCAT pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, Concat, pe1, pe2)) }
+  | pe1 = expr_wMin_ p = BIT_OR pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, Bit_Or, pe1, pe2)) }
+  | pe1 = expr_wMin_ p = BIT_AND pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, Bit_And, pe1, pe2)) }
+  | pe1 = expr_wMin_ p = BIT_XOR pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, Bit_Xor, pe1, pe2)) }
+  | pe1 = expr_wMin_ p = SHIFT_LEFT pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, Shift_Left, pe1, pe2)) }
+  | pe1 = expr_wMin_ p = SHIFT_RIGHT pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, Shift_Right, pe1, pe2)) }
   | pi = INT {let (p,i) = pi in (p,Eentier i)}
   | pc = CHAR {let (p, c) = pc in (p,Echar c)}
   | pf = FLOAT {let (p, f) = pf in (p, Eflottant f)}
@@ -320,6 +351,46 @@ expr_wMin_<Ast.expression>:
   | pl = expr_wMin_ AFFECT e = expr {
   		match pl with
   			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, e)
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr_wMin_ PLUS_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Plus, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr_wMin_ TIMES_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Times, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr_wMin_ MINUS_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Minus, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr_wMin_ OR_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Bit_Or, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr_wMin_ AND_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Bit_And, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr_wMin_ XOR_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Bit_Xor, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr_wMin_ SHIFT_LEFT_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Shift_Left, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr_wMin_ SHIFT_RIGHT_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Shift_Right, pl, e)))
   			|_ -> raise Ast.Parsing_Error
   		}
   | pl = lvalue_wMin_ {let (p,l) = pl in p, Elvalue l}
@@ -361,6 +432,11 @@ expr_w_Ret<Ast.expression>:
   | pe1 = expr p = AND pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, And, pe1, pe2) }
   | pe1 = expr p = OR pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Or, pe1, pe2) }
   | pe1 = expr p = CONCAT pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Concat, pe1, pe2) }
+  | pe1 = expr p = BIT_OR pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Bit_Or, pe1, pe2) }
+  | pe1 = expr p = BIT_AND pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Bit_And, pe1, pe2) }
+  | pe1 = expr p = BIT_XOR pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Bit_Xor, pe1, pe2) }
+  | pe1 = expr p = SHIFT_LEFT pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Shift_Left, pe1, pe2) }
+  | pe1 = expr p = SHIFT_RIGHT pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Shift_Right, pe1, pe2) }
   | pi = INT {let (p,i) = pi in p, Eentier i}
   | pc = CHAR {let (p, c) = pc in (p,Echar c)}
   | pf = FLOAT {let (p, f) = pf in (p, Eflottant f)}
@@ -406,6 +482,46 @@ expr_w_Ret<Ast.expression>:
   | p1 = CROCHETG arr = separated_list_COMMA_expr p2 = CROCHETD {
     Hyper2.build_array arr
     }
+  | pl = expr PLUS_AFFECT e = expr_w_Ret {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Plus, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr TIMES_AFFECT e = expr_w_Ret {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Times, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr MINUS_AFFECT e = expr_w_Ret {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Minus, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr OR_AFFECT e = expr_w_Ret {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Bit_Or, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr AND_AFFECT e = expr_w_Ret {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Bit_And, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr XOR_AFFECT e = expr_w_Ret {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Bit_Xor, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr SHIFT_LEFT_AFFECT e = expr_w_Ret {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Shift_Left, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr SHIFT_RIGHT_AFFECT e = expr_w_Ret {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Shift_Right, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
 ;
 
 expr<Ast.expression>:
@@ -424,6 +540,11 @@ expr<Ast.expression>:
   | pe1 = expr p = AND pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, And, pe1, pe2) }
   | pe1 = expr p = OR pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Or, pe1, pe2) }
   | pe1 = expr p = CONCAT pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Concat, pe1, pe2) }
+  | pe1 = expr p = BIT_OR pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Bit_Or, pe1, pe2) }
+  | pe1 = expr p = BIT_AND pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Bit_And, pe1, pe2) }
+  | pe1 = expr p = BIT_XOR pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Bit_Xor, pe1, pe2) }
+  | pe1 = expr p = SHIFT_LEFT pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Shift_Left, pe1, pe2) }
+  | pe1 = expr p = SHIFT_RIGHT pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Shift_Right, pe1, pe2) }
   | pi = INT {let (p,i) = pi in p, Eentier i}
   | pc = CHAR {let (p, c) = pc in (p,Echar c)}
   | pf = FLOAT {let (p, f) = pf in (p, Eflottant f)}
@@ -469,6 +590,46 @@ expr<Ast.expression>:
   		match pl with
   			|p, Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, e)
   			| _ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr PLUS_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Plus, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr TIMES_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Times, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr MINUS_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Minus, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr OR_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Bit_Or, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr AND_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Bit_And, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr XOR_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Bit_Xor, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr SHIFT_LEFT_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Shift_Left, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr SHIFT_RIGHT_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Shift_Right, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
   		}
 ;
 

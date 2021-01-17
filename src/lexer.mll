@@ -103,12 +103,25 @@ rule tokens = parse
     }
   | "," {Hyper.disableEnd (); [COMMA (Hyper.position lexbuf)]}
   | "+" {Hyper.disableEnd (); [PLUS (Hyper.position lexbuf)]}
+  | "+=" {Hyper.disableEnd (); [PLUS_AFFECT (Hyper.position lexbuf)]}
+  | "*=" {Hyper.disableEnd (); [TIMES_AFFECT (Hyper.position lexbuf)]}
+  | "-=" {Hyper.disableEnd (); [MINUS_AFFECT (Hyper.position lexbuf)]}
+  | "|=" {Hyper.disableEnd (); [OR_AFFECT (Hyper.position lexbuf)]}
+  | "&=" {Hyper.disableEnd (); [AND_AFFECT (Hyper.position lexbuf)]}
+  | "/=" {Hyper.disableEnd (); [XOR_AFFECT (Hyper.position lexbuf)]}
+  | "<<=" {Hyper.disableEnd (); [SHIFT_LEFT_AFFECT (Hyper.position lexbuf)]}
+  | ">>=" {Hyper.disableEnd (); [SHIFT_RIGHT_AFFECT (Hyper.position lexbuf)]}
   | "-" {Hyper.disableEnd (); [MINUS (Hyper.position lexbuf)]}
   | "=" {Hyper.disableEnd (); [AFFECT (Hyper.position lexbuf)]}
   | "||" {Hyper.disableEnd (); [OR (Hyper.position lexbuf)]}
   | "&&" {Hyper.disableEnd (); [AND (Hyper.position lexbuf)]}
   | "==" {Hyper.disableEnd (); [EQ (Hyper.position lexbuf)]}
   | "!=" {Hyper.disableEnd (); [NEQ (Hyper.position lexbuf)]}
+  | "|" {Hyper.disableEnd (); [BIT_OR (Hyper.position lexbuf)]}
+  | "&" {Hyper.disableEnd (); [BIT_AND (Hyper.position lexbuf)]}
+  | "/" {Hyper.disableEnd (); [BIT_XOR (Hyper.position lexbuf)]}
+  | ">>" {Hyper.disableEnd (); [SHIFT_LEFT (Hyper.position lexbuf)]}
+  | "<<" {Hyper.disableEnd (); [SHIFT_RIGHT (Hyper.position lexbuf)]}
   | ">" {Hyper.disableEnd (); [G (Hyper.position lexbuf)]}
   | "<" {Hyper.disableEnd (); [L (Hyper.position lexbuf)]}
   | ">=" {Hyper.disableEnd (); [GEQ (Hyper.position lexbuf)]}

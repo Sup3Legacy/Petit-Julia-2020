@@ -563,6 +563,21 @@ let rec compile_expr = function
 			cmpq !%rbx !%r15 ++
 			jne label3 ++
 			pushq !%r13 ++ pushq !%rax
+		| Bit_Or ->
+			deb ++ orq !%rdx !%rbx ++ 
+			pushq !%rbx ++ pushq !%rax
+		| Bit_And ->
+			deb ++ andq !%rdx !%rbx ++ 
+			pushq !%rbx ++ pushq !%rax
+		| Bit_Xor ->
+			deb ++ xorq !%rdx !%rbx ++ 
+			pushq !%rbx ++ pushq !%rax
+		| Shift_Left -> 
+			deb ++ cmpq (imm nTypeInt) !%rax ++ jne errorTypeE ++
+			shlq !%rbx !%rdx ++ movq !%rcx !%rax ++ movq !%rdx !%rbx ++ pushq !%rax ++ pushq !%rax
+		| Shift_Right -> 
+			deb ++ cmpq (imm nTypeInt) !%rax ++ jne errorTypeE ++
+			shrq !%rbx !%rdx ++ movq !%rcx !%rax ++ movq !%rdx !%rbx ++ pushq !%rax ++ pushq !%rax
 		in operation
 	| Ident (Tag name) ->
 		movq ((if estMac then lab else ilab) ((rectify_character name)^"_type")) !%rax ++ cmpq (imm nTypeUndef) !%rax ++

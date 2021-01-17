@@ -24,6 +24,11 @@ type operateur =
   | And
 	| Or
 	| Concat
+	| Bit_Or
+	| Bit_And
+	| Bit_Xor
+	| Shift_Left
+	| Shift_Right
 [@@deriving show]
 ;;
 

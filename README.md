@@ -437,7 +437,7 @@ Un point à remarquer : il n'est pas possible de déclarer des immédiats flotta
 
 Un ajout que nous souhaitions faire dans notre projet était les tableaux. En effet, des structures utilisées astucieusement permettent de se passer de tableaux, mais il est toujours plus agréable d'utiliser des vrais tableaux, avec tout le sucre syntaxique qui facilite la vie du programmeur (par exemple l'accès et la modification d'une cellule avec `a[i]`).
 
-## 1) première itération aved des structs
+## 1) première itération avec des structs
 
 La première implémentation que nous avons essayée était une implémentation simple à mettre en place :
 
@@ -577,7 +577,7 @@ Cependant, il y a quelques éléments supplémentaires que nous aurions aimé aj
 * `-analytics` : affiche à l'issue de la compilation quelques informations plus ou moins utiles à propos de cette dernière.
 * `-o` : permet de choisir le nom du fichier assembleur
 
-# B] Contenu de la bibliothèque standard
+## B] Contenu de la bibliothèque standard
 
 Voilà la liste des paquets disponiblessur le repo `pjulia-packages`, téléchargeables vie pPkg. Les paquets annotés "**(cf démo)**" seront présentés durant la démonstration en visio (donc il peut être préférable de ne pas trop se divulgâcher ces surprises!).
 
@@ -592,7 +592,7 @@ Voilà la liste des paquets disponiblessur le repo `pjulia-packages`, téléchar
 * `random` : Génération pseudo-aléatoire de nombres entiers et de flottants
 * `tester` : Fichier pour tester le bon fonctionnement de notre production de code
 
-# C] Nos ajouts à x86-64.ml
+## C] Nos ajouts à x86-64.ml
 Nous avons ajouté quelques fonctionnalités à la bibliothèque `x86-64.ml` :
 * la détection automatique du type d'OS : Linux ou MacOS. Elle sert dans certains cas de figure, par exemple pour `lab`.
 * les registres flottants SSE 64 bits : les registres `%xmm0` à `%xmm15`.
