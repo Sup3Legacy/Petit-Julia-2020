@@ -305,13 +305,13 @@ val xorq: [`Q] operand -> [`Q] operand -> text
 val shlb: [`B] operand -> [`B] operand -> text
 val shlw: [`W] operand -> [`W] operand -> text
 val shll: [`L] operand -> [`L] operand -> text
-val shlq: [`Q] operand -> [`Q] operand -> text
+val shlq: [`B] operand -> [`Q] operand -> text
   (** note: shl est la même chose que sal *)
 
 val shrb: [`B] operand -> [`B] operand -> text
 val shrw: [`W] operand -> [`W] operand -> text
 val shrl: [`L] operand -> [`L] operand -> text
-val shrq: [`Q] operand -> [`Q] operand -> text
+val shrq: [`B] operand -> [`Q] operand -> text
 
 val sarb: [`B] operand -> [`B] operand -> text
 val sarw: [`W] operand -> [`W] operand -> text

@@ -3,7 +3,7 @@
 #                                        #
 #     Fichier principal de Samenhir      #
 #                                        #
-# Contient le corp et l'âme de Samenhir  #
+# Contient le corps et l'âme de Samenhir #
 #                                        #
 ##########################################
 *)
@@ -545,7 +545,7 @@ type actionTypes =
 	|Action of int
 	|Shift of int
 	|Success
-";
+"
 
 let pp_tokenDecl fmt liste = 
 	Format.fprintf fmt "type token =\n";
@@ -686,7 +686,7 @@ let pp_reduce_action fmt tokenTypeMap _ (num, (raw_prod, cons)) =
 		match List.hd l with
 			|TerminalR t -> (("Tok ("^t^(if Tmap.mem t tokenTypeMap then " _" else "")^")::"^s1),("_::"^s2))
 			|AssocTerminal (s, t) -> (("Tok ("^t^" "^s^")::"^s1),("_::"^s2))
-			|NonTerminalR t ->(t^(if Tmap.mem t tokenTypeMap then " _" else "")^"::"^s1),("_::"^s2))
+			|NonTerminalR t ->(t^(if Tmap.mem t tokenTypeMap then " _" else "")^"::"^s1),("_::"^s2)
 			|AssocNonTerminal (s,t) -> ((t^" "^s^"::"^s1),("_::"^s2))
 	in let s1,s2 = aux1 p in
 	Format.fprintf "\t|%i, %s, %s -> %s" num s1 s2 cons
