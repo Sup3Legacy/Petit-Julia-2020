@@ -14,12 +14,14 @@ val leavePar : unit -> bool
 
 val position : Lexing.lexbuf -> Ast.position
 
-val rajoutePosition : Parser.token -> Lexing.lebuf -> Parser.token
+val rajoutePosition : Parser.token -> Lexing.lexbuf -> Parser.token
 
 val file : string ref
 
 val treat_ident : string -> string
 
-val push_to_string_stack : string -> unit 
+val push_to_string_stack : char -> unit 
 
 val empty_stack : unit -> string
+
+val keywords : (string, Parser.token) Hashtbl.t
