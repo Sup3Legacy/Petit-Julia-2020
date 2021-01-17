@@ -9,10 +9,10 @@
 **Les derniers calculs estiment à environ 1h la durée de compilation du compilateur. Vous avez deux options devans vous :**
 
 Il y a dans notre rendu deux fichier dune : dune-lent et dune-lourd. Vous pouvez remplacer le fichier dune par l'un ou l'autre. 
-* Dune-lourd fait compiler le compilateur en environ 50minutes pour un exécutable de 70Mo
-* Dune-lent fait compiler le compilateur en plus d'une heure et demi pour un exécutable de 8.8Mo
+* Dune-lourd fait compiler le compilateur en environ 50 minutes pour un exécutable de 70Mo
+* Dune-lent fait compiler le compilateur en plus d'une heure et demie pour un exécutable de 8.8Mo
 
-La différence est l'utilisation ou non du flag `-v2` de Samenhir qui permet de produire un code plus court mais composé d'un énorme dispatch, que donc ocamlc met plus de temps à compiler.
+La différence est l'utilisation ou non du flag `-v2` de Samenhir qui permet de produire un code plus court mais composé d'un énorme dispatch, que `ocamlc` met plus de temps à compiler.
 
 # 0] Prérequis
 
@@ -272,9 +272,9 @@ Pour la deuxième partie du projet, nous projetons d'ajouter aussi à PetitJulia
 
 # VIII] Corrections des problèmes du premier rendu
 
-Nous avons corrigé les flags qui étaient mal écrits lors du premier rendu.
+Nous avons corrigé les **flags** qui étaient mal écrits lors du premier rendu.
 
-Nous avons aussi ajouté le support du multi-ligne au REPL : lorsque l'on entre quelque chose sur la ligne de commande, le REPL attend d'avoir vu passer deux `\n` successifs avant d'envoyer la commande à l'interpréteur. Ainsi, il est maintenant possible d'entrer du code sur plusieurs lignes, tant qu'il n'y a pas de ligne vide dans ce code.
+Nous avons aussi ajouté le support du **multi-ligne** au **REPL** : lorsque l'on entre quelque chose sur la ligne de commande, le **REPL** attend d'avoir vu passer deux `\n` successifs avant d'envoyer la commande à l'interpréteur. Ainsi, il est maintenant possible d'entrer du code sur **plusieurs lignes**, tant qu'il n'y a pas de ligne vide dans ce code.
 
 L'inconvénient est cependant qu'il faut toujours penser à **faire deux retours à la ligne, même lorsque la commande ne fait qu'une seule ligne!**
 
@@ -288,15 +288,15 @@ function f()
 	y = 0
 end
 ```
-Du fait de cela, il n'y a plus qu'un seul test dans `exec-fail/undef*.jl` qui plante au typage (par rapport aux quatre tests de `exec-fail/undef*.jl` qui étaient rejetés par notre typeur au premier rendu).
+Du fait de cela, il n'y a plus qu'un *seul test* dans `exec-fail/undef*.jl` qui plante au typage (par rapport aux quatre tests de `exec-fail/undef*.jl` qui étaient rejetés par notre typeur au premier rendu).
 
 # IX] pPkg, depManager, namespace et pjulia-packages
 
-Durant le travail sur ce projet, il nous a semblé intéressant d'implémenter non seulement un compilateur, mais aussi un environnement de développement 'complet' pour notre language. C'est pour ça que nous avons mis en place un système de paquets permettant, comme dans beaucoup d'autres languages, de scinder les composantes d'un projet en plusieurs fichiers, ou bien d'utiliser des fonctions pré-implémentées.
+Durant le travail sur ce projet, il nous a semblé intéressant d'implémenter non seulement un compilateur, mais aussi un *environnement de développement* 'complet' pour notre language. C'est pour ça que nous avons mis en place un système de *paquets* permettant, comme dans beaucoup d'autres languages, de scinder les composantes d'un projet en plusieurs fichiers, ou bien d'utiliser des fonctions pré-implémentées.
 
 ## 1) pjulia-packages
 
-Nous avons créé un [repo Github](https://github.com/Sup3Legacy/pjulia-packages) contenant quelques modules de base (par exemple `matrix`, qui contient des méthodes utiles pour exploiter le potentiel des matrices). Ce repo contient de plus un répertoire des paquets disponibles, sous la forme d'un fichier JSON avec des enregistrements comme ceci :
+Nous avons créé un [repo Github](https://github.com/Sup3Legacy/pjulia-packages) contenant quelques modules de base (par exemple `matrix`, qui contient des méthodes utiles pour exploiter le potentiel des matrices). Ce repo contient de plus un répertoire des *paquets* disponibles, sous la forme d'un fichier *JSON* avec des enregistrements comme ceci :
 
 ```json
 {
@@ -310,20 +310,20 @@ Nous avons créé un [repo Github](https://github.com/Sup3Legacy/pjulia-packages
 
 ## 2) pPkg
 
-De même que Julia a son gestionnaire de paquets : `Pkg`, nous avons doté petit-Julia de `pPkg`. Il s'agit d'un tout petit gestionnaire de paquets très basique incorporé dans notre REPL et avec lequel il est possible d'interagir via quelques commandes dans la console de ce dernier :
+De même que Julia a son *gestionnaire de paquets* : `Pkg`, nous avons doté petitJulia™ de `pPkg`. Il s'agit d'un tout petit gestionnaire de paquets très basique incorporé dans notre REPL et avec lequel il est possible d'interagir via quelques commandes dans la console de ce dernier :
 - `#update` : cette commande télécharge la liste des paquets disponibles (`index.json`).
-- `#install package` : cette commande installe le paquet `package`. Les paquets sont installés dans un sous-répertoire `/packages`. (Si cette commande jette une erreur, il faut possiblement ajouter ce sous-dossier à la main). /!\ pour cela, il faut avoir au préalable téléchargé la liste des paquets avec `#update`
+- `#install package` : cette commande installe le paquet `package`. Les paquets sont installés dans un sous-répertoire `/packages`. (Si cette commande jette une erreur, il faut possiblement ajouter ce sous-dossier à la main). **/!\\** pour cela, il faut avoir au préalable téléchargé la liste des paquets avec `#update`
 - `#remove package` : cette commande supprime le paquet `package`, s'il existe.
 
-NB : 
-* le temps nous a manqué pour ajouter à pPkg la gestion des dépendances et des versions. Il n'en tient donc pas compte.
-* pPkg utilise plusieurs modules, notamment pour faire des requêtes HTTPS ou bien parser les fichiers JSON. Ces modules étant capricieux et n'ayant de notre côté pas eu beaucoup de temps pour les stabiliser, pPkg a parfois tendance à avoir des comportements plus ou moins indéfinis.
+**NB :**
+* le temps nous a manqué pour ajouter à *pPkg* la gestion des *dépendances* et des *versions*. Il n'en tient donc pas compte.
+* *pPkg* utilise plusieurs modules, notamment pour faire des requêtes HTTPS ou bien parser les fichiers JSON. Ces modules étant capricieux et n'ayant de notre côté pas eu beaucoup de temps pour les stabiliser, *pPkg* a parfois tendance à avoir des comportements plus ou moins indéfinis.
 
 ## 3) Namespace
 
-Une fois un gestionnaire de paquets basique mis en place, nous avons réfléchi à la façon d'importer les paquets pour les utiliser dans des programmes pJulia. Après plusieurs tests plus ou moins ratés, nous avons statué sur ceci :
+Une fois un gestionnaire de paquets basique mis en place, nous avons réfléchi à la façon d'importer les paquets pour les utiliser dans des programmes petitJulia™. Après plusieurs tests plus ou moins ratés, nous avons statué sur ceci :
 - L'importation d'un paquet se fait avec l'expression `include("package.jl")` (il ne faut pas oublier le `.jl`). Tous les `include` doivent être mis tout en haut du fichier, avant tout autre expression ou déclaration. /!\ Les paquets doivent être dans le sous-répertoire `/packages`.
-- L'utilisation des fonctions ou variables globales définies dans un paquet, nous utilisons cette syntaxe : `package::fonction(a, package::variable)`.
+- L'utilisation des **fonctions** ou **variables globales** définies dans un paquet, nous utilisons cette syntaxe : `package::fonction(a, package::variable)`.
 
 Petit exemple :
 
@@ -340,16 +340,16 @@ gol::run()
 
 Nous avons opté pour la syntaxe `package::objet` plutôt que `package.objet` pour plusieurs raisons : 
 
-* Cela simplifie beaucoup l'analyse du fichier, en évitant la confusion avec les expressions `structure.champ`.
+* Cela simplifie beaucoup l'analyse du fichier, en évitant la *confusion* avec les expressions `structure.champ`.
 * Il s'agit d'une syntaxe qui nous semble jolie et qui est utilisée dans plusieurs autres langages de programmation (notamment Rust).
 
-NB : Lors de la compilation, les `::` sont remplacés par des `.`, pour que le fichier ASM soit accepté par `gcc`. En effet, d'expérience, `gcc` apprécie très peu de voir des caractères `:` à une place inattendue! **/!\\** Cela est fait après le parsing, donc il n'y a pas de risque de confusion avec `structure.champ`.
+**NB :** Lors de la compilation, les `::` sont remplacés par des `.`, pour que le fichier ASM soit accepté par `gcc`. En effet, d'expérience, `gcc` apprécie très peu de voir des caractères `:` à une place inattendue! **/!\\** Cela est fait après le parsing, donc il n'y a pas de risque de confusion avec `structure.champ`.
 
 ## 4) depManager
 
-Le composant central de notre système de paquets est `depManager.ml`, s'intégrant entre le parsing et le typage.
+Le composant central de notre système de paquets est `depManager.ml`, s'intégrant entre le *parsing* et le *typage*.
 
-Lorsque depManager rencontre un appel à `include`, il charge le fichier correspondant, le parse, et modifie tous les identifiants (sauf primitives) apparaissant dans l'arbre syntaxique du paquet pour correspondre au nom par lequel on appelle ces fonctions et variables globales. Pour finir, il ajoute cet arbre de syntaxe abstraite au début l'arbre du fichier principal. Par exemple, si on se donne les fichiers :
+Lorsque depManager rencontre un appel à `include`, il *charge* le fichier correspondant, le *parse*, et modifie tous les *identifiants* (sauf primitives) apparaissant dans l'arbre syntaxique du paquet pour correspondre au nom par lequel on appelle ces fonctions et variables globales. Pour finir, il *ajoute* cet arbre de syntaxe abstraite au début l'arbre du fichier principal. Par exemple, si on se donne les fichiers :
 
 ```julia
 #package1.jl
@@ -410,60 +410,60 @@ println(package2__package1__succ(5))
 println(package2__bar)
 ```
 
-On peut remarquer une chose : on ne peut pas importer plusieurs fois le même paquet depuis un même fichier. Cependant, on peut importer un même paquet depuis un fichier, tout en l'important aussi depuis un fichier lui-même importé. On se retrouve alors avec deux copies _a priori_ identiques du paquet, donc seuls les identifiants diffèrent. Cela ajoute une masse parfois importante aux exécutables, mais cela permet d'isoler le comportement des différents modules du programme. De plus ce système évite tout risque de collision de nom entre les paquets (on peut imaginer importer plusieurs paquets, chacun implémentant une méthode `new`).
+On peut remarquer une chose : on ne peut pas importer plusieurs fois le même paquet depuis un même fichier. Cependant, on peut importer un paquet depuis un fichier, tout en l'important aussi depuis un fichier lui-même importé. On se retrouve alors avec deux copies _a priori_ identiques du paquet, donc seuls les identifiants diffèrent. Cela ajoute une masse parfois importante aux exécutables, mais cela permet d'**isoler le comportement des différents modules du programme**. De plus ce système évite tout risque de **collision** de nom entre les paquets (on peut imaginer importer plusieurs paquets, chacun implémentant une méthode `new`).
 
 # X] génération de code du projet de base (donc sans flottants ni arrays)
 
-Toutes les valeurs sont composées de deux champs de 64 bits : le premier pour le type et le second pour la valeur en elle-même. Les valeurs "grandes", telles que les structures, sont composées d'un pointeur vers un emplacement dans la mémoire qui contient toute l'information. Les types `undef` et `nothing` sont aussi implémentés sur 128 bits pour simplifier leur utilisation.
+Toutes les **valeurs** sont composées de deux champs de **64 bits** : le premier pour le type et le second pour la valeur en elle-même. Les valeurs "grandes", telles que les structures, sont composées d'un pointeur vers un emplacement dans la mémoire qui contient toute l'information. Les types `undef` et `nothing` sont aussi implémentés sur **128 bits** pour simplifier leur utilisation.
 
 Les variables globales sont définies dans `.data` et nommées `nom_val` et `nom_type`.
-Les variables locales sont placées dans la pile et adressées avec une adresse relative par rapport à `%rbp`. Tous les emplacement de variables locales utilisés par une fonction seront tous créés à l'appel de cette fonction, ce qui permet de ne pas avoir à créer d'emplacements quand on rentre dans une boucle for, while ou dowhile.
+Les variables locales sont placées dans la **pile** et adressées avec une adresse relative par rapport à `%rbp`. Tous les emplacement de variables locales utilisés par une fonction seront tous créés à l'appel de cette fonction, ce qui permet de ne pas avoir à créer d'emplacements quand on rentre dans une boucle for, while ou dowhile.
 
-Nous avons décidé de ne pas utiliser les conventions d'appel car le code n'est pas appelé depuis l'extérieur. Cependant, la fonction `print_value` ainsi que les fonctions associées respectent les conventions d'appel pour résoudre les problèmes autour des print récursifs. De plus nous avons gardé ces conventions dans un coin de notre tête car elles nous ont permis de pouvoir manipuler `printf` et `malloc` sans devoir sauvegarder tous nos registres.
+Nous avons décidé de ne pas utiliser les conventions d'appel car le code n'est pas appelé depuis l'extérieur. Cependant, la fonction `print_value` ainsi que les fonctions associées respectent les conventions d'appel pour résoudre les problèmes autour des print récursifs. De plus nous avons gardé ces *conventions* dans un coin de notre tête car elles nous ont permis de pouvoir manipuler `printf` et `malloc` sans devoir sauvegarder tous nos registres.
 
-Toutes les fonctions ont été renomées sous la forme `nom_id` ce qui permet de les surcharger (dispatch multiple : chaque id est un numéro correspondant à l'instance de fonction surchargée). De plus nous sommes plutôt confiants sur l'impossibilité à l'utilisateur de réussir à créer une collision entre les identifiants qu'il peut définir et ceux utilisés par le compilateur.
+Toutes les fonctions ont été renomées sous la forme `nom_id` ce qui permet de les *surcharger* (**dispatch multiple** : chaque id est un numéro correspondant à l'instance de fonction surchargée). De plus nous sommes plutôt confiants sur l'impossibilité à l'utilisateur de réussir à créer une collision entre les identifiants qu'il peut définir et ceux utilisés par le compilateur.
 
-Nous n'avons malheureusement pas de GC, de qui implique parfois une consommation de mémoire importante. Cependant, l'utilisation intensive de la pile pour stocker les variables nous permet de ne pas trop allouer de mémoire inutile sur le tas, lorsque le programme utilise surtout de "petites" données, i.e. entiers, flottants et booléens.
+Nous n'avons malheureusement pas de **GC**, de qui implique parfois une consommation de mémoire importante. Cependant, l'utilisation intensive de la pile pour stocker les variables nous permet de ne pas trop allouer de mémoire inutile sur le tas, lorsque le programme utilise surtout de "petites" données, i.e. entiers, flottants et booléens.
 
 # XI] extension flottants
 
-La gestion des flottants est une extension que nous avions prévu d'apporter au compilateur depuis la première phase de travail sur le projet.
+La gestion des **flottants** est une extension que nous avions prévu d'apporter au compilateur depuis la première phase de travail sur le projet.
 
 ## 1) Modifications lexer/typer
 
 Nous avons ajouté au lexer une règle pour accepter des constantes flottantes : `(chiffre+'.' | '.'chiffre+ | chiffre+'.'chiffre+)(('e'|'E')('-'|'+')?chiffre+)?`
 
-Nous avons en même temps ajouté à l'AST un constructeur Flottant ainsi que les règles de typage dans le typer. Par exemple, un opérateur arithmétique prenant en argument au moins une valeur flottante renverra un flottant.
+Nous avons en même temps ajouté à l'AST un **constructeur Flottant** ainsi que les règles de typage dans le typer. Par exemple, un **opérateur arithmétique** prenant en argument au moins une **valeur flottante** renverra un **flottant**.
 
 ## 2) Modification production de code
 
-Là encore, il n'y eu besoin que de compléter ce que nous avions déjà mis en place pour les entiers : chaque opérateur (`+, -, *, ^, <, >, <=, >=`) est découpé en 4, en fonction de la combinaison Entier-Entier/Entier-Flottant/... qu'il a en argument. Lorsque nécessaire, les entiers sont convertis en flottants au moyen de l'instruction `cvtsi2sdq` (cf la liste de nos ajouts à `x86-64.ml`).
+Là encore, il n'y eu besoin que de compléter ce que nous avions déjà mis en place pour les entiers : chaque opérateur (`+, -, *, ^, <, >, <=, >=`) est découpé en 4, en fonction de la combinaison Entier-Entier/Entier-Flottant/... qu'il a en argument. Lorsque nécessaire, les entiers sont **convertis** en flottants au moyen de l'instruction `cvtsi2sdq` (cf la liste de nos ajouts à `x86-64.ml`).
 
-Un point à remarquer : il n'est pas possible de déclarer des immédiats flottants, donc les constantes flottantes sont remplacées par des variables globales, définies à la compilation dans le segment `data`.
+Un point à remarquer : il n'est pas possible de déclarer des **immédiats flottants** (en tout cas nous n'avons pas trouvé comment faire), donc les constantes flottantes sont remplacées par des variables globales, définies à la compilation dans le segment `data`.
 
 # XII] extension arrays
 
-Un ajout que nous souhaitions faire dans notre projet était les tableaux. En effet, des structures utilisées astucieusement permettent de se passer de tableaux, mais il est toujours plus agréable d'utiliser des vrais tableaux, avec tout le sucre syntaxique qui facilite la vie du programmeur (par exemple l'accès et la modification d'une cellule avec `a[i]`).
+Un ajout que nous souhaitions faire dans notre projet était les **tableaux**. En effet, des structures utilisées astucieusement permettent de se passer de tableaux, mais il est toujours plus agréable d'utiliser des vrais tableaux, avec tout le **sucre syntaxique** qui facilite la vie du programmeur (par exemple l'accès et la modification d'une cellule avec `a[i]`).
 
 ## 1) première itération avec des structs
 
-La première implémentation que nous avons essayée était une implémentation simple à mettre en place :
+La première implémentation que nous avons essayée était une implémentation **simple** à mettre en place :
 
-Nous nous donnons une structure :
+Nous nous donnons une *structure* :
 
 ```julia
 mutable struct List head :: Any; tail :: List end;
 ```
 
-Cette structure implémente une liste chaînée (comme c'est le cas dans un des tests fournis). Nous avons implémenté en Julia les primitives `list_length`, `get_element` et `set_element` (de bêtes fonctions récursives) et nous avons ajouté au parser quelques règles pour pouvoir utiliser du sucre syntaxique : `a[i]` est remplacé au moment de l'analyse syntaxique par `get_element(a, i)`, et de même pour la mutation `a[i] = b`, remplacée par `set_element(a, i, b)`. Enfin, `[A, b, c, ...]` est remplacé par `List(a, List(b, List(c, ...)))`.
+Cette structure implémente une **liste chaînée** (comme c'est le cas dans un des tests fournis). Nous avons implémenté en petitJulia™ les primitives `list_length`, `get_element` et `set_element` et nous avons ajouté au parser quelques règles pour pouvoir utiliser du sucre syntaxique : `a[i]` est remplacé au moment de l'analyse syntaxique par `get_element(a, i)`, et de même pour la mutation `a[i] = b`, remplacée par `set_element(a, i, b)`. Enfin, `[A, b, c, ...]` est remplacé par `List(a, List(b, List(c, ...)))`.
 
-Cette première implémentation avait le bon goût d'être très simple à mettre en place (juste quelques règles à ajouter au parser ainsi que des primitives basiques en pJulia). Cependant, elle posait un défaut conséquent : Il n'était pas vraiment possible de faire des listes ayant un type fixé. Deuxièmement, et principalement, notre but était de faire des tableaux, pas des listes. On avait là une pseudo-structure de tableau qui était en fait exactement une liste chaînée, avec les avantages mais aussi les incovénients (particulièrement l'accès en temps linéaire au lie ude constant) qui viennent avec. Nous avons donc totalement refondu cette implémentation.
+Cette première implémentation avait le bon goût d'être **très simple à mettre en place** (juste quelques règles à ajouter au parser ainsi que des primitives basiques en petitJulia™). Cependant, elle posait un *défaut conséquent* : Il n'était pas vraiment possible de faire des listes ayant un **type fixé**. Deuxièmement, et principalement, notre but était de faire des **tableaux**, pas des **listes**. On avait là une pseudo-structure de tableau qui était en fait exactement une liste chaînée, avec les avantages mais aussi les incovénients (particulièrement l'accès en **temps linéaire** au lie ude constant) qui viennent avec. Nous avons donc totalement refondu cette implémentation.
 
 ## 2) deuxième itération, plus propre
 
-Notre but dans cette refonte a été de faire des arrays en bonne et due forme : taille et type fixes, accès en temps constant aux éléments. Nous avons gardé le même sucre syntaxique, étant la syntaxe universelle pour la définition, l'accès et la mutation de tableaux.
+Notre but dans cette refonte a été de faire des **arrays** en bonne et due forme : **taille et type fixes**, accès en **temps constant** aux éléments. Nous avons gardé le même **sucre syntaxique**, étant la syntaxe universelle pour la définition, l'accès et la mutation de tableaux.
 
-Premièrement, nous nous sommes donné une primitive, `newarray(len, val)`, qui alloue sur le tas un tableau de `len + 2` mots avec toutes les cellules initialisées à la valeur initiale `val`. Les deux premiers mots alloués sont le type et la taille du tableau. Ensuite, on stocke une donnée par mot (contrairement à 2 pour les structures; ici, le type est commun à tous les éléments et est stocké dans le premier mot du tableau, pas besoin de le dupliquer `len` fois!). Ensuite, le sucre syntaxique `a[i]` et `a[i] = b` est interprété durant l'analyse syntaxique comme une règle supplémentaire de Lvalue (cf. plus haut la définition de notre grammaire). Enfin, le sucre syntaxique `[a, b, c, ...]` est remplacé au moment du parsing par une expression de la forme :
+Premièrement, nous nous sommes donné une primitive, `newarray(len, val)`, qui alloue sur le tas un tableau de `len + 2` mots avec toutes les cellules initialisées à la valeur initiale `val`. Les deux premiers mots alloués sont le **type** et la **taille** du tableau. Ensuite, on stocke une donnée par mot (contrairement à 2 pour les structures; ici, le type est commun à tous les éléments et est stocké dans le premier mot du tableau, pas besoin de le dupliquer `len` fois!). Ensuite, le sucre syntaxique `a[i]` et `a[i] = b` est interprété durant l'analyse syntaxique comme une règle supplémentaire de *Lvalue* (cf. plus haut la définition de notre grammaire). Enfin, le sucre syntaxique `[a, b, c, ...]` est remplacé au moment du parsing par une expression de la forme :
 
 ```julia
 (
@@ -475,26 +475,26 @@ Premièrement, nous nous sommes donné une primitive, `newarray(len, val)`, qui 
 )
 ```
 
-Cela évite d'avoir à créer une primitive d'initialisation de tableau qui prenne un nombre variable d'arguments (bien que cela soit possible, de la même façon que `print`).
+Cela évite d'avoir à créer une **primitive d'initialisation** de tableau qui prenne un nombre variable d'arguments (bien que cela soit possible, de la même façon que `print`).
 
 Un problème a été délicat : comment intégrer les arrays dans notre système de types? 
 
-Plusieurs possibilités ont été évoquées : 
-- se donner un type unique `Array` : tous les arrays, peu importe leur dimension et le type de leurs cellules, ont le même type. Cela serait simple mais ne permettrait pas de conserver des tableaux avec un type fixe : si on se donne un tableau de tableaux, on peut remplacer un de ses éléments par un tableau de n'importe quelle dimension, car il aura toujours le même type `Array`
-- se donner des types explicites, par exemple `Int64 Array Array` ou bien `Float64 Array` : cela assure la bonne définition des types des arrays, mais cela complexifie beaucoup l'étape de typage.
+*Plusieurs possibilités* ont été évoquées : 
+- se donner un type unique `Array` : tous les arrays, peu importe leur dimension et le type de leurs cellules, ont le *même type*. Cela serait simple mais ne permettrait pas de conserver des tableaux avec un type fixe : si on se donne un tableau de tableaux, on peut remplacer un de ses éléments par un tableau de n'importe quelle dimension, car il aura toujours le même type `Array`
+- se donner des *types explicites*, par exemple `Int64 Array Array` ou bien `Float64 Array` : cela assure la bonne définition des types des arrays, mais cela **complexifie beaucoup l'étape de typage** et nous avons jugé que nous n'avions plus suffisamment de temps pour implémenter ce système de typage de tableaux.
 
-Nous avons alors décidé de partir sur une solution intermédiaire : Lors du parsing, tous les tableaux ont un unique type `Array`. Cependant, à l'exécution, les tableaux ont un type bien défini ressemblant à `Int64 Array Array`. En effet, le type d'un tableau est de la forme `i + n * a`, où `n` est la dimension du tableau, `a` l'entier associé au type `Array` et `i` l'entier associé au type de élémentaire contenu dans le tableau (pour `Int64 Array Array`, c'est `Int64`). Ainsi, on peut vérifier à l'exécution que les mutations et accès des éléments d'un tableaux sont licites.
+Nous avons alors décidé de partir sur une *solution intermédiaire* : Lors du parsing, tous les tableaux ont un unique type `Array`. Cependant, à l'exécution, les tableaux ont un type bien défini ressemblant à `Int64 Array Array`. En effet, le type d'un tableau est de la forme `i + n * a`, où `n` est la **dimension du tableau** (un talbeau d'entiers est de dimension `1`, une matrice de dimention `2`, un tensor `3`, etc.), `a` l'**entier associé au type** `Array` et `i` l'entier associé au **type de élémentaire contenu** dans le tableau (pour `Int64 Array Array`, c'est `Int64`). Ainsi, on peut vérifier à l'exécution que les **mutations** et **accès** des éléments d'un tableaux sont licites.
 
 Quelques petites remarques sur le fonctionnement des tableaux :
-- il est possible d'accéder à un élément d'un tableau via un indice négatif : `a[-1]` renvoie le dernier élément du tableau, `a[-2]` le pénultième, etc.
-- lorsqu'un tableau est multi-dimensionnel, on peut accéder à ses éléments via cette syntaxe : `a[i][j]...[z]`.
-- Comme dans d'autres languages, l'initialisation d'un tableau avec une valeur ne duplique pas cette dernière. Par exemple, `newarray(2, newarray(2, 0))` renvoie un tableau dont les deux éléments pointent vers le même tableau. Pour créer un tableau en profondeur, il est préférable d'utiliser la fonction `make_matrix(d, lengths, init_value)`, dans le package `matrix` (initialise un tableau multi-dimensionnel de dimension `d` où la `i`-ème dimension a une taille `lengths[i]` et dont la valeur initiale de base (la plus en profondeur) est `init_value`)
-- L'opérateur `@` permet de faire des concaténations. La concaténation de deux tableaux produit un nouveau tableau, sans les détruire.
+- il est possible d'accéder à un élément d'un tableau via un **indice négatif** : `a[-1]` renvoie le dernier élément du tableau, `a[-2]` le pénultième, etc.
+- lorsqu'un tableau est **multi-dimensionnel**, on peut accéder à ses éléments via cette syntaxe : `a[i][j]...[z]`.
+- Comme dans d'autres languages, l'initialisation d'un tableau avec une valeur **ne duplique pas cette dernière**. Par exemple, `newarray(2, newarray(2, 0))` renvoie un tableau dont les deux éléments pointent vers le même tableau. Pour créer un tableau en profondeur, il est préférable d'utiliser la fonction `make_matrix(d, lengths, init_value)`, dans le package `matrix` (initialise un tableau multi-dimensionnel de dimension `d` où la `i`-ème dimension a une taille `lengths[i]` et dont la valeur initiale de base (la plus en profondeur) est `init_value`)
+- L'opérateur `@` permet de faire des **concaténations**. La concaténation de deux tableaux produit un **nouveau tableau**, sans les détruire.
 
 
 # XIII] extension strings et chars
 
-Afin de pouvoir manipuler les string plus librement il a été décidé de les convertir en tableau de caractère. Cela a multiplié la consommation en mémoire des string par 8 (chaque caractère prend un mot de 8 octets au lieu d'un seul octet comme le prévoit la norme UTF-8). Cependant cela nous permet d'avoir accès à tous les avantages qu'un tableau nous fournit : 
+Afin de pouvoir manipuler les **strings** plus librement, il a été décidé de les convertir en **tableaux de caractères**. Cela a multiplié la consommation en mémoire des strings par **8** (chaque caractère prend un mot de 8 octets au lieu d'un seul octet comme le prévoit la norme UTF-8). Cependant cela nous permet d'avoir accès à tous les avantages qu'un tableau nous fournit : 
 - concaténation
 - mutabilité
 - récupération d'une valeur à un indice précis
@@ -502,7 +502,7 @@ Afin de pouvoir manipuler les string plus librement il a été décidé de les c
 
 Il a aussi été décidé que les types String et le type Array seraient les mêmes à l'intérieur du typeur, notamment pour la surcharge de fonction.
 
-Remarque : Comme nous utilisons nos propres chaînes de caractères, les chaînes définies à la compilation ne sont plus déclarées dans le segment `data` mais sont construites caractère par caractère dans le code. Cela présente l'inconvénient de générer des fichiers ASM absolument monstrueux lorsque de grosses chaînes de caractères sont définies dans un programme (cf les exemples dans le packaghe `brainfuck`). Cependant, les avantages apportés par notre implémentation nous semblent très rentables!
+**Remarque :** Comme nous utilisons nos propres chaînes de caractères, les chaînes définies à la compilation ne sont plus déclarées dans le segment `data` mais sont construites caractère par caractère dans le code. Cela présente l'inconvénient de générer des fichiers ASM absolument monstrueux lorsque de grosses chaînes de caractères sont définies dans un programme (cf les exemples dans le packaghe `brainfuck`). Cependant, les avantages apportés par notre implémentation nous semblent très rentables!
 
 # XIV] extensions des primitives (input_int, delay, timestamp, typeof, int, float, input_string, etc.) + erreurs
 
@@ -528,7 +528,7 @@ La liste de toutes les primitives avec leurs types possible est défini en bas d
 
 ## 1) docstrings et utilisation dans le REPL
 
-Nous avons ajouté le support des docstrings à petitJulia : chaque fonction peut être précédée d'une docstring, entre `"""`. Elle est conservée sous la forme d'une chaîne de caractère dans l'AST et est affichée lorsque l'utilisateur entre `? nom_fonction` dans le REPL.
+Nous avons ajouté le support des docstrings à petitJulia™ : chaque fonction peut être précédée d'une docstring, entre `"""`. Elle est conservée sous la forme d'une chaîne de caractère dans l'AST et est affichée lorsque l'utilisateur entre `? nom_fonction` dans le REPL.
 
 ## 2) assert
 
@@ -542,11 +542,11 @@ Nous avons ajouté au compilateur un petit compteur de performances : lorsque le
 
 # XVI] Extension opérateurs
 
-Nous avons pensé que petitJulia manquait d'opérateurs, comme par exemple les opérateurs `AND`, `OR`, `SHIFT`, bit-à-bit. Nous avons donc ajouté `|`, `&`, `/`, `<<`, `>>`, correspondant aux opérateurs OR, AND, XOR, SHIFT_LEFT, SHIFT_RIGHT.
+Nous avons pensé que petitJulia™ manquait d'opérateurs, comme par exemple les opérateurs `AND`, `OR`, `SHIFT`, bit-à-bit. Nous avons donc ajouté `|`, `&`, `/`, `<<`, `>>`, correspondant aux opérateurs OR, AND, XOR, SHIFT_LEFT, SHIFT_RIGHT.
 
 De plus, nous avons ajouté les opérateurs de mise à jour (*update operators*, en anglais) : `+=`, `-=`, `*=`, `|=`, `&=`, `/=`, `<<=` et `>>=`.
 
-**NB :** Ce sont nos derniers ajouts à petitJulia et nous n'avons pas eu beaucoup de temps pour tester ces opérateurs. Il est possible que, concernant les opérateurs bit-à-bit, il y ait quelques erreurs de comportement!
+**NB :** Ce sont nos derniers ajouts à petitJulia™ et nous n'avons pas eu beaucoup de temps pour tester ces opérateurs. Il est possible que, concernant les opérateurs bit-à-bit, il y ait quelques erreurs de comportement!
 
 # XVII] État de l'interpréteur
 
@@ -561,11 +561,11 @@ Nous avons préféré nous concentrer sur la compilation. En effet, il nous semb
 
 Ce projet a été pour nous l'occasion de découvrir le domaine de la programmation bas-niveau et de la compilation. 
 
-L'étape de la génération de code a été très intéressante et l'occasion de tester "pour de vrai" les capacités de notre compilateur. Nous nous sommes pris au jeu d'ajouter à petitJulia le plus possible de fonctionnalités plus ou moins utiles ou anecdotiques! 
+L'étape de la génération de code a été très intéressante et l'occasion de tester "pour de vrai" les capacités de notre compilateur. Nous nous sommes pris au jeu d'ajouter à petitJulia™ le plus possible de fonctionnalités plus ou moins utiles ou anecdotiques! 
 
 Cependant, il y a quelques éléments supplémentaires que nous aurions aimé ajouter à notre compilateur mais qui n'ont pas pu être réalisés par manque de temps : 
 
-* Affichage de structures : le temps nous a tout simplement manqué et nous avons trouvé plus intéressant d'implémenter l'affichage de tableaux.
+* Affichage de structures : le temps nous a tout simplement manqué et nous avons trouvé plus intéressant d'implémenter l'affichage de tableaux (au vu des choses que nous voulions encore implémenter, nous avons du faire un choix).
 * Support de LLVM : cela aurait permis de gagner en performance et en portabilité. Cependant nous ne connaissions pas du tout le fonctionnement de cette plateforme et il nous aurait fallu du temps pour comprendre son fonctionnement!
 * GC : un GC, même basique, aurait fait de notre compilateur un vrai compilateur utilisable en pratique. En effet, même si la consommation de mémoire des exécutables générés par notre compilateur sur les exemples fournis reste raisonnable, il nous paraît évident que certaines situation ferait exploser cette consommation du fait de l'absence de GC. Par exemple si une fonction instantiant une structure était appelée un grand nombre de fois.
 * Nous avions évoqué la possibilité de faire un compilateur JIT. Nous nous sommes rendus compte que c'est une chose difficilement faisable en OCaml (ou bien nous n'avons pas trouvé les bonnes ressources) autrement que via la plateforme LLVM, que nous n'avions déjà pas le temps d'utiliser dans notre projet.
@@ -578,7 +578,7 @@ Cependant, il y a quelques éléments supplémentaires que nous aurions aimé aj
 
 J'ai beaucoup aimé travailler sur ce projet, qui a été une grande motivation durant ces longs mois passés à la maison (comme je suis en "distanciel" depuis le début de l'année)! J'ai encore rarement eu l'occasion de travailler à plusieurs sur un projet "libre" comme ceci, où nous étions encouragés à chercher plus loin que le sujet et à lui apporter tous les ajouts qui nous semblent utiles. Nous avons tous les deux passé beaucoup de temps à nous approprier le projet, à le modeler selon notre vision de ce que devrait être un langage de programmation : pas seulement un langage défini dans un sujet avec un compilateur, mais plutôt un environnement (presque) complet de développement, avec gestionnaire de paquets, interpréteur, REPL, documentation, etc. 
 
-Après avoir fini d'implémenter ce qui était demandé dans le sujet, nous avons continué à ajouter à petitJulia des fonctionnalités, encore même le jour du rendu (cf **Extension opérateurs**), et nous avions des idées pour continuer à complexifier le langage jusqu'à ce que, peut-être, il mérite de s'appeler "moyenJulia"!
+Après avoir fini d'implémenter ce qui était demandé dans le sujet, nous avons continué à ajouter à petitJulia™ des fonctionnalités, encore même le jour du rendu (cf **Extension opérateurs**), et nous avions des idées pour continuer à complexifier le langage jusqu'à ce que, peut-être, il mérite de s'appeler "moyenJulia™"!
 
 ## 3) Samuel
 
@@ -616,6 +616,7 @@ Nous avons ajouté quelques fonctionnalités à la bibliothèque `x86-64.ml` :
 * les registres flottants SSE 64 bits : les registres `%xmm0` à `%xmm15`.
 * des opérations sur les flottants : par exemple `cvtsi2sdq`, instruction de conversion d'entier vers flottant, ainsi que les instruction de comparaison de flottants
 * des instructions spéciales comme par exemple `rdtsc` pour la lecture du registre de timestamp ou bien `syscall` pour réaliser des appels système.
+* Nous avons modifié les instructions `shlq` et `shrq` pour que leur premier argument soit un registre d'un seul octet (`gcc` eccepte soit un immédiat soit un registre d'un octet)
 
 
 ## D] Liste des fichiers
