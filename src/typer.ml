@@ -362,9 +362,11 @@ let rec testTypageE (isLoc:bool) (vE:varEnv) (fE:funcEnv) (sE:structEnv) (aE:arg
         end
       | Bit_Or | Bit_And | Bit_Xor -> t1, BinopE (o, (t1, et1), (t2, et2)) (* To be ameliored when time is available *)
       | Shift_Left | Shift_Right -> 
+        begin
         match t2 with 
         | Int64 | Any -> t1, BinopE (o, (t1, et1), (t2, et2))
-        | error ("found "^typeName t2^" and is not a good type for shift amount") p
+        | _ -> error ("found " ^ typeName t2 ^ " and is not a good type for shift amount") p
+        end
     end
   | Elvalue lv -> begin
     match lv with
