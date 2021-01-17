@@ -425,6 +425,8 @@ Toutes les fonctions ont été renomées sous la forme `nom_id` ce qui permet de
 
 Nous n'avons malheureusement pas de **GC**, de qui implique parfois une consommation de mémoire importante. Cependant, l'utilisation intensive de la pile pour stocker les variables nous permet de ne pas trop allouer de mémoire inutile sur le tas, lorsque le programme utilise surtout de "petites" données, i.e. entiers, flottants et booléens.
 
+Pour ce qui est du dispatch mutliple on a approché le problème de façon très structuré ce qui nous as permis de faire ça sans difficulté. On avait obtenue du type la liste des fonctions correspondantes et toutes numéroté. De plus pour chaqu'une de ces fonctions on avait la liste des types des arguments. On a pu donc construire un arbre d'appel avec pour chaque noeud une fils pour chaque type admis et un type autres (ie les types any). **Les fonctions acceptant Any pour un argument était donc dans toutes les branches qui descendent d'un noeud.** À partir de cet arbre construit à l'aide de la fonction `calcArb` du fichier `compilNaif.ml`, nous avons put, après avoir calculé tous les arguments parcourir l'arbre comme si il s'agissait d'un if-then-else. Le parcours de l'arbre est fait par `buildArb` du même fichier.
+
 # XI] extension flottants
 
 La gestion des **flottants** est une extension que nous avions prévu d'apporter au compilateur depuis la première phase de travail sur le projet.
