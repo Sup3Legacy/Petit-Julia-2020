@@ -532,17 +532,17 @@ Nous avons ajouté dans la bibliothèque standard un paquet `tester` qui contien
 
 Nous avons ajouté au compilateur un petit compteur de performances : lorsque le drapeau `-analytics` est passé à `pjuliac`, le compilateur affiche à l'issue de la compilation quelques éléments d'analyse de performances très simples : le nombre de labels utilisés, selon leur type (`for`, `while` ou `if`), le nombre d'instructions `call` et le nombre d'appels à `malloc` présents dans le fichier généré. Nous aimerions également ajouter dans le futur le temps et la mémoire qui ont été nécessaires lors de la compilation.
 
-# XVI] Extensiosn opérateurs
+# XVI] Extension opérateurs
 
 Nous avons pensé que petitJulia manquait d'opérateurs, comme par exemple les opérateurs `AND`, `OR`, `SHIFT`, bit-à-bit. Nous avons donc ajouté `|`, `&`, `/`, `<<`, `>>`, correspondant aux opérateurs OR, AND, XOR, SHIFT_LEFT, SHIFT_RIGHT.
 
 De plus, nous avons ajouté les opérateurs de mise à jour (*update operators*, en anglais) : `+=`, `-=`, `*=`, `|=`, `&=`, `/=`, `<<=` et `>>=`.
 
-**NB :** Ce sont nos derniers ajouts à petitJulia et nous n'avons pas eu beaucou de temps pour tester ces opérateurs. Il est possible que, concernant les opérateurs bit-à-bit, il y a quelques erreurs de comportement!
+**NB :** Ce sont nos derniers ajouts à petitJulia et nous n'avons pas eu beaucoup de temps pour tester ces opérateurs. Il est possible que, concernant les opérateurs bit-à-bit, il y ait quelques erreurs de comportement!
 
 # XVII] État de l'interpréteur
 
-Étant bien occupés par la compilation, nous n'avons pas eu le temps de retravailler l'interpréteur. Il n'a donc pas été modifié depuis le premier rendu et ne supporte donc pas tous nos ajouts (tableaux, nouvelles chaînes de caractères, primitives, etc.). Cependant, il supporte partiellement les flottants.
+Étant bien occupés par la compilation, nous n'avons pas eu le temps de retravailler l'interpréteur. Il n'a donc pas été modifié depuis le premier rendu et ne supporte donc pas tous nos ajouts (tableaux, nouvelles chaînes de caractères, primitives, opérateurs étendus, etc.). Cependant, il supporte partiellement les flottants.
 
 Nous avons préféré nous concentrer sur la compilation. En effet, il nous semblait plus intéressant (et c'est un plus grand défi) d'ajouter de nouvelles fonctionnalités au compilateur en priorité, la mise à jour de l'interpréteur étant en soi une tâche assez facile, mais qui prend du temps, et nous avons préféré consacrer ce temps au paufinement du fonctionnement du compilateur!
 
@@ -561,20 +561,22 @@ Cependant, il y a quelques éléments supplémentaires que nous aurions aimé aj
 * Support de LLVM : cela aurait permis de gagner en performance et en portabilité. Cependant nous ne connaissions pas du tout le fonctionnement de cette plateforme et il nous aurait fallu du temps pour comprendre son fonctionnement!
 * GC : un GC, même basique, aurait fait de notre compilateur un vrai compilateur utilisable en pratique. En effet, même si la consommation de mémoire des exécutables générés par notre compilateur sur les exemples fournis reste raisonnable, il nous paraît évident que certaines situation ferait exploser cette consommation du fait de l'absence de GC. Par exemple si une fonction instantiant une structure était appelée un grand nombre de fois.
 * Nous avions évoqué la possibilité de faire un compilateur JIT. Nous nous sommes rendus compte que c'est une chose difficilement faisable en OCaml (ou bien nous n'avons pas trouvé les bonnes ressources) autrement que via la plateforme LLVM, que nous n'avions déjà pas le temps d'utiliser dans notre projet.
-* La mise à jour de l'interpréteur. Cf plus haut
+* La mise à jour de l'interpréteur. Cf plus haut.
 * Pourquoi pas les entiers et flottants sur 128 bits et les caractères non UTF-8.
+* Une documentation avec l'outil `ocamldoc`.
 
 
 ## 2) Constantin
 
+J'ai beaucoup aimé travailler sur ce projet, qui a été une grande motivation durant ces longs mois passés à la maison (comme je suis en "distanciel" depuis le début de l'année)! J'ai encore rarement eu l'occasion de travailler à plusieurs sur un projet "libre" comme ceci, où nous étions encouragés à chercher plus loin que le sujet et à lui apporter tous les ajouts qui nous semblent utiles. Nous avons tous les deux passé beaucoup de temps à nous approprier le projet, à le modeler selon notre vision de ce que devrait être un langage de programmation : pas seulement un langage défini dans un sujet avec un compilateur, mais plutôt un environnement (presque) complet de développement, avec gestionnaire de paquets, interpréteur, REPL, documentation, etc. 
+
+Après avoir fini d'implémenter ce qui était demandé dans le sujet, nous avons continué à ajouter à petitJulia des fonctionnalités, encore même le jour du rendu (cf **Extension opérateurs**), et nous avions des idées pour continuer à complexifier le langage jusqu'à ce que, peut-être, il mérite de s'appeler "moyenJulia"!
+
 ## 3) Samuel
 
-Ce projet fut pour moi à la fois un grand plaisir et une grande frustration. On a pus faire tellement de choses mais il en reste tellement à faire. J'aurais bien aimé rajouter au compilateur un GC, notre propre générateur d'analyseur lexicale ainsi qu'un compilateur optimisant plutôt que le notre qui n'est pas du tout optimisé et ne prend pas en compte les type calculé par le typeur. Il y a aussi une envie de refaire samenhir pour réussir à obtenir un code encore plus optimisé en terme de taille. Et aussi diminuer le temps de compilation. Malheureusement le temps nous as manqué. Notamment à cause des projets dans les autres cours d'informatique.
-
+Ce projet fut pour moi à la fois un grand plaisir et une grande frustration. On a pu faire tellement de choses mais il en reste tellement à faire. J'aurais bien aimé rajouter au compilateur un GC, notre propre générateur d'analyseur lexicale ainsi qu'un compilateur optimisant plutôt que le notre qui n'est pas du tout optimisé et ne prend pas en compte les types calculés par le typeur. Il y a aussi une envie de refaire Samenhir pour réussir à obtenir un code encore plus optimisé en terme de taille. Et aussi diminuer le temps de compilation. Malheureusement le temps nous a manqué, notamment à cause des projets dans les autres cours d'informatique!
 
 # XIX] Annexes
-
-
 
 ## A] Drapeaux de pjuliac
 
