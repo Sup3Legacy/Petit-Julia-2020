@@ -85,9 +85,9 @@ Cela nous a donné un analyseur à peu près fonctionnel mais souffrant de dizai
 
 Le parser a subi un nouveau remodelage général au début de notre travail sur le typeur car nous avions oublié de transmettre les positions des token dans l'`ast`, ce qui nous empêchait de pouvoir positionner précisement les erreurs de types.
 
-Une erreur de parser affiche une erreur de syntaxe donnant la position du dernier lexème lu avant de planter et, s'il y a suffisament peu de possibilités, il donne la liste des catégories de lexèmes autorisés à ce moment-là.
+Une erreur de parser affiche une erreur de syntaxe donnant la position du dernier lexème lu avant de planter et -s'il y a suffisament peu de possibilités- il donne la liste des catégories de lexèmes autorisés à ce moment-là.
 
-Nous avons implémenté une règle dans le lexer et le parser permetant de donner aux fonction des **docstrings**, dans le même format que `Julia`. Pour l'instant, les docstringss sont reconnues et enregistrées dans l'arbre syntaxique mais nous n'avons pas encore eu le temps d'implémenter dans le **REPL** une fonctionnalité permettant d'accéder à la docstring d'une fonction (via `help [nom fonction]`, par exemple).
+Nous avons implémenté une règle dans le lexer et le parser permettant de donner aux fonction des **docstrings**, dans le même format que `Julia`. Pour l'instant, les docstringss sont reconnues et enregistrées dans l'arbre syntaxique mais nous n'avons pas encore eu le temps d'implémenter dans le **REPL** une fonctionnalité permettant d'accéder à la docstring d'une fonction (via `help [nom fonction]`, par exemple).
 
 
 # III] Typer
@@ -99,22 +99,22 @@ Pour cela le fichier est parcouru **deux fois**. Il s'agit des parcours 1 et 2 (
 
 ### Parcours 1 :
 
-**Il a été choisi que les (en fait les constructeurs de) structures seraient gérées comme des fonctions. Cela signifie que pour nous, un constructeur de structure est un appel de fonction dont l'image est la structure construite**
+**Il a été choisi que les (en fait les constructeurs de) structures seraient gérées comme des fonctions. Cela signifie que pour nous, un constructeur de structure est un appel de fonction dont l'image est la structure construite.**
 
-Le fichier est découpé en une liste de déclarations de **fonctions**, de déclarations de **structures** et de **expressions**.
+Le fichier est découpé en une liste de déclarations de **fonctions**, de déclarations de **structures** et d'**expressions**.
 
 On fait le parcours en utilisant **4 environnements Map** :
 - un pour les **variables définies**
 - un pour toutes les **fonctions**, qui à tous les noms de fonctions associe l'ensemble des types (types de paramètres et type de l'image)
 - un pour tous les **noms de structures**
-- un pour tous les **noms d'attributs** associés à leur types, si la structure les contenant est mutable et le nom de la structure associée.
+- un pour tous les **noms d'attributs** associés à leur type, si la structure les contenant est mutable et le nom de la structure associée.
 
 
 Si l'on rencontre une **déclaration de structure**, on effectue ces actions :
 - on vérifie que son nom n'est pas `print`, `println` ou `div`
-- on vérifie que l'on a pas d'autre structure du **même nom**
+- on vérifie que l'on n'a pas d'autre structure du **même nom**
 - on parcourt les champs de la struture en vérifiant que les types sont bien définis et les noms distincts et pas déjà attribués (par exemple deux structures différentes ne peuvent pas avoir le même champ `a`), puis on rajoute ses champs à l'ensemble des champs existants. Il a été décidé de ne pas autoriser un champ d'une structure `S` à être du type Struct `S` car sinon on n'arriverait pas à construire la première variable de type `S`
-- on ajoute la structure (enfin plus exactement son constructeur) à l'ensemble des fonctions du même nom, ainsi que à l'ensemble des structures
+- on ajoute la structure (enfin plus exactement son constructeur) à l'ensemble des fonctions du même nom, ainsi qu'à l'ensemble des structures
 
 Si l'on rencontre une **déclaration de fonction**, on vérifie dans l'ordre :
 - que son nom n'est pas déjà associé à une variable
@@ -128,21 +128,21 @@ Si l'on rencontre une **expression**, on la parcourt récursivement et propagean
 - si l'on rencontre une **affectation de variable** on crée la variable associée dans l'environnement
 - si l'on rencontre une **affectation d'attribut**, on vérifie si l'attribut existe et s'il est mutable
 - si l'on rencontre un **appel de fonction**, on vérifie qu'il existe une fonction ou une struture du même nom
-- si l'on rencontre une expression qui définie un nouvel environnement (boucles `for` et `while`), alors on fait un premier parcours pour récupérer l'ensemble des variables définies dans le bloc à l'intérieur (on ne descend pas dans les `for`/`while` suivants par contre). Puis on reparcourt le bloc en testant bien tous les types en commençant avec l'environnement global privé des valeurs qui seront définies par la suite (en réalité c'est beaucoup plus compliquer car il faut gérer les différences d'environnement global/local).
+- si l'on rencontre une expression qui définie un nouvel environnement (boucles `for` et `while`), alors on fait un premier parcours pour récupérer l'ensemble des variables définies dans le bloc à l'intérieur (on ne descend pas dans les `for`/`while` suivants par contre). Puis on reparcourt le bloc en testant bien tous les types en commençant avec l'environnement global privé des valeurs qui seront définies par la suite (en réalité c'est beaucoup plus compliqué car il faut gérer les différences d'environnement global/local).
 
-**La première différence notable avec ce qui est demandé dans le sujet est que le typeur teste si les variables sont bien définie AVANT leur utilisation et pas uniquement si elle sont bien définies dans le même champs. Ce qui permet de faire planter les tests dans exec-fail suivant : `undef1.jl`, `undef3.jl`, `undef4.jl` et `undef5.jl`**
+**La première différence notable avec ce qui est demandé dans le sujet est que le typeur teste si les variables sont bien définie AVANT leur utilisation et pas uniquement si elles sont bien définies dans le même champ. Ce qui permet de faire planter les tests dans exec-fail suivant : `undef1.jl`, `undef3.jl`, `undef4.jl` et `undef5.jl`**
 
 ### Parcours 2 :
 
 On teste si tout est **correctement typé**, notamment pour toutes les affectations, on teste si on met bien dans une variable un type compatible avec le type que possède déjà la variable.
 
-On vérifie aussi que toutes les expressions sont bien typés.
+On vérifie aussi que toutes les expressions sont bien typées.
 
-De plus, pour chaque appel de fonction, on regarde l'ensemble des fonctions compatibles. Pour cela calcul d'abord la liste des types des expressions donné en arguments. Puis pour chaque fonction compatible on compte le nombre de `Any` dans ses types d'arguments et on récupère la liste des types des arguments dont l'expression à la position correspondante est de type `Any`. Il a été décidé que si toutes les fonctions avaient les mêmes listes et nombre alors le typage plantait car il y avait une impossibilité de savoir qu'elle fonction appeler. Cela permet notamment de faire planter le test `typing/bad/testfile-ambiguity-1.jl` (les deux fonctions on pour couple `(1,[])` à l'appel).
+De plus, pour chaque appel de fonction, on regarde l'ensemble des fonctions compatibles. Pour cela, on calcule d'abord la liste des types des expressions données en arguments. Puis pour chaque fonction compatible on compte le nombre de `Any` dans ses types d'arguments et on récupère la liste des types des arguments dont l'expression à la position correspondante est de type `Any`. Il a été décidé que si toutes les fonctions avaient les mêmes listes et nombre alors le typage plantait car il y avait une impossibilité de savoir quelle fonction appeler. Cela permet notamment de faire planter le test `typing/bad/testfile-ambiguity-1.jl` (les deux fonctions on pour couple `(1,[])` à l'appel).
 
 ### Difficultés :
 
-La principale difficulté rencontré dans le typage de Petitjulia™ se cachait dans la **portée des variables**.
+La principale difficulté rencontrée dans le typage de Petitjulia™ se cachait dans la **portée des variables**.
 
 # IV] Samenhir
 
@@ -153,7 +153,7 @@ Actuellement **Samenhir** est totalement indépendant de `menhir`, c'est à dire
 ### Grammaire à fournir à Samenhir :
 
 **Samenhir** a besoin d'une grammaire ressemblant fortement à celle demandée par `menhir`. Cependant, par soucis de simplification de l'implémentation, certaines décisions ont été prises :
-- Le parser doit être écrit dans un fichier `.sam` afin de différentier d'un fichier `.mly` car la syntaxe n'est pas entièrement compatible avec `Menhir` et `Ocamlyacc`
+- Le parser doit être écrit dans un fichier `.sam` afin de différencier d'un fichier `.mly` car la syntaxe n'est pas entièrement compatible avec `Menhir` et `Ocamlyacc`
 - la première lettre du nom d'une règle doit être **minuscule** et la première lettre du nom d'un token **majuscule**
 - il est possible de mettre un bout de code au dessus (`%{ code ocaml %}`}) du parser mais pas en dessous
 - une déclaration de règle nécessite de renseigner le **type de renvoi de la règle**. Cela permet d'éviter de faire nous-mêmes de l'**inférence de type** ou d'utiliser le module `Obj`, comme ceci :
@@ -163,10 +163,10 @@ rule<int * int>:
 ;
 ```
 - en raison de la décision ci-dessus, il n'est plus nécessaire de renseigner le type de la règle de départ
-- pour les **règles de priorité** (mais qui actuellement ne sont pas utilisées par Samenhir), on ne peut mettre qu'un seul' mot par **règle d'associativité**
+- pour les **règles de priorité** (mais qui actuellement ne sont pas utilisées par Samenhir), on ne peut mettre qu'un seul mot par **règle d'associativité**
 - il n'est pas possible d'utiliser des outils tel que `%inline` ainsi que `list`, `separated_list`, etc.
 
-Il y a peut être d'autres points de divergence entre **Samenhir** et `Menhir` liés à l'ignorance de notre part de certains spécificitées technique de `Menhir`!
+Il y a peut être d'autres points de divergence entre **Samenhir** et `Menhir` liés à l'ignorance de notre part de certaines spécificitées technique de `Menhir`!
 
 
 ### Algorithme utilisé pour construire l'analyseur :
@@ -177,7 +177,7 @@ Pour pouvoir construire l'**analyseur syntaxique**, **Samenhir** utilise l'**alg
 
 Actuellement, **Samenhir** est très **peu optimisé**. Son utilisation dans le projet ralonge fortement la durée de compilation du compilateur de Petitjulia™. Cependant, le parser ainsi généré fonctionne comme il devrait, en **passant tous les tests** de typage ainsi que les tests de syntaxe.
 
-Nous avons aussi la certitude que **Samenhir** n'est _pas entièrement correct_. Il manque de nombreuses sécurités par rapport aux différentes possibilités d'utilisations frauduleuses par un utilisateur De plus, il n'y as pas de typeur (on a considéré qu'un seul typeur dans le projet était suffisant). Cependant, le compilateur `pjuliac` utilise le fichier `parser.ml` généré par Samenhir et arrive à passer tous les tests de typages et de syntaxe. On part donc du principe suivant : `ça ne plante pas donc ça marche !`™.
+Nous avons aussi la certitude que **Samenhir** n'est _pas entièrement correct_. Il manque de nombreuses sécurités par rapport aux différentes possibilités d'utilisations frauduleuses par un utilisateur De plus, il n'y a pas de typeur (on a considéré qu'un seul typeur dans le projet était suffisant). Cependant, le compilateur `pjuliac` utilise le fichier `parser.ml` généré par Samenhir et arrive à passer tous les tests de typage et de syntaxe. On part donc du principe suivant : `ça ne plante pas donc ça marche !`™.
 
 Ces inconviénients sont faibles par rapport à la satisfaction personnelle d'utiliser un outil que l'on a développé soi-même plutôt que se reposer sur le travail de quelqu'un d'autre!
 
@@ -198,15 +198,15 @@ Ainsi, pour l'instant, nous avons un interpréteur qui fonctionne uniquement en 
 
 Pour rendre l'utilisation de l'interpréteur plus intuitive et interactive, nous avons aussi implémenté un **REPL**, très semblable aux **REPL** `OCaml` ou `Python` (nos modèles) ou même à celui de `Julia`.
 
-L'utilisation du **REPL** est très simple : entrer du code Petitjulia™ l'envoie vers l'interpréteur. Toutes les variables/functions/structures sont ajoutées à l'environnement global.
+L'utilisation du **REPL** est très simple : entrer du code Petitjulia™ l'envoie vers l'interpréteur. Toutes les variables/fonctions/structures sont ajoutées à l'environnement global.
 
 En plus de cela, nous avons ajouté quelques commandes spéciales :
 - `#run file` permet de charger et exécuter un **fichier**. Cette commande diffère de la commande présente dans le REPL Julia (`include(file)`) car il nous semblait plus simple d'utiliser une **syntaxe spéciale** pour que le **REPL** puisse décider simplement s'il doit charger un fichier et le faire suivre à l'interpréteur ou bien s'il doit directement lui faire suivre l'entrée.
-- `#flush` vide entièrement les **environnements de typage et interprétation**; un peu comme si on relançait le **REPL**. Cette commande est la solution à un problème que nous avons rencontré. Il peut arriver que l'utilisateur ait besoin de **redéfinir une fonction** précédemment définie. Les environnement de typage et d'interprétion restant les mêmes lors d'une session REPL, le typeur soulèverait une erreur de **double définition** d'une fonction, ce qui n'est pas autorisé par le langage.
+- `#flush` vide entièrement les **environnements de typage et interprétation**; un peu comme si on relançait le **REPL**. Cette commande est la solution à un problème que nous avons rencontré. Il peut arriver que l'utilisateur ait besoin de **redéfinir une fonction** précédemment définie. Les environnements de typage et d'interprétion restant les mêmes lors d'une session REPL, le typeur soulèverait une erreur de **double définition** d'une fonction, ce qui n'est pas autorisé par le langage.
 - `#exit` permet de **fermer proprement le REPL**, au lieu de le faire sauvagement planter à grand renfort de `Ctrl+C`!
 - Il y a d'autres **commandes easter-eggs** cachées dans le code; leur recherche est laissée comme exercice au lecteur :)
 
-Le **REPL** est pourvu d'un système de **récupération d'exception** qui `catch` toutes les erreurs levées par l'analyse **lexicale**, **syntaxique**, le **typage**, l'**interprétation** ou bien même les erreurs levées par le **système** (par exemple en cas de fichier introuvable) et affiche les messages correspondant sur la sortie stantard. Cela nous permet d'avoir un **REPL** qui ne plante pas à la moindre faute de frappe mais affiche l'erreur et permet de corriger la commande entrée, notamment grâce à l'**historique de commandes** (voir ci-dessous).
+Le **REPL** est pourvu d'un système de **récupération d'exception** qui `catch` toutes les erreurs levées par l'analyse **lexicale**, **syntaxique**, le **typage**, l'**interprétation** ou bien même les erreurs levées par le **système** (par exemple en cas de fichier introuvable) et affiche les messages correspondants sur la sortie stantard. Cela nous permet d'avoir un **REPL** qui ne plante pas à la moindre faute de frappe mais affiche l'erreur et permet de corriger la commande entrée, notamment grâce à l'**historique de commandes** (voir ci-dessous).
 
 Enfin, nous utilisons un **wrapper**, `rlwrap`, pour ajouter à notre **REPL** les fonctionnalités attendues d'un tel système : historique des commandes, auto-complétion, édition de la ligne courante, etc.
 
@@ -232,7 +232,7 @@ end
 
 Ensuite nous avons mesuré le temps mis par le calcul de `ackermann(3,8)` sur les deux interpréteurs. Sans rien configurer, notre interpréteur a subi une défaite cuisante contre l'interpréteur Julia. Le temps de calcul sur le notre avait en effet plus qu'un **facteur 50** par rapport à la référence (en utilisant exactement le même fichier de base).
 
-Cependant, nous nous sommes souvenus que le **REPL** de `Julia` "triche" un peu, en cela qu'il compile à la volée le code pour ensuite l'exécuter dans le processur courant. Nous avons refait le même test, cette fois-ci en appelant le **REPL** `Julia` de cette façon `julia --compile=no`. Le résultat est devenu beaucoup plus intéressant : notre interpréteur ne met plus qu'environ **10% plus longtemps** pour calculer `ackermann(3,8)`, ce qui nous paraît être un très bon premier résultat!
+Cependant, nous nous sommes souvenus que le **REPL** de `Julia` "triche" un peu, en cela qu'il compile à la volée le code pour ensuite l'exécuter dans le processus courant. Nous avons refait le même test, cette fois-ci en appelant le **REPL** `Julia` de cette façon `julia --compile=no`. Le résultat est devenu beaucoup plus intéressant : notre interpréteur ne met plus qu'environ **10% plus longtemps** pour calculer `ackermann(3,8)`, ce qui nous paraît être un très bon premier résultat!
 
 Nous n'avons malheureusement pas encore eu le temps d'effectuer des **tests de performances** plus poussés et plus fiables, donc ce résultat est à prendre avec un peu de recul, et cela d'autant plus que le langage Julia est beaucoup plus complexe que notre petit fragment. On peut ainsi raisonnablement s'attendre à ce que l'**interpréteur Julia** ait des étapes d'interprétation supplémentaires (Par exemple la gestion des opérateurs `+ - *` qui sont surchargés du fait de la présence de flottants dans Julia) par rapport à notre interpréteur basique. Ces étapes allongeant plus ou moins le temps pris par l'interprétation, notre succès est un peu moindre.
 
@@ -242,7 +242,7 @@ Nous n'avons malheureusement pas encore eu le temps d'effectuer des **tests de p
 En l'état actuel des choses, la compilation du compilateur (`pjuliac.exe`) et du REPL (`pjuliarepl.exe`) est gérée par `dune` via un `dune-project` commun. Elle est réalisable via notre `Makefile`. Nous avons paramétré celui-ci pour **automatiser** au maximum les tests et essais des différentes parties de notre projet.
 
 Nous retrouvons :
-- `make` : construit les deux fichiers, de plus pour le confort de l'utilisateur un exécutable `pjuliac` est mis dans le **répertoire courant**. Cependant cet exécutable est supprimé par la commande `make clean`. Pensez donc à le déplacer avant si vous voulez le garder après avoir nétoyé le reste du projet.
+- `make` : construit les deux fichiers, de plus pour le confort de l'utilisateur un exécutable `pjuliac` est mis dans le **répertoire courant**. Cependant cet exécutable est supprimé par la commande `make clean`. Pensez donc à le déplacer avant si vous voulez le garder après avoir nettoyé le reste du projet.
 - ` make clean` : efface les fichiers engendrés par la compilation du projet.
 - `make repl`/`make compil` : construit et exécute le fichier (le `pjuliarepl.exe` ou `pjuliac.exe`).
 - `make testExec`/`make failsExec` : exécute les tests d'exécution positifs/négatifs. (dans `/test/exec/` et `/test/exec-fail`)
@@ -400,14 +400,14 @@ println(package2__package1__succ(5))
 println(package2__bar)
 ```
 
-On peut remarquer une chose : on ne peut pas importer plusieurs fois le même paquet depuis un même fichier. Cependant, on peut importer un même paquet depuis un fichier, tout en l'important aussi depusi un fichier lui-même importé. On se retrouve alors avec deux copies _a priori_ identique du paquet, donc seuls les identifiants diffèrent. Cela ajoute une masse parfois importante aux exécutables, mais cela permet d'isoler le comportement des différents modules du programmes. De plus ce système évite tout risque de collision de nom entre les paquets (on peut iamginer importer plusieurs paquets, chacun implémentant une méthode `new`).
+On peut remarquer une chose : on ne peut pas importer plusieurs fois le même paquet depuis un même fichier. Cependant, on peut importer un même paquet depuis un fichier, tout en l'important aussi depuis un fichier lui-même importé. On se retrouve alors avec deux copies _a priori_ identiques du paquet, donc seuls les identifiants diffèrent. Cela ajoute une masse parfois importante aux exécutables, mais cela permet d'isoler le comportement des différents modules du programme. De plus ce système évite tout risque de collision de nom entre les paquets (on peut imaginer importer plusieurs paquets, chacun implémentant une méthode `new`).
 
 # X] génération de code du projet de base (donc sans flottants ni arrays)
 
-Toutes les valeurs sont composées de deux champs de 64 bits : le premier pour le type, et le second pour la valeur en elle-même. Les valeurs "grandes", telles que les structures, sont composées d'un pointeur vers un emplacement dans la mémoire qui contient toute l'information. Les types `undef` et `nothing` sont aussi implémentés sur 128 bits pour simplifier leur utilisation.
+Toutes les valeurs sont composées de deux champs de 64 bits : le premier pour le type et le second pour la valeur en elle-même. Les valeurs "grandes", telles que les structures, sont composées d'un pointeur vers un emplacement dans la mémoire qui contient toute l'information. Les types `undef` et `nothing` sont aussi implémentés sur 128 bits pour simplifier leur utilisation.
 
 Les variables globales sont définies dans `.data` et nommées `nom_val` et `nom_type`.
-Les variables locales sont placées dans la pile et adressées avec une adresse relative par rapport à `%rbp`. Tous les emplacement de variables locales utilisés par une fonctions seront tous créés à l'appel de cette fonction, ce qui permet de ne pas avoir à créer d'emplacements quand on rentre dans une boucle for, while ou dowhile.
+Les variables locales sont placées dans la pile et adressées avec une adresse relative par rapport à `%rbp`. Tous les emplacement de variables locales utilisés par une fonction seront tous créés à l'appel de cette fonction, ce qui permet de ne pas avoir à créer d'emplacements quand on rentre dans une boucle for, while ou dowhile.
 
 Nous avons décidé de ne pas utiliser les conventions d'appel car le code n'est pas appelé depuis l'extérieur. Cependant, la fonction `print_value` ainsi que les fonctions associées respectent les conventions d'appel pour résoudre les problèmes autour des print récursifs. De plus nous avons gardé ces conventions dans un coin de notre tête car elles nous ont permis de pouvoir manipuler `printf` et `malloc` sans devoir sauvegarder tous nos registres.
 
@@ -433,7 +433,7 @@ Un point à remarquer : il n'est pas possible de déclarer des immédiats flotta
 
 # XII] extension arrays
 
-Un ajout que nous aouhaitions faire dans notre projet était les tableaux. En effet, des structures utilisées astucieusement permettent de se passer de tableaux, mais il est toujours plus agréable d'utiliser des vrais tableaux, avec tout le sucre syntaxique qui facilite la vie du programmeur (par exemple l'accès et la modification d'une cellule avec `a[i]`).
+Un ajout que nous souhaitions faire dans notre projet était les tableaux. En effet, des structures utilisées astucieusement permettent de se passer de tableaux, mais il est toujours plus agréable d'utiliser des vrais tableaux, avec tout le sucre syntaxique qui facilite la vie du programmeur (par exemple l'accès et la modification d'une cellule avec `a[i]`).
 
 ## 1) première itération aved des structs
 
@@ -470,8 +470,8 @@ Cela évite d'avoir à créer une primitive d'initialisation de tableau qui pren
 Un problème a été délicat : comment intégrer les arrays dans notre système de types? 
 
 Plusieurs possibilités ont été évoquées : 
-- se donner un type unique `Array` : tous les arrays, peu importe leur dimension et le type de leurs cellules, ont le même type. Cela serait simple mais ne permettrait pas de conserver des tableaux avec un type fixe : si on se donne un talbeaux de tableaux, on peut remplacer un de ses éléments par un tableau de n'importe quelle dimension, car il aura toujours le même type `Array`
-- se donner des types explicites, par exemple `Int64 Array Array` ou bien `Float64 Array` : cela assure la bonne définition des types des arrays, mais cela complexifie beaucoup l'étapde de typage.
+- se donner un type unique `Array` : tous les arrays, peu importe leur dimension et le type de leurs cellules, ont le même type. Cela serait simple mais ne permettrait pas de conserver des tableaux avec un type fixe : si on se donne un tableau de tableaux, on peut remplacer un de ses éléments par un tableau de n'importe quelle dimension, car il aura toujours le même type `Array`
+- se donner des types explicites, par exemple `Int64 Array Array` ou bien `Float64 Array` : cela assure la bonne définition des types des arrays, mais cela complexifie beaucoup l'étape de typage.
 
 Nous avons alors décidé de partir sur une solution intermédiaire : Lors du parsing, tous les tableaux ont un unique type `Array`. Cependant, à l'exécution, les tableaux ont un type bien défini ressemblant à `Int64 Array Array`. En effet, le type d'un tableau est de la forme `i + n * a`, où `n` est la dimension du tableau, `a` l'entier associé au type `Array` et `i` l'entier associé au type de élémentaire contenu dans le tableau (pour `Int64 Array Array`, c'est `Int64`). Ainsi, on peut vérifier à l'exécution que les mutations et accès des éléments d'un tableaux sont licites.
 
@@ -498,7 +498,7 @@ Remarque : Comme nous utilisons nos propres chaînes de caractères, les chaîne
 
 La liste de toutes les primitives avec leurs types possible est défini en bas du typeur dans la fonction `resetFE`.
 
-* `int` : Cette fonction convertit son argument (entier, flottant, booléen ou caractère) vers un entier, éventuellement en arondissant à l'entier inférieur.
+* `int` : Cette fonction convertit son argument (entier, flottant, booléen ou caractère) vers un entier, éventuellement en arrondissant à l'entier inférieur.
 
 * `float` : Cette fonction convertit son argument (entier ou flottant) vers le flottant correspondant
 
@@ -506,7 +506,7 @@ La liste de toutes les primitives avec leurs types possible est défini en bas d
 
 * `sqrt` : Cette fonction renvoie la racine carrée (sous forme d'un flottant) de son argument entier ou flottant
 
-* `input_int` : Cette fonction permet de lire un entier sur l'éntrée standard.
+* `input_int` : Cette fonction permet de lire un entier sur l'entrée standard.
 
 * `delay` : Cette fonction déclenche une pause de l'exécution du programme. L'argument est en secondes. /!\ la compatibilité n'est pas tout à fait bonne, comme cette fonction utilise un *syscall*. Elle a été testée et est fonctionnelle sous Ubuntu 20 mais ne semble pas marcher sur MacOS car les syscall n'y sont pas les même.
 
@@ -524,20 +524,22 @@ Nous avons ajouté le support des docstrings à petitJulia : chaque fonction peu
 
 Comme nous avons rajouté un certain nombre de fonctionnalités à notre langage, il nous a semblé important de pouvoir faire des tests automatisés pour s'assurer, à tout moment, que toutes nos fonctionnalités marchent correctement. C'est pourquoi nous avons implémenté un méchanisme d'assertions. Une assertion est déclarée dans un programme par le mot-clé `assert` suivi d'une expression. À l'exécution, si l'expression s'évalue à `true`, rien ne se passe. Autrement, le programme échoue et affiche une `assertionError`, contenant le nom du fichier où l'assertion a échoué ainsi que sa ligne (le nom et la ligne sont ajoutés dans l'AST au moment du parsing puis "hardcoded" dans l'exécutable).
 
-Nous avons ajouté dans la bibliothèque standard un paquet `tester` qui contient quelques tests (encore incomplet, il contient surtout les tests des différents comparaisons entier/entier, entier/flottant, flottant/flottant et de quelques opérations sur les arrays)
+Nous avons ajouté dans la bibliothèque standard un paquet `tester` qui contient quelques tests (encore incomplet, il contient surtout les tests des différentes comparaisons entier/entier, entier/flottant, flottant/flottant et de quelques opérations sur les arrays)
 
 ## 3) analytics
 
-Nous avons ajouté au compilateur un petit compteur de performances : lorsque le drapeau `-analytics` est passé à `pjuliac`, le compilateur affiche à l'issue de al compilation quelques éléments d'analyse de performances très simples : le nombre de labels utilisés, se lon leur type (`for`, `while` ou `if`), le nombre d'instructions `call` et le nombre d'appels à `malloc` présents dans le fichier généré. Nous aimerions également ajouter dans le futur le temps et la mémoire qui ont été nécessaires lors de la compilation.
+Nous avons ajouté au compilateur un petit compteur de performances : lorsque le drapeau `-analytics` est passé à `pjuliac`, le compilateur affiche à l'issue de la compilation quelques éléments d'analyse de performances très simples : le nombre de labels utilisés, selon leur type (`for`, `while` ou `if`), le nombre d'instructions `call` et le nombre d'appels à `malloc` présents dans le fichier généré. Nous aimerions également ajouter dans le futur le temps et la mémoire qui ont été nécessaires lors de la compilation.
 
 # XVI] État de l'interpréteur
 
 Étant bien occupés par la compilation, nous n'avons pas eu le temps de retravailler l'interpréteur. Il n'a donc pas été modifié depuis le premier rendu et ne supporte donc pas tous nos ajouts (tableaux, nouvelles chaînes de caractères, primitives, etc.). Cependant, il supporte partiellement les flottants.
 
-Nous avons préféré nous concentrer sur la compilation. En effet, il nous semblait plus intéressant (et c'est un plus grand défi) d'ajouter les nouvelles fonctionnalités au compilateur en priorité, la mise à jour de l'interpréteur étant en soi une tâche assez facile, mais qui prend du temps, et nous avons préféré consacrer ce temps au paufinement du fonctionnement du compilateur!
+Nous avons préféré nous concentrer sur la compilation. En effet, il nous semblait plus intéressant (et c'est un plus grand défi) d'ajouter de nouvelles fonctionnalités au compilateur en priorité, la mise à jour de l'interpréteur étant en soi une tâche assez facile, mais qui prend du temps, et nous avons préféré consacrer ce temps au paufinement du fonctionnement du compilateur!
 
 
 # XVII] Conclusion
+
+## 1) Partie commune
 
 Ce projet a été pour nous l'occasion de découvrir le domaine de la programmation bas-niveau et de la compilation. 
 
@@ -553,6 +555,12 @@ Cependant, il y a quelques éléments supplémentaires que nous aurions aimé aj
 * Opérateurs `+=`, `-=` et `*=`. Ces opérateurs peuvent être utiles pour factoriser un peu du code!
 * L'opérateur `/` pour la division, en plus de `div`.
 * Pourquoi pas les entiers et flottants sur 128 bits et les caractères non UTF-8.
+
+
+## 2) Constantin
+
+## 3) Samuel
+
 
 # XVIII] Annexes
 
