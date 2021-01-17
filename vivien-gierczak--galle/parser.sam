@@ -1,0 +1,806 @@
+%{
+  open Ast
+  open Astype
+  open Hyper2
+  let file_name = ref ""
+
+%}
+
+%token <Ast.position*Int64.t> INT
+%token <Ast.position*float> FLOAT
+%token <Ast.position*string> CHAINE
+%token <Ast.position*string> IDENT
+%token <Ast.position * int> CHAR
+%token EOF
+%token <Ast.position> PARG
+%token <Ast.position> PARD
+%token <Ast.position> CROCHETG
+%token <Ast.position> CROCHETD
+%token <Ast.position> CURLYG
+%token <Ast.position> CURLYD
+%token <Ast.position> AFFECT
+%token <Ast.position> PLUS_AFFECT
+%token <Ast.position> TIMES_AFFECT
+%token <Ast.position> MINUS_AFFECT
+%token <Ast.position> OR_AFFECT
+%token <Ast.position> AND_AFFECT
+%token <Ast.position> XOR_AFFECT
+%token <Ast.position> SHIFT_LEFT_AFFECT
+%token <Ast.position> SHIFT_RIGHT_AFFECT
+%token <Ast.position> OR
+%token <Ast.position> AND
+%token <Ast.position> EQ
+%token <Ast.position> NEQ
+%token <Ast.position> L
+%token <Ast.position> G
+%token <Ast.position> LEQ
+%token <Ast.position> GEQ
+%token <Ast.position> PLUS
+%token <Ast.position> MINUS
+%token <Ast.position> TIMES
+%token <Ast.position> MODULO
+%token <Ast.position> EXP
+%token <Ast.position> NOT
+%token <Ast.position> DOT
+%token <Ast.position> ASSERT
+%token <Ast.position> CONCAT
+%token <Ast.position> BIT_OR
+%token <Ast.position> BIT_AND
+%token <Ast.position> BIT_XOR
+%token <Ast.position> SHIFT_LEFT
+%token <Ast.position> SHIFT_RIGHT
+
+%token <Ast.position> ELSE
+%token <Ast.position> ELSEIF
+%token <Ast.position> END
+%token <Ast.position> FALSE
+%token <Ast.position> FOR
+%token <Ast.position> FUNCTION
+%token <Ast.position> IF
+%token MUTABLE
+%token <Ast.position> RETURN
+%token <Ast.position> STRUCT
+%token <Ast.position> TRUE
+%token <Ast.position> WHILE
+%token <Ast.position> DOWHILE
+
+%token <Ast.position*Int64.t * string> ENTIER_IDENT
+%token <Ast.position*string> IDENT_PARG
+%token <Ast.position*Int64.t> ENTIER_PARG
+%token <Ast.position*string> PARD_IDENT
+
+%token TYPE
+
+%token <Ast.position> COLON
+%token <Ast.position> SEMICOLON
+%token <Ast.position> COMMA
+
+%token <string> DOCSTRING
+
+%nonassoc ASSERT
+%nonassoc RETURN
+%right AFFECT
+%right PLUS_AFFECT
+%right TIMES_AFFECT
+%right MINUS_AFFECT
+%right OR_AFFECT
+%right AND_AFFECT
+%right XOR_AFFECT
+%right SHIFT_LEFT_AFFECT
+%right SHIFT_RIGHT_AFFECT
+%left BIT_OR
+%left BIT_AND
+%left BIT_XOR
+%left SHIFT_LEFT
+%left SHIFT_RIGHT
+%left OR
+%left AND
+%left EQ NEQ
+%left L G LEQ GEQ
+%left PLUS MINUS
+%left TIMES
+%left MODULO
+%nonassoc NOT
+%nonassoc unary_minus
+%right EXP
+%left CONCAT
+%left DOT
+%nonassoc calcValArray
+%left CROCHETG
+
+
+%start fichier
+
+%%
+
+fichier<Ast.fichier>:
+  | declarations = declarations_list {DeclarationList declarations}
+;
+
+declarations_list <Ast.declaration list>:
+  | EOF {[]}
+  | s = structure SEMICOLON d = declarations_list {s::d}
+  | f = fonction SEMICOLON d = declarations_list {f::d}
+  | e = expr SEMICOLON d = declarations_list {(Dexpr e)::d}
+  | s = structure EOF {[s]}
+  | f = fonction EOF {[f]}
+  | e = expr EOF {[Dexpr e]}
+;
+
+
+structure<Ast.declaration>:
+  | MUTABLE STRUCT pi = IDENT parameters = param_list
+    {
+      let (p,i) = pi in
+      Dstruct (true, p, i, parameters)
+    }
+  | STRUCT pi = IDENT parameters = param_list
+    {
+      let (p,i) = pi in
+      Dstruct (false, p, i, parameters)
+    }
+;
+
+param_list<Ast.param list>:
+  | END {[]}
+  | SEMICOLON pl = param_list {pl}
+  | p = param SEMICOLON pl = param_list {p::pl}
+  | p = param END {[p]}
+;
+
+typage<Ast.position * string>:
+  | TYPE pi = IDENT {pi}
+;
+
+fonction<Ast.declaration>:
+  | FUNCTION pig = IDENT_PARG parameters = separated_list_COMMA_param
+    PARD pb = bloc_END
+    {
+      let (p1,ig) = pig in
+      let (pEnd, (p,eL)) = pb in
+      Dfonction (p1,ig, parameters, p1, Any, (p,eL), "")
+    }
+  | FUNCTION pig = IDENT_PARG parameters = separated_list_COMMA_param
+    PARD pt = typage pb = bloc_END
+    {
+      let (p1,ig) = pig in
+      let (pEnd, (p,eL)) = pb in
+      let typ,p2 = match pt with
+        | (p, "Int64") -> Int64, p
+        | (p, "Float64") -> Float64, p
+        | (p, "Bool") -> Bool, p
+        | (p, "String") -> Array, p
+        | (p, "Any") -> Any, p
+        | (p, "Nothing") -> Nothing, p
+        | (p, "Array") -> Array, p
+        | (p, s) -> S s, p
+      in
+      Dfonction (p1,ig, parameters, p2, typ, (p,eL), "")
+    }
+  | FUNCTION pig = IDENT_PARG parameters = separated_list_COMMA_param
+    PARD e = expr pb = bloc_END
+    {
+      let (p1,ig) = pig in
+      let (pEnd, (p,eL)) = pb in
+      Dfonction (p1,ig, parameters, p1, Any, (Hyper2.fusionPos (fst e) p, e::eL), "")
+    }
+  | FUNCTION pig = IDENT_PARG parameters = separated_list_COMMA_param
+    PARD pt = typage e = expr pb = bloc_END
+    {
+      let (p1,ig) = pig in
+      let (pEnd, (p,eL)) = pb in
+      let typ,p2 = match pt with
+        | (p, "Int64") -> Int64, p
+        | (p, "Float64") -> Float64, p
+        | (p, "Bool") -> Bool, p
+        | (p, "String") -> Array, p
+        | (p, "Any") -> Any, p
+        | (p, "Nothing") -> Nothing, p
+        | (p, "Array") -> Array, p
+        | (p, s) -> S s, p
+      in
+      Dfonction (p1,ig, parameters, p2, typ, (Hyper2.fusionPos (fst e) p, e::eL), "")
+    }
+  | doc = DOCSTRING FUNCTION pig = IDENT_PARG parameters = separated_list_COMMA_param
+    PARD pb = bloc_END
+    {
+      let (p1,ig) = pig in
+      let (pEnd, (p,eL)) = pb in
+      Dfonction (p1,ig, parameters, p1, Any, (p,eL), doc)
+    }
+  | doc = DOCSTRING FUNCTION pig = IDENT_PARG parameters = separated_list_COMMA_param
+    PARD pt = typage pb = bloc_END
+    {
+      let (p1,ig) = pig in
+      let (pEnd, (p,eL)) = pb in
+      let typ,p2 = match pt with
+        | (p, "Int64") -> Int64, p
+        | (p, "Float64") -> Float64, p
+        | (p, "Bool") -> Bool, p
+        | (p, "String") -> Array, p
+        | (p, "Any") -> Any, p
+        | (p, "Nothing") -> Nothing, p
+        | (p, "Array") -> Array, p
+        | (p, s) -> S s, p
+      in
+      Dfonction (p1,ig, parameters, p2, typ, (p,eL), doc)
+    }
+  | doc = DOCSTRING FUNCTION pig = IDENT_PARG parameters = separated_list_COMMA_param
+    PARD e = expr pb = bloc_END
+    {
+      let (p1,ig) = pig in
+      let (pEnd, (p,eL)) = pb in
+      Dfonction (p1,ig, parameters, p1, Any, (Hyper2.fusionPos (fst e) p, e::eL), doc)
+    }
+  | doc = DOCSTRING FUNCTION pig = IDENT_PARG parameters = separated_list_COMMA_param
+    PARD pt = typage e = expr pb = bloc_END
+    {
+      let (p1,ig) = pig in
+      let (pEnd, (p,eL)) = pb in
+      let typ,p2 = match pt with
+        | (p, "Int64") -> Int64, p
+        | (p, "Float64") -> Float64, p
+        | (p, "Bool") -> Bool, p
+        | (p, "String") -> Array, p
+        | (p, "Any") -> Any, p
+        | (p, "Nothing") -> Nothing, p
+        | (p, "Array") -> Array, p
+        | (p, s) -> S s, p
+      in
+      Dfonction (p1,ig, parameters, p2, typ, (Hyper2.fusionPos (fst e) p, e::eL), doc)
+    }
+;
+
+separated_list_COMMA_param<Ast.param list>:
+  | {[]}
+  | p = param pL = separated_list_C_P {p::pL}
+;
+
+separated_list_C_P<Ast.param list>:
+  | {[]}
+  | COMMA p = param pL = separated_list_C_P {p::pL}
+;
+
+param<Ast.param>:
+  | pi = IDENT pb = typage
+    {
+      let (p1,i) = pi in
+      
+      let typ,p2 = match pb with
+        | (p, "Float64") -> Float64, p
+        | (p, "Int64") -> Int64, p
+        | (p, "Bool") -> Bool, p
+        | (p, "String") -> Array, p
+        | (p, "Any") -> Any, p
+        | (p, "Nothing") -> Nothing, p
+        | (p, "Array") -> Array, p
+        | (p, s) -> S s, p
+      in
+      Param (p1, i, p2, typ)
+    }
+  | pi = IDENT
+    {
+      let (p1, i_) = pi in
+      let (id, type_colle) = Hyper2.separate_string i_ !file_name in
+      match type_colle with 
+      | None -> Param (p1, id, p1, Any)
+      | Some "Float64" -> Param (p1, id, p1, Float64)
+      | Some "Int64" -> Param (p1, id, p1, Int64)
+      | Some "Bool" -> Param (p1, id, p1, Bool)
+      | Some "String" -> Param (p1, id, p1, Array)
+      | Some "Any" -> Param (p1, id, p1, Any)
+      | Some "Nothing" -> Param (p1, id, p1, Nothing)
+      | Some "Array" -> Param (p1, id, p1, Array)
+      | Some s -> Param (p1, id, p1, S s)
+    }
+;
+
+separated_list_COMMA_expr<Ast.expression list>:
+  | {[]}
+  | e = expr eL = separated_list_C_E {e::eL}
+;
+
+separated_list_C_E<Ast.expression list>:
+  | {[]}
+  | COMMA e = expr eL = separated_list_C_E {e::eL}
+;
+
+expr_wMin_<Ast.expression>:
+  | p = ASSERT e = expr {p, EAssert (p.ldeb, !file_name, e)}
+  | pe1 = expr_wMin_ p = EQ pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, Eq, pe1, pe2)) }
+  | pe1 = expr_wMin_ p = NEQ pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, Neq, pe1, pe2)) }
+  | pe1 = expr_wMin_ p = L pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, Lo, pe1, pe2)) }
+  | pe1 = expr_wMin_ p = G pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, Gr, pe1, pe2)) }
+  | pe1 = expr_wMin_ p = LEQ pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, Leq, pe1, pe2)) }
+  | pe1 = expr_wMin_ p = GEQ pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, Geq, pe1, pe2)) }
+  | pe1 = expr_wMin_ p = PLUS pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, Plus, pe1, pe2)) }
+  | pe1 = expr_wMin_ p = MINUS pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, Minus, pe1, pe2)) }
+  | pe1 = expr_wMin_ p = TIMES pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, Times, pe1, pe2)) }
+  | pe1 = expr_wMin_ p = MODULO pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, Modulo, pe1, pe2)) }
+  | pe1 = expr_wMin_ p = EXP pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, Exp, pe1, pe2)) }
+  | pe1 = expr_wMin_ p = AND pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, And, pe1, pe2)) }
+  | pe1 = expr_wMin_ p = OR pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, Or, pe1, pe2)) }
+  | pe1 = expr_wMin_ p = CONCAT pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, Concat, pe1, pe2)) }
+  | pe1 = expr_wMin_ p = BIT_OR pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, Bit_Or, pe1, pe2)) }
+  | pe1 = expr_wMin_ p = BIT_AND pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, Bit_And, pe1, pe2)) }
+  | pe1 = expr_wMin_ p = BIT_XOR pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, Bit_Xor, pe1, pe2)) }
+  | pe1 = expr_wMin_ p = SHIFT_LEFT pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, Shift_Left, pe1, pe2)) }
+  | pe1 = expr_wMin_ p = SHIFT_RIGHT pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in ((Hyper2.fusionPos p1 p2) , Ebinop (p, Shift_Right, pe1, pe2)) }
+  | pi = INT {let (p,i) = pi in (p,Eentier i)}
+  | pc = CHAR {let (p, c) = pc in (p,Echar c)}
+  | pf = FLOAT {let (p, f) = pf in (p, Eflottant f)}
+  | ps = CHAINE {let (p,s) = ps in (p, Echaine s)}
+  | p = TRUE {(p, Etrue)}
+  | p = FALSE {(p, Efalse)}
+  | pb = ENTIER_IDENT {
+  	  let (p,i,s) = pb in (p, EentierIdent (p, i, s))
+    }
+  | pi = ENTIER_PARG pb = bloc1 p2 = PARD {
+      let (p,i) = pi in
+      Hyper2.fusionPos p p2, EentierParG (p, i, pb)}
+  | p1 = PARG pb = bloc1 p2 = PARD { Hyper2.fusionPos p1 p2, Ebloc1 pb }
+  | p1 = PARG e = expr pi = PARD_IDENT {
+    let (p2,i) = pi in
+    Hyper2.fusionPos p1 p2, EparDIdent (e, p2, i)}
+  | pi = IDENT_PARG l = separated_list_COMMA_expr p2 = PARD {
+    let (p1,i) = pi in
+    if i = "println" then
+      Hyper2.fusionPos p1 p2, Eapplication (p1, "print", l @ [(p1,Echaine "\n")])
+    else Hyper2.fusionPos p1 p2, Eapplication (p1, i, l)}
+  | p = NOT e = expr {Hyper2.fusionPos p (fst e), Enot e}
+  | pl = expr_wMin_ AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, e)
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr_wMin_ PLUS_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Plus, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr_wMin_ TIMES_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Times, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr_wMin_ MINUS_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Minus, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr_wMin_ OR_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Bit_Or, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr_wMin_ AND_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Bit_And, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr_wMin_ XOR_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Bit_Xor, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr_wMin_ SHIFT_LEFT_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Shift_Left, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr_wMin_ SHIFT_RIGHT_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Shift_Right, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = lvalue_wMin_ {let (p,l) = pl in p, Elvalue l}
+  | p = RETURN e = expr {Hyper2.fusionPos p (fst e), Ereturn (p,Some e)}
+  | p = RETURN {p, Ereturn (p, None)}
+  | p1 = FOR pi = IDENT AFFECT e1 = expr COLON e2b = expr_bloc p2 = END {
+  		let (p,i) = pi in
+  		let (e2, b) = e2b in
+      Hyper2.fusionPos p1 p2, Efor ((i : ident), e1, e2, b)
+    }
+  | w = whileExp { w }
+  | w = doWhileExp { w }
+  | p1 = IF eb = expr_bloc pel = else_exp {
+  		let (e, b) = eb in
+      let (p2, el) = pel in
+	    Hyper2.fusionPos p1 p2, Eif (e, b, el)
+    }
+  | p1 = CROCHETG p2 = CROCHETD {
+    Hyper2.build_array []
+  }
+  | p1 = CROCHETG e1 = expr COMMA e2 = expr arr = separated_list_C_E p2 = CROCHETD {
+    Hyper2.build_array (e1::e2::arr)
+    }
+;
+
+expr_w_Ret<Ast.expression>:
+  | p = ASSERT e = expr_w_Ret {p, EAssert (p.ldeb, !file_name, e)}
+  | pe1 = expr p = EQ pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Eq, pe1, pe2) }
+  | pe1 = expr p = NEQ pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Neq, pe1, pe2) }
+  | pe1 = expr p = L pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Lo, pe1, pe2) }
+  | pe1 = expr p = G pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Gr, pe1, pe2) }
+  | pe1 = expr p = LEQ pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Leq, pe1, pe2) }
+  | pe1 = expr p = GEQ pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Geq, pe1, pe2) }
+  | pe1 = expr p = PLUS pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Plus, pe1, pe2) }
+  | pe1 = expr p = MINUS pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Minus, pe1, pe2) }
+  | pe1 = expr p = TIMES pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Times, pe1, pe2) }
+  | pe1 = expr p = MODULO pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Modulo, pe1, pe2) }
+  | pe1 = expr p = EXP pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Exp, pe1, pe2) }
+  | pe1 = expr p = AND pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, And, pe1, pe2) }
+  | pe1 = expr p = OR pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Or, pe1, pe2) }
+  | pe1 = expr p = CONCAT pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Concat, pe1, pe2) }
+  | pe1 = expr p = BIT_OR pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Bit_Or, pe1, pe2) }
+  | pe1 = expr p = BIT_AND pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Bit_And, pe1, pe2) }
+  | pe1 = expr p = BIT_XOR pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Bit_Xor, pe1, pe2) }
+  | pe1 = expr p = SHIFT_LEFT pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Shift_Left, pe1, pe2) }
+  | pe1 = expr p = SHIFT_RIGHT pe2 = expr_w_Ret { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Shift_Right, pe1, pe2) }
+  | pi = INT {let (p,i) = pi in p, Eentier i}
+  | pc = CHAR {let (p, c) = pc in (p,Echar c)}
+  | pf = FLOAT {let (p, f) = pf in (p, Eflottant f)}
+  | ps = CHAINE {let (p,s) = ps in p, Echaine s}
+  | p = TRUE {p, Etrue}
+  | p = FALSE {p, Efalse}
+  | pb = ENTIER_IDENT {
+  	  let (p,i,s) = pb in p, EentierIdent (p, i, s)
+    }
+  | pi = ENTIER_PARG pb = bloc1 p2 = PARD {
+    let (p1,i) = pi in
+    (Hyper2.fusionPos p1 p2, EentierParG (p1, i, pb))}
+  | p1 = PARG b = bloc1 p2 = PARD {Hyper2.fusionPos p1 p2, Ebloc1 b}
+  | p1 = PARG e = expr pi = PARD_IDENT {
+    let (p2,i) = pi in
+    Hyper2.fusionPos p1 p2, EparDIdent (e, p2, i)}
+  | pi = IDENT_PARG l = separated_list_COMMA_expr p2 = PARD {
+    let (p1,i) = pi in
+    if i = "println" then
+      Hyper2.fusionPos p1 p2, Eapplication (p1, "print", l @ [(p1,Echaine "\n")])
+    else Hyper2.fusionPos p1 p2, Eapplication (p1, i, l)}
+  | p = NOT e = expr_w_Ret {Hyper2.fusionPos p (fst e), Enot e}
+  | pl = expr AFFECT e = expr_w_Ret {
+  		match pl with
+  			|p, Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, e)
+  			| _ -> raise Ast.Parsing_Error
+  		}
+  | pl = lvalue {let (p,l) = pl in p, Elvalue l}
+  | p1 = MINUS e = expr_w_Ret %prec unary_minus{Hyper2.fusionPos p1 (fst e),Eminus e}
+  | p1 = RETURN e = expr_w_Ret {Hyper2.fusionPos p1 (fst e), Ereturn (p1, Some e)}
+  | p1 = FOR pi = IDENT AFFECT e1 = expr COLON e2b = expr_bloc p2 = END {
+  		let (p,i) = pi in
+  		let (e2, b) = e2b in
+      Hyper2.fusionPos p1 p2,	Efor ((i : ident), e1, e2, b)
+    }
+  | w = whileExp { w }
+  | w = doWhileExp { w }
+  | p1 = IF eb = expr_bloc pel = else_exp {
+  		let (e,b) = eb in
+      let (p2, el) = pel in
+      Hyper2.fusionPos p1 p2, Eif (e, b, el)
+    }
+  | p1 = CROCHETG arr = separated_list_COMMA_expr p2 = CROCHETD {
+    Hyper2.build_array arr
+    }
+  | pl = expr PLUS_AFFECT e = expr_w_Ret {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Plus, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr TIMES_AFFECT e = expr_w_Ret {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Times, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr MINUS_AFFECT e = expr_w_Ret {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Minus, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr OR_AFFECT e = expr_w_Ret {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Bit_Or, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr AND_AFFECT e = expr_w_Ret {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Bit_And, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr XOR_AFFECT e = expr_w_Ret {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Bit_Xor, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr SHIFT_LEFT_AFFECT e = expr_w_Ret {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Shift_Left, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr SHIFT_RIGHT_AFFECT e = expr_w_Ret {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Shift_Right, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+;
+
+expr<Ast.expression>:
+  | p = ASSERT e = expr {p, EAssert (p.ldeb, !file_name, e)}
+  | pe1 = expr p = EQ pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Eq, pe1, pe2) }
+  | pe1 = expr p = NEQ pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Neq, pe1, pe2) }
+  | pe1 = expr p = L pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Lo, pe1, pe2) }
+  | pe1 = expr p = G pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Gr, pe1, pe2) }
+  | pe1 = expr p = LEQ pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Leq, pe1, pe2) }
+  | pe1 = expr p = GEQ pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Geq, pe1, pe2) }
+  | pe1 = expr p = PLUS pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Plus, pe1, pe2) }
+  | pe1 = expr p = MINUS pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Minus, pe1, pe2) }
+  | pe1 = expr p = TIMES pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Times, pe1, pe2) }
+  | pe1 = expr p = MODULO pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Modulo, pe1, pe2) }
+  | pe1 = expr p = EXP pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Exp, pe1, pe2) }
+  | pe1 = expr p = AND pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, And, pe1, pe2) }
+  | pe1 = expr p = OR pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Or, pe1, pe2) }
+  | pe1 = expr p = CONCAT pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Concat, pe1, pe2) }
+  | pe1 = expr p = BIT_OR pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Bit_Or, pe1, pe2) }
+  | pe1 = expr p = BIT_AND pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Bit_And, pe1, pe2) }
+  | pe1 = expr p = BIT_XOR pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Bit_Xor, pe1, pe2) }
+  | pe1 = expr p = SHIFT_LEFT pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Shift_Left, pe1, pe2) }
+  | pe1 = expr p = SHIFT_RIGHT pe2 = expr { let (p1, e1) = pe1 in let (p2,e2) = pe2 in (Hyper2.fusionPos p1 p2) , Ebinop (p, Shift_Right, pe1, pe2) }
+  | pi = INT {let (p,i) = pi in p, Eentier i}
+  | pc = CHAR {let (p, c) = pc in (p,Echar c)}
+  | pf = FLOAT {let (p, f) = pf in (p, Eflottant f)}
+  | ps = CHAINE {let (p,s) = ps in p, Echaine s}
+  | p = TRUE {p, Etrue}
+  | p = FALSE {p, Efalse}
+  | pb = ENTIER_IDENT {
+  	  let (p,i,s) = pb in p, EentierIdent (p, i, s)
+    }
+  | pi = ENTIER_PARG b = bloc1 p2 = PARD {
+    let (p1,i) = pi in
+    Hyper2.fusionPos p1 p2, EentierParG (p1, i, b)}
+  | p1 = PARG b = bloc1 p2 = PARD {Hyper2.fusionPos p1 p2, Ebloc1 b}
+  | p1 = PARG e = expr pi = PARD_IDENT {
+    let (p2,i) = pi in
+    Hyper2.fusionPos p1 p2, EparDIdent (e, p2, i)}
+  | pi = IDENT_PARG l = separated_list_COMMA_expr p2 = PARD {
+    let (p1,i) = pi in
+    if i = "println" then
+      Hyper2.fusionPos p1 p2, Eapplication (p1, "print", l @ [(p1,Echaine "\n")])
+    else Hyper2.fusionPos p1 p2, Eapplication (p1, i, l)}
+  | p = NOT e = expr {Hyper2.fusionPos p (fst e), Enot e}
+  | pl = lvalue {let (p,l) = pl in (p, Elvalue l)}
+  | p1 = MINUS e = expr %prec unary_minus {Hyper2.fusionPos p1 (fst e), Eminus e}
+  | p1 = RETURN e = expr {Hyper2.fusionPos p1 (fst e), Ereturn (p1, Some e)}
+  | p = RETURN {p, Ereturn (p, None)}
+  | p1 = FOR pi = IDENT AFFECT e1 = expr COLON e2b = expr_bloc p2 = END {
+  		let (p,i) = pi in
+  		let (e2, b) = e2b in
+      Hyper2.fusionPos p1 p2,	Efor ((i : ident), e1, e2, b)
+    }
+  | w = whileExp { w }
+  | w = doWhileExp { w }
+  | p1 = IF eb = expr_bloc pel = else_exp {
+  		let (e,b) = eb in
+      let (p2, el) = pel in
+      Hyper2.fusionPos p1 p2, Eif (e, b, el)
+    }
+  | p1 = CROCHETG arr = separated_list_COMMA_expr p2 = CROCHETD {
+    Hyper2.build_array arr
+    }
+  | pl = expr AFFECT e = expr {
+  		match pl with
+  			|p, Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, e)
+  			| _ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr PLUS_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Plus, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr TIMES_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Times, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr MINUS_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Minus, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr OR_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Bit_Or, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr AND_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Bit_And, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr XOR_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Bit_Xor, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr SHIFT_LEFT_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Shift_Left, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+  | pl = expr SHIFT_RIGHT_AFFECT e = expr {
+  		match pl with
+  			|p,Elvalue l -> Hyper2.fusionPos p (fst e), ElvalueAffect (p, l, (p, Ebinop (p, Shift_Right, pl, e)))
+  			|_ -> raise Ast.Parsing_Error
+  		}
+;
+
+whileExp<Ast.expression>:
+  | p1 = WHILE e = expr pb = bloc_END {
+    let (p2,b) = pb in
+    Hyper2.fusionPos p1 p2, Ewhile (e, b)}
+  | p1 = WHILE e1 = expr_w_Ret e2 = expr_wMin_ pb = bloc_END {
+    let (p2,(p,eL)) = pb in
+    Hyper2.fusionPos p1 p2, Ewhile (e1, (Hyper2.fusionPos (fst e2) p, e2::eL))}
+;
+
+doWhileExp<Ast.expression>:
+  | p1 = DOWHILE b = bloc_END {
+    let p2,b = b in
+    Hyper2.fusionPos p1 p2, EdoWhile b
+  }
+  | p1 = DOWHILE e = expr b = bloc_END {
+    let p2, (pb, eL) = b in
+    Hyper2.fusionPos p1 p2, EdoWhile (Hyper2.fusionPos (fst e) pb, e::eL)
+  }
+;
+
+lvalue<Ast.position * Ast.lvalue>:
+  | pi = IDENT {let (p,i) = pi in p,Lident (p,i)}
+  | e = expr DOT pi = IDENT {
+    let (p,i) = pi in
+    Hyper2.fusionPos (fst e) p, Lindex (e, p, (i : ident))}
+  | e1 = expr_w_Ret CROCHETG e2 = expr CROCHETD %prec calcValArray {
+    Hyper2.fusionPos (fst e1) (fst e2), Larray (e1, e2)
+  }
+;
+
+lvalue_w_Ret<Ast.position * Ast.lvalue>:
+  | pi = IDENT {let (p,i) = pi in p,Lident (p,i)}
+  | e = expr_w_Ret DOT pi = IDENT {
+    let (p,i) = pi in
+    Hyper2.fusionPos (fst e) p, Lindex (e, p, (i : ident))}
+  | e1 = expr_w_Ret CROCHETG e2 = expr CROCHETD %prec calcValArray {
+    Hyper2.fusionPos (fst e1) (fst e2), Larray (e1, e2)
+  }
+;
+
+lvalue_wMin_<Ast.position * Ast.lvalue>:
+  | pi = IDENT {let (p,i) = pi in p,Lident (p,i)}
+  | e = expr_wMin_ DOT pi = IDENT {
+    let (p,i) = pi in
+    Hyper2.fusionPos (fst e) p, Lindex (e, p, (i : ident))}
+  | e1 = expr_wMin_ CROCHETG e2 = expr CROCHETD %prec calcValArray {
+    Hyper2.fusionPos (fst e1) (fst e2), Larray (e1, e2)
+  }
+;
+
+else_exp<Ast.position * Ast.else_>:
+  | p = END {p, Iend}
+  | ELSE pb = bloc_END {
+    let (p2, b) = pb in
+    p2, Ielse b}
+  | ELSE e = expr pb = bloc_END {
+    let (p2, (p,b)) = pb in
+    p2, Ielse (Hyper2.fusionPos (fst e) p, e::b)}
+  | ELSEIF eb = expr_bloc el = else_exp {
+    let (p, el) = el in
+  	let (e,b) = eb in
+  	p, Ielseif (e, b, el)
+  	}
+;
+
+operateur<Ast.position * Astype.operateur>:
+  | p = EQ {(p,Eq)}
+  | p = NEQ {(p,Neq)}
+  | p = L {(p,Lo)}
+  | p = G {(p,Gr)}
+  | p = LEQ {(p,Leq)}
+  | p = GEQ {(p,Geq)}
+  | p = PLUS {(p,Plus)}
+  | p = MINUS {(p,Minus)}
+  | p = TIMES {(p,Times)}
+  | p = MODULO {(p,Modulo)}
+  | p = EXP {(p,Exp)}
+  | p = AND {(p,And)}
+  | p = OR {(p,Or)}
+  | p = CONCAT {(p, Concat)}
+;
+
+bloc<Ast.bloc>:
+  | e = expr {fst e, [e]}
+  | e = expr SEMICOLON pb = bloc {
+      let (p, eL) = pb in
+      Hyper2.fusionPos (fst e) p, e::eL}
+  | p = SEMICOLON pb = bloc {
+      let (p2, eL) = pb in
+      Hyper2.fusionPos p p2, eL
+  }
+  | p = SEMICOLON {
+    p, []
+  }
+;
+
+
+expr_bloc<Ast.expression * Ast.bloc>:
+	| e = expr {(e, (fst e, []))}
+  | e = expr b = expr_bloc2 %prec priomax {(e,b)}
+	| e1 = expr_w_Ret pe2 = expr_wMin_ pb = expr_bloc2 {
+    let (p1, e2) = pe2 in
+    let (p2, eL) = pb in
+    (e1, (Hyper2.fusionPos p1 p2, pe2::eL))}
+	| e1 = expr_w_Ret pe2 = expr_wMin_ {
+    let (p, e2) = pe2 in
+    (e1, (p, [pe2]))}
+;
+
+bloc_expr_END<Ast.bloc * Ast.expression>:
+  | e = expr p = END {((fst e,[]),e)}
+  | e1 = expr_w_Ret e2 = expr_wMin_ END {
+    (fst e1, [e1]), e2
+  }
+  | e = expr SEMICOLON b = bloc_expr_END {
+    let (b,ef) = b in
+    let (p2, eL) = b in
+    (Hyper2.fusionPos (fst e) p2, e::eL), ef
+  }
+  | p1 = SEMICOLON b = bloc_expr_END {
+    let (b,ef) = b in
+    let (p2, eL) = b in
+    (Hyper2.fusionPos p1 p2, eL), ef
+  }
+;
+
+expr_bloc2<Ast.bloc>:
+	| p = SEMICOLON {p, []}
+	| p1 = SEMICOLON e = expr pb = expr_bloc2 {
+    let (p2, eL) = pb in
+    (Hyper2.fusionPos p1 p2, (e::eL))}
+	| p1 = SEMICOLON pb = expr_bloc2 {
+    let p2,eL = pb in
+    (Hyper2.fusionPos p1 p2, eL)}
+	| p = SEMICOLON e = expr {
+    (Hyper2.fusionPos p (fst e), [e])}
+;
+
+bloc_END<Ast.position * Ast.bloc>:
+	| p = END {p,(p,[])}
+	| p1 = SEMICOLON e = expr pb = bloc_END {
+    let pEnd, (p2, eL) = pb in
+    pEnd, (Hyper2.fusionPos p1 p2, (e::eL))
+  }
+	| p1 = SEMICOLON pb = bloc_END {
+    let pEnd, (p2, eL) = pb in
+    (pEnd, (Hyper2.fusionPos p1 p2, eL))}
+;
+
+
+bloc1<Ast.bloc>:
+  | e = expr pb = bloc1bis {
+    let (p, eL) = pb in
+    Hyper2.fusionPos (fst e) p, (e::eL)}
+  | e = expr {(fst e), [e]}
+;
+
+bloc1bis<Ast.bloc>:
+  | p = SEMICOLON {
+    (p, [])
+  }
+  | p = SEMICOLON e = expr {
+    (Hyper2.fusionPos p (fst e), [e])
+  }
+  | p = SEMICOLON pb = bloc1bis {
+    let (p2,eL) = pb in (Hyper2.fusionPos p p2, eL)
+  }
+  | p = SEMICOLON e = expr pb = bloc1bis {
+    let (p2,eL) = pb in (Hyper2.fusionPos p p2, e::eL)
+  }
+;
