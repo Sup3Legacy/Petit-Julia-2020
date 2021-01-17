@@ -120,8 +120,8 @@ rule tokens = parse
   | "|" {Hyper.disableEnd (); [BIT_OR (Hyper.position lexbuf)]}
   | "&" {Hyper.disableEnd (); [BIT_AND (Hyper.position lexbuf)]}
   | "/" {Hyper.disableEnd (); [BIT_XOR (Hyper.position lexbuf)]}
-  | ">>" {Hyper.disableEnd (); [SHIFT_LEFT (Hyper.position lexbuf)]}
-  | "<<" {Hyper.disableEnd (); [SHIFT_RIGHT (Hyper.position lexbuf)]}
+  | ">>" {Hyper.disableEnd (); [SHIFT_RIGHT (Hyper.position lexbuf)]}
+  | "<<" {Hyper.disableEnd (); [SHIFT_LEFT (Hyper.position lexbuf)]}
   | ">" {Hyper.disableEnd (); [G (Hyper.position lexbuf)]}
   | "<" {Hyper.disableEnd (); [L (Hyper.position lexbuf)]}
   | ">=" {Hyper.disableEnd (); [GEQ (Hyper.position lexbuf)]}

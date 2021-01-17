@@ -565,19 +565,19 @@ let rec compile_expr = function
 			pushq !%r13 ++ pushq !%rax
 		| Bit_Or ->
 			deb ++ orq !%rdx !%rbx ++ 
-			pushq !%rbx ++ pushq !%rax
+			pushq !%rax ++ pushq !%rbx
 		| Bit_And ->
 			deb ++ andq !%rdx !%rbx ++ 
-			pushq !%rbx ++ pushq !%rax
+			pushq !%rax ++ pushq !%rbx
 		| Bit_Xor ->
 			deb ++ xorq !%rdx !%rbx ++ 
-			pushq !%rbx ++ pushq !%rax
+			pushq !%rax ++ pushq !%rbx
 		| Shift_Left -> 
-			deb ++ cmpq (imm nTypeInt) !%rax ++ jne errorTypeE ++
-			shlq !%rbx !%rdx ++ movq !%rcx !%rax ++ movq !%rdx !%rbx ++ pushq !%rax ++ pushq !%rax
+			deb ++ cmpq (imm nTypeInt) !%rax ++ jne errorTypeE ++ movq !%rcx !%rax ++ movb !%bl !%cl ++
+			shlq !%cl !%rdx ++ movq !%rdx !%rbx ++ pushq !%rax ++ pushq !%rbx
 		| Shift_Right -> 
-			deb ++ cmpq (imm nTypeInt) !%rax ++ jne errorTypeE ++
-			shrq !%rbx !%rdx ++ movq !%rcx !%rax ++ movq !%rdx !%rbx ++ pushq !%rax ++ pushq !%rax
+			deb ++ cmpq (imm nTypeInt) !%rax ++ jne errorTypeE ++ movq !%rcx !%rax ++ movb !%bl !%cl ++
+			shrq !%cl !%rdx ++ movq !%rdx !%rbx ++ pushq !%rax ++ pushq !%rbx
 		in operation
 	| Ident (Tag name) ->
 		movq ((if estMac then lab else ilab) ((rectify_character name)^"_type")) !%rax ++ cmpq (imm nTypeUndef) !%rax ++
