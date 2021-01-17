@@ -532,14 +532,22 @@ Nous avons ajouté dans la bibliothèque standard un paquet `tester` qui contien
 
 Nous avons ajouté au compilateur un petit compteur de performances : lorsque le drapeau `-analytics` est passé à `pjuliac`, le compilateur affiche à l'issue de la compilation quelques éléments d'analyse de performances très simples : le nombre de labels utilisés, selon leur type (`for`, `while` ou `if`), le nombre d'instructions `call` et le nombre d'appels à `malloc` présents dans le fichier généré. Nous aimerions également ajouter dans le futur le temps et la mémoire qui ont été nécessaires lors de la compilation.
 
-# XVI] État de l'interpréteur
+# XVI] Extensiosn opérateurs
+
+Nous avons pensé que petitJulia manquait d'opérateurs, comme par exemple les opérateurs `AND`, `OR`, `SHIFT`, bit-à-bit. Nous avons donc ajouté `|`, `&`, `/`, `<<`, `>>`, correspondant aux opérateurs OR, AND, XOR, SHIFT_LEFT, SHIFT_RIGHT.
+
+De plus, nous avons ajouté les opérateurs de mise à jour (*update operators*, en anglais) : `+=`, `-=`, `*=`, `|=`, `&=`, `/=`, `<<=` et `>>=`.
+
+**NB :** Ce sont nos derniers ajouts à petitJulia et nous n'avons pas eu beaucou de temps pour tester ces opérateurs. Il est possible que, concernant les opérateurs bit-à-bit, il y a quelques erreurs de comportement!
+
+# XVII] État de l'interpréteur
 
 Étant bien occupés par la compilation, nous n'avons pas eu le temps de retravailler l'interpréteur. Il n'a donc pas été modifié depuis le premier rendu et ne supporte donc pas tous nos ajouts (tableaux, nouvelles chaînes de caractères, primitives, etc.). Cependant, il supporte partiellement les flottants.
 
 Nous avons préféré nous concentrer sur la compilation. En effet, il nous semblait plus intéressant (et c'est un plus grand défi) d'ajouter de nouvelles fonctionnalités au compilateur en priorité, la mise à jour de l'interpréteur étant en soi une tâche assez facile, mais qui prend du temps, et nous avons préféré consacrer ce temps au paufinement du fonctionnement du compilateur!
 
 
-# XVII] Conclusion
+# XVIII] Conclusion
 
 ## 1) Partie commune
 
@@ -554,8 +562,6 @@ Cependant, il y a quelques éléments supplémentaires que nous aurions aimé aj
 * GC : un GC, même basique, aurait fait de notre compilateur un vrai compilateur utilisable en pratique. En effet, même si la consommation de mémoire des exécutables générés par notre compilateur sur les exemples fournis reste raisonnable, il nous paraît évident que certaines situation ferait exploser cette consommation du fait de l'absence de GC. Par exemple si une fonction instantiant une structure était appelée un grand nombre de fois.
 * Nous avions évoqué la possibilité de faire un compilateur JIT. Nous nous sommes rendus compte que c'est une chose difficilement faisable en OCaml (ou bien nous n'avons pas trouvé les bonnes ressources) autrement que via la plateforme LLVM, que nous n'avions déjà pas le temps d'utiliser dans notre projet.
 * La mise à jour de l'interpréteur. Cf plus haut
-* Opérateurs `+=`, `-=` et `*=`. Ces opérateurs peuvent être utiles pour factoriser un peu du code!
-* L'opérateur `/` pour la division, en plus de `div`.
 * Pourquoi pas les entiers et flottants sur 128 bits et les caractères non UTF-8.
 
 
@@ -566,7 +572,7 @@ Cependant, il y a quelques éléments supplémentaires que nous aurions aimé aj
 Ce projet fut pour moi à la fois un grand plaisir et une grande frustration. On a pus faire tellement de choses mais il en reste tellement à faire. J'aurais bien aimé rajouter au compilateur un GC, notre propre générateur d'analyseur lexicale ainsi qu'un compilateur optimisant plutôt que le notre qui n'est pas du tout optimisé et ne prend pas en compte les type calculé par le typeur. Il y a aussi une envie de refaire samenhir pour réussir à obtenir un code encore plus optimisé en terme de taille. Et aussi diminuer le temps de compilation. Malheureusement le temps nous as manqué. Notamment à cause des projets dans les autres cours d'informatique.
 
 
-# XVIII] Annexes
+# XIX] Annexes
 
 
 
