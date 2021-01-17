@@ -3,7 +3,7 @@
 #                                        #
 #     Fichier principal de Samenhir      #
 #                                        #
-# Contient le corp et l'âme de Samenhir  #
+# Contient le corps et l'âme de Samenhir #
 #                                        #
 ##########################################
 *)
