@@ -65,7 +65,7 @@ let handle () =
       if !show_fName then print_endline !(Hyper.file); (* On peut switch entre afficher le nom (ie. compil réussie) et afficher l'arbre généré *)
       exit 0;
       end
-    else CompilNaif.compile_program fichierType !output_file;
+    else try CompilNaif.compile_program fichierType !output_file with Not_found -> assert false;
     if !affiche then print_endline (show_fichier e)
     else if !show_fName then print_endline !(Hyper.file);
     (* CompilNaif.compile_program fichierType (!Hyper.file ^ ".s"); *)

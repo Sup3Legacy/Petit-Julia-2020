@@ -92,7 +92,7 @@ let structMap = ref (Smap.empty: Astype.structEnv)
 let functionMap = ref (Smap.empty: Astype.funcMap)
 let functionEnv = ref (Smap.empty: Astype.funcEnv)
 
-let numStruct ident = nTypeStruct + snd (Smap.find ident !structMap)
+let numStruct ident = nTypeStruct + snd (try Smap.find ident !structMap with Not_found -> assert false)
 
 type local_env = int Smap.t
 
@@ -203,8 +203,8 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 			| IdentL (_, ident, false) -> Ident (Tag ident), offset
 			| IndexL ((_, e), nameS, nameC) ->
 				let (e, offset) = alloc_expr env offset e in
-				let map = fst (Smap.find nameS !structMap) in
-				let i2 = 16 * fst (Smap.find nameC map) in
+				let map = fst (try Smap.find nameS !structMap with Not_found -> assert false) in
+				let i2 = 16 * fst (try Smap.find nameC map with Not_found -> assert false) in
 				Index (e, nameS, i2), offset
 			| ArrayL ((_, e1), (_, e2)) -> 
 				let (e1, o1) = alloc_expr env offset e1 in
@@ -215,11 +215,11 @@ let rec alloc_expr (env: local_env) (offset:int):Astype.exprTyper -> (AstcompilN
 		let e, offset = alloc_expr env offset e in
 		match l with
 			| IdentL (_, ident, false) -> LvalueAffectV ((Tag ident), e), offset
-			| IdentL (_, ident, true) -> LvalueAffectV (Dec (Tmap.find ident env), e), offset
+			| IdentL (_, ident, true) -> LvalueAffectV (Dec (try Tmap.find ident env with Not_found -> assert false), e), offset
 			| IndexL ((_, e2), nameS, nameC) ->
 				let (e2, o2) = alloc_expr env offset e2 in
-				let map = fst (Smap.find nameS !structMap) in
-				let i2 = 16 * fst (Smap.find nameC map) in
+				let map = fst (try Smap.find nameS !structMap with Not_found -> assert false) in
+				let i2 = 16 * fst (try Smap.find nameC map with Not_found -> assert false) in
 				LvalueAffectI (e2, nameS, i2, e), min o2 offset
 			| ArrayL ((_, e1), (_, e2)) -> 
 				let (e1, o1) = alloc_expr env offset e1 in
@@ -296,11 +296,11 @@ let newFlagArb () =
 
 let rec buildArb (p:int) (f:string) (l:string):functArbr -> [`text] asm = function
 	| Failure -> (label (rectify_character l) ++ jmp errorCall2)
-	| Feuille (s,i) -> compteurCall := !compteurCall + 1;
-		label (rectify_character l) ++ call ((rectify_character s)^"_"^string_of_int i) ++ jmp f
-	| Appels tM ->
+	| Feuille (s,i) -> (try compteurCall := !compteurCall + 1;
+		label (rectify_character l) ++ call ((rectify_character s)^"_"^string_of_int i) ++ jmp f with Not_found -> assert false)
+	| Appels tM -> (try
 		if TypeMap.cardinal tM == 1 then
-			if TypeMap.mem Any tM then buildArb (p-1) f l (TypeMap.find Any tM)
+			if TypeMap.mem Any tM then buildArb (p-1) f l (try TypeMap.find Any tM with Not_found -> assert false)
 			else
 				let (t,arb) = TypeMap.choose tM in
 				if (int_of_type t = !nTypeArray) then 
@@ -313,21 +313,23 @@ let rec buildArb (p:int) (f:string) (l:string):functArbr -> [`text] asm = functi
 							) tM (label (rectify_character l), []) in
 			let c2,l2 = if TypeMap.mem Array tM then 
 					let dir = newFlagArb () in
-					(c1 ++ cmpq (imm !nTypeArray) (ind ~ofs:(16*p - 8) rsp) ++ jge dir, ((dir, TypeMap.find Array tM)::l1))
+					(c1 ++ cmpq (imm !nTypeArray) (ind ~ofs:(16*p - 8) rsp) ++ jge dir, ((dir, try TypeMap.find Array tM with Not_found -> assert false)::l1))
 				else
 					c1,l1 in
 			let c = if TypeMap.mem Any tM then
-					buildArb (p-1) f (newFlagArb ()) (TypeMap.find Any tM)
+					buildArb (p-1) f (newFlagArb ()) (try TypeMap.find Any tM with Not_found -> assert false)
 				else
 					jmp errorCall1 in
 			let c3 = List.fold_left (fun c (dir,a) -> c ++ buildArb (p-1) f dir a) (c2 ++ c) l2 in
 			c3
+		with Not_found -> assert false)
+
 
 
 let rec compile_expr = function
 	| Entier i -> pushq (imm nTypeInt) ++ movq (imm64 i) !%rax ++ pushq !%rax
 	| Flottant f -> (*pushq (imm nTypeFloat) ++ pushq (immD f)*) (* À changer *)
-		let n = string_of_int (Hashtbl.find fMap (string_of_float f)) in
+		let n = string_of_int (try Hashtbl.find fMap (string_of_float f) with Not_found -> assert false) in
 		pushq (imm nTypeFloat) ++ pushq ((if estMac then lab else ilab) ("constant_float"^n))
 	| Char c -> pushq (imm nTypeChar) ++ pushq (imm c)
 	| Chaine s ->
@@ -343,7 +345,7 @@ let rec compile_expr = function
 	| Nothing -> pushq (imm nTypeNothing) ++ pushq (imm 0)
 	| Bloc bloc -> compile_bloc bloc
 	| Assert (l, s, e) -> 
-		let ind = Hashtbl.find sMap s in
+		let ind = (try Hashtbl.find sMap s with Not_found -> assert false) in
 		compile_expr e ++
 		popq rbx ++ popq rax ++ cmpq (imm nTypeBool) !%rax ++ jne errorTypeE ++
 		movq (imm l) !%rdi ++ (if estMac then leaq (lab ("string"^string_of_int ind)) rsi else movq (lab ("string"^string_of_int ind)) !%rsi) ++
@@ -620,9 +622,9 @@ let rec compile_expr = function
 	| LvalueAffectI (exp1, ident, entier, exp2) ->
 		let code1 = compile_expr exp2 in (* J'ai changé code1 et code2 :D *)
 		let code2 = compile_expr exp1 in
-		let (field_map, numero) = Tmap.find ident !structMap in (* numero est le code de type de la structure - 5*)
+		let (field_map, numero) = try Tmap.find ident !structMap with Not_found -> assert false in (* numero est le code de type de la structure - 5*)
 		let numeroBis = numero + nTypeStruct in
-		let (cle, (field_index, field_type)) = Tmap.find_first (fun cle -> let (num, _) = Tmap.find cle field_map in num = numero) field_map in
+		let (cle, (field_index, field_type)) = Tmap.find_first (fun cle -> let (num, _) = try Tmap.find cle field_map with Not_found -> assert false in num = numero) field_map in
 		let comparaison = (popq r14) ++ (popq rax) ++ (cmpq (imm numeroBis) !%rax) ++ (jne errorTypeE) in
 		let target_type = (popq rbx) ++ (popq rax) ++
 			(if field_type != Any then (cmpq (ind ~ofs:(entier + 0) r14) !%rax) ++ (jne errorTypeE) else nop) ++(* vérification de type qu'on met dans le champ *)
@@ -741,12 +743,12 @@ let compile_function f e fpmax =
 	code
 
 
-let compile_fun (n:string) (i:int) = function
+let compile_fun (n:string) (i:int) = print_string n; print_string " ";print_int i; print_newline ();function
   | Funct (argL, tmap, (_, eL), rT) -> (
   	let (_, env) = List.fold_right (fun (i, _) (n,t) -> (n + 16, Tmap.add i n t)) argL (16, Tmap.empty) in
 		let env2, fpcur2 = Tmap.fold (fun k _ (m, n) -> if Tmap.mem k env then (m,n) else (Tmap.add k (n-16) m, n-16)) tmap (env, 0) in
 		let (eL,o2) = List.fold_right (fun (_, e) (l, o1) -> let e,o2 = (alloc_expr env2 fpcur2 e) in (e::l, min o1 o2)) eL ([], fpcur2) in
-  	let code = List.fold_left (fun c e -> c ++ compile_expr e ++ popq rbx ++ popq rax) nop eL in
+  	let code = List.fold_left (fun c e -> c ++ try compile_expr e with Not_found -> (print_string n; print_newline ();assert false) ++ popq rbx ++ popq rax) nop eL in
     label ((rectify_character n)^"_"^string_of_int i)++
     pushq !%rbp ++ movq !%rsp !%rbp ++
     pushn (-o2) ++
@@ -773,11 +775,11 @@ let compile_fun (n:string) (i:int) = function
     ret
 
 let compile_program f ofile =
- let (eL, i, smap, fmap) = alloc_fichier f in (* smap est le map des variables globales *)
+ let (eL, i, smap, fmap) = try alloc_fichier f with Not_found -> assert false in (* smap est le map des variables globales *)
 (* print_int i;
  print_newline ();*)
- let code = List.fold_left (fun d e -> (if d!=nop then d ++ popn 16 else nop) ++ compile_expr e) nop eL in
- let codefun = Tmap.fold (fun k imap asm -> Imap.fold (fun i f asm2 -> asm2 ++ compile_fun k i f) imap asm) fmap nop in
+ let code = List.fold_left (fun d e -> (if d!=nop then d ++ popn 16 else nop) ++ try compile_expr e with Not_found -> assert false) nop eL in
+ let codefun = Tmap.fold (fun k imap asm -> Imap.fold (fun i f asm2 -> asm2 ++ try compile_fun k i f with Not_found -> assert false) imap asm) fmap nop in
  let deplq = if estMac then (fun x y -> leaq x y) else (fun x y -> movq x !%y) in (* remplacement de rdi par y*)
  let p =
    { text =
