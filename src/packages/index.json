@@ -62,6 +62,20 @@
       "description": "Brainfuck interpreter",
       "dependencies": [],
       "url": "https://raw.githubusercontent.com/Sup3Legacy/pjulia-packages/main/brainfuck.jl"
+    },
+    {
+      "name": "asciiFluid",
+      "version": "0.1.0",
+      "description": "Implementation of asciiFluid",
+      "dependencies": [],
+      "url": "https://raw.githubusercontent.com/Sup3Legacy/pjulia-packages/main/asciiFluid.jl"
+    },
+    {
+      "name": "morpion",
+      "version": "0.1.0",
+      "description": "Petit morpion des familles",
+      "dependencies": [],
+      "url": "https://raw.githubusercontent.com/Sup3Legacy/pjulia-packages/main/morpion.jl"
     }
   ]
 }
