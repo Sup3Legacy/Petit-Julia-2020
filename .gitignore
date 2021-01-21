@@ -30,3 +30,5 @@ src/*.jl
 src/index.json
 *.jl
 .VSCodeCounter/
+
+src/packages/index.json
