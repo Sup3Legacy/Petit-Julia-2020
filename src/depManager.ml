@@ -22,7 +22,7 @@ let get_package (identifiant : string) =
 
 let add_prefix_ident (ident : string) (name : string) =
   match ident with 
-  | "println" | "print" | "newarray" | "div" | "array_length" | "input_int" | "char" | "sqrt" | "delay" | "timestamp" | "int" | "float" | "typeof" -> ident
+  | "println" | "print" | "newarray" | "div" | "array_length" | "input_int" | "char" | "sqrt" | "delay" | "timestamp" | "int" | "float" | "typeof" | "nothing" -> ident
   | _ -> name ^ ident
 ;;
 
