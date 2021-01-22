@@ -32,7 +32,7 @@ type expression =
 	| Index of expression * ident * int
 	| Array of expression * expression
 	| LvalueAffectV of label * expression
-	| LvalueAffectI of expression * ident * int * expression
+	| LvalueAffectI of expression * ident * int * Astype.pjtype * expression
 	| LvalueAffectA of expression * expression * expression
 	| Ret of pjtype * expression (* expected type of the return *)
 	| For of int * int * expression * expression * bloc
