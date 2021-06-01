@@ -68,23 +68,29 @@ module StateMap = Map.Make(struct type t = stateND let compare = compare end)
 module Smap = Map.Make(String)
 module StateSet = Set.Make(struct type t = stateND let compare = compare end)
 
-type state = StateSet.t
-type transitionTable = state Smap.t StateMap.t
-type prodSet = state Smap.t
+module Imap = Map.Make(Int)
+module Iset = Set.Make(Int)
+
+
+type state = Iset.t
+type transitionTableRaw = StateSet.t Smap.t StateMap.t
+type transitionTable = state Smap.t Imap.t
 
 type automatND = {
 	startND : state;
-	transND : transitionTable
+	transND : transitionTable;
+	conversionND: stateND Imap.t
 }
 
 (* Structures permettant de stocker l'automate déterministe (D) *)
-module StateSetMap = Map.Make(StateSet)
-type transitionTableD = state Smap.t StateSetMap.t 
-type successor = state StateMap.t
+module StateSetMap = Map.Make(Iset)
+type transitionTableD = Iset.t Smap.t StateSetMap.t 
+type successor = Iset.t Imap.t
 
 type automatD = {
 	startSet : state;
-	transitions : transitionTableD
+	transitions : transitionTableD;
+	conversion : stateND Imap.t
 }
 
 (* Structures servant à stocker la table *)
@@ -93,7 +99,6 @@ type action =
 	| SHIFT of int
 	| SUCCESS
 
-module Imap = Map.Make(Int)
 
 type assoc = 
 	| Left

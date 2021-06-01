@@ -12,7 +12,9 @@
 (* Le début vient du TD 6 sur l'analyse descendente, l'algorithme utilisé si dessous est l'algorithme de Knuth *)
 let print_all = ref false
 let explain = ref false
+let include_main = ref false
 let endString = "Not_a_token"
+let trace_time = ref false
 
 open Lexing
 open Format
@@ -122,7 +124,7 @@ let follow g (n:nulls) (fst:first) :follow =
 	fixpoint step (Ntmap.mapi (fun nt s -> if nt = g.start then Tset.add endString s else s) (empty_map g))
 
 (* Rajoute la transition de l'état state1 vers l'état state2 avec le mot term qui est un terminal, un non terminal ou la chaine de caractère vide *)
-let add_entry (trans:transitionTable) (state1:stateND) (term:string) (state2:stateND) :transitionTable =
+let add_entry (trans:transitionTableRaw) (state1:stateND) (term:string) (state2:stateND) :transitionTableRaw =
 	if StateMap.mem state1 trans then begin 
 		let map = StateMap.find state1 trans in 
 		if Smap.mem term map then 
@@ -152,6 +154,13 @@ let rec pos n = function
 	|[] -> failwith "vide"
 	|Dot::tl -> n 
 	|_::tl -> pos (n+1) tl
+
+let convert_set s sm =
+	StateSet.fold (fun k im -> Iset.add (StateMap.find k sm) im) s Iset.empty
+
+
+let convert_map m sm =
+	StateMap.fold (fun k s im -> Imap.add (StateMap.find k sm) (Smap.map (fun state -> convert_set state sm) s) im) m Imap.empty
 
 (* Construction de l'automate non déterministe présenté slides 82 du cours analyse syntaxique (1/2) *)
 let buildAutom g = 
@@ -186,7 +195,7 @@ let buildAutom g =
 		let after = Ntmap.find n flw in
 		if Tset.cardinal after > 0 then Tset.fold (fun t m2 -> rajouteRules m2 n p prio t) after m
 		else if n=g.start then rajouteRules m n p prio endString (* si la régle n'est suivi par rien et que c'est la règle de départ on met que l'on peut terminer avec ses réductions *)
-		else m 
+		else m
 	in let mapEmpty = List.fold_left rajouteRule StateMap.empty g.rules (* construit la table avec juste toues les états et aucune transition *)
 	in let rec miroir l1 l2 = match l1 with
 		|[] -> l2
@@ -198,9 +207,9 @@ let buildAutom g =
 			Tset.union (Ntmap.find t fst) (following suiv tl)
 			else Ntmap.find t fst 
 		|Dot::tl -> failwith "Not possible to have a Dot in following" in
-	let rajouteEntry (m:transitionTable) (s1:stateND) (t:terminal) (nm:non_terminal) (pd:productionD) (prio:string option) (set:Tset.t):transitionTable = 
+	let rajouteEntry (m:transitionTableRaw) (s1:stateND) (t:terminal) (nm:non_terminal) (pd:productionD) (prio:string option) (set:Tset.t):transitionTableRaw = 
 		Tset.fold (fun str m2 -> add_entry m2 s1 t (nm, pd, prio, str)) set m
-	in let rec rajouteTrans (m:transitionTable) (nm:non_terminal) (deb:productionD) (fin:productionD) (prio:string option) (suivant:terminal):transitionTable =  match fin with
+	in let rec rajouteTrans (m:transitionTableRaw) (nm:non_terminal) (deb:productionD) (fin:productionD) (prio:string option) (suivant:terminal):transitionTableRaw =  match fin with
 		|[] -> m
 		|(TerminalD t)::tl ->
 			let premier = miroir deb (Dot::fin) in
@@ -210,10 +219,10 @@ let buildAutom g =
 			let premier = miroir deb (Dot::fin) in 
 			let deuxieme = miroir deb ((NonTerminalD t)::Dot::tl) in
 			let suite = Smap.find t mapDotRules in
-			let m3 = PDset.fold (fun (pd, prio2) (m2:transitionTable) -> rajouteEntry m2 (nm, premier, prio, suivant) "" t pd prio2 (following suivant tl)) suite m in
+			let m3 = PDset.fold (fun (pd, prio2) (m2:transitionTableRaw) -> rajouteEntry m2 (nm, premier, prio, suivant) "" t pd prio2 (following suivant tl)) suite m in
 			rajouteTrans (add_entry m3 (nm, premier, prio, suivant) t (nm,deuxieme, prio, suivant)) nm ((NonTerminalD t)::deb) tl prio suivant
 		|Dot::tl -> failwith "Pattern error cant have Dot in rajouteTrans"
-	in let rajouteTransAll (m:transitionTable) (n:non_terminal) (p:production) (prio:string option) :transitionTable = 
+	in let rajouteTransAll (m:transitionTableRaw) (n:non_terminal) (p:production) (prio:string option) :transitionTableRaw = 
 		let after = Ntmap.find n flw in
 		if Tset.cardinal after > 0 then Tset.fold (fun t m1 -> rajouteTrans m1 n [] (convert p) prio t) after m
 		else if n = g.start then rajouteTrans m n [] (convert p) prio endString
@@ -223,45 +232,60 @@ let buildAutom g =
 	let prem = try Smap.find g.start mapDotRules with Not_found -> failwith ("First rule "^g.start^" not found in mapDotRules") in (* calcule l'ensemble des productions de la règle de départ *)
 	let prem2 = PDset.fold (fun (pd,prio) m -> StateSet.add (g.start, pd, prio, endString) m) prem StateSet.empty in (* rajoute leur nom à ces productions *)
 	if !print_all then print_string "non deterministic automaton calculated\n";
-	{startND = prem2; transND = transition} (* renvoie l'automate non déterministe *)
+	let compteur = ref 0 in
+	let conversion_state_to_int = ref StateMap.empty in
+	let add_in_conversion s =
+		if not (StateMap.mem s !conversion_state_to_int)
+		then begin
+			conversion_state_to_int := StateMap.add s !compteur !conversion_state_to_int;
+			incr compteur
+			end
+	in StateMap.iter (fun i o ->
+		add_in_conversion i;
+		Smap.iter (fun _ -> StateSet.iter add_in_conversion) o
+		) transition;
+	let conversion_int_to_state = StateMap.fold (fun k s m -> Imap.add s k m) !conversion_state_to_int Imap.empty in
+	let prem3 = convert_set prem2 !conversion_state_to_int in
+	let transition2 = convert_map transition !conversion_state_to_int in
+	{startND = prem3; transND = transition2; conversionND = conversion_int_to_state} (* renvoie l'automate non déterministe *)
 
 (* Calcule la table de tous les états acceccible depuis un état par epsilon-transitions *)
 let successor g :successor = 
-	let init ((n,_,_,suiv) as r) trans m = 
+	let init r trans m = 
 		if Smap.mem "" trans then 
-			StateMap.add r (StateSet.add r (Smap.find "" trans)) m
-		else StateMap.add r (StateSet.singleton r) m
-	in let debut = StateMap.fold init g.transND StateMap.empty in
+			Imap.add r (Iset.add r (Smap.find "" trans)) m
+		else Imap.add r (Iset.singleton r) m
+	in let debut = Imap.fold init g.transND Imap.empty in
 	if !print_all then print_string "first calculated\n";
 	let union set m =
-		StateSet.fold (fun ((n, _, _, suiv) as r) s -> StateSet.union s (try StateMap.find r m with Not_found -> failwith (n^" ["^suiv^"] not found in successor"))) set StateSet.empty
+		Iset.fold (fun r s -> Iset.union s (try Imap.find r m with Not_found -> assert false)) set Iset.empty
 	in let step m =
 		if !print_all then print_string "set\n";
-		let newmap = StateMap.mapi (fun _ s -> union s m) m in
-		(newmap, not (StateMap.equal (fun s1 s2 -> StateSet.equal s1 s2) newmap m))
+		let newmap = Imap.mapi (fun _ s -> union s m) debut in
+		(newmap, not (Imap.equal (fun s1 s2 -> Iset.equal s1 s2) newmap m))
 	in fixpoint step debut
 
 (* Calcule l'état réel de l'automate déterministe en ajoutant à l'ensemble d'états tous ceux accessibles par epsilon-transitions *)
 let calcReal (suiv:successor) (st:state):state =
-	StateSet.fold (fun r s -> StateSet.union s (StateMap.find r suiv)) st StateSet.empty
+	Iset.fold (fun r s -> Iset.union s (Imap.find r suiv)) st Iset.empty
 
 (* Calcule l'état d'arrivé par une transition *)
 let calcNext (st:state) (suiv:successor) (transname:string) (trans:transitionTable):state =
-	let next (r:stateND):state =
-		let m = StateMap.find r trans in
+	let next r :state =
+		let m = Imap.find r trans in
 		if Smap.mem transname m then
 			Smap.find transname m
-		else StateSet.empty
-	in let s1 = StateSet.fold (fun r s -> StateSet.union s (next r)) st StateSet.empty
+		else Iset.empty
+	in let s1 = Iset.fold (fun r s -> Iset.union s (next r)) st Iset.empty
 	in calcReal suiv s1
 
 (* Calcule tous les terminaux et non terminaux lisibles depuis un état *)
 let readable (st:state) (trans:transitionTable):Sset.t = 
-	let aux (r:stateND) (s:Sset.t):Sset.t =
-		let transitions = StateMap.find r trans in 
+	let aux r (s:Sset.t):Sset.t =
+		let transitions = Imap.find r trans in 
 		let couples = Smap.bindings transitions in 
 		List.fold_left (fun s2 (n,_) -> Sset.union s2 (Sset.singleton n)) s couples
-	in StateSet.fold aux st Sset.empty
+	in Iset.fold aux st Sset.empty
 
 (* Rajoute une transition dans la talbe de trnasition de l'automate déterministe *)
 let rajouteTransition (s:state) (str:string) (next:state) (m:transitionTableD) = 
@@ -272,14 +296,31 @@ let rajouteTransition (s:state) (str:string) (next:state) (m:transitionTableD) =
 
 (* Déterminisation de l'automate g (effectivement c'est un nom bizarre pour un automate) *)
 let determinisation g = 
+	let t1 = Unix.gettimeofday () in
 	let succ = successor g in
-	if !print_all then print_int (StateMap.cardinal succ);
+	let t2 = Unix.gettimeofday () in
+	if !trace_time then
+		begin
+			print_string "Calc succ ";
+			print_float (t2 -. t1);
+			print_string "s";
+			print_newline ();
+		end;
+	if !print_all then print_int (Imap.cardinal succ);
 	if !print_all then print_string " nb succ calculated\n";
-	if !print_all then print_int (StateMap.cardinal g.transND);
+	if !print_all then print_int (Imap.cardinal g.transND);
 	if !print_all then print_string " for transitions\n";
 	if !print_all then print_string "debut calc startState\n";
 	let startState = calcReal succ g.startND in
-	if !print_all then print_int (StateSet.cardinal startState);
+	let t3 = Unix.gettimeofday () in
+	if !trace_time then
+		begin
+			print_string "calcReal of succ ";
+			print_float (t3 -. t2);
+			print_string "s";
+			print_newline ();
+		end;
+		if !print_all then print_int (Iset.cardinal startState);
 	if !print_all then print_string " states in startState\n";
 	let rec rajouteEntree (s:state) (str:string) (m:transitionTableD) :transitionTableD = 
 		if str = "" then m else 
@@ -291,13 +332,46 @@ let determinisation g =
 			Sset.fold (rajouteEntree s) lisibles (StateSetMap.add s Smap.empty m)
 		end
 	in if !print_all then print_string "debut construction transitions\n";
-	{startSet = startState; transitions = construitTrans startState StateSetMap.empty}
+	let output = {startSet = startState; transitions = construitTrans startState StateSetMap.empty; conversion = g.conversionND} in
+	let t4 = Unix.gettimeofday () in
+	if !trace_time then
+		begin
+			print_string "Last step of determinisitation ";
+			print_float (t4 -. t3);
+			print_string "s";
+			print_newline ();
+		end;
+	output
+
 
 (* Construit l'automate déterministe à partir de la grammaire en appelant buildAutom et determinisation *)
 let buildAutomateD g = 
+	let t_start = Unix.gettimeofday () in
 	let a = buildAutom g in
+	let t_end = Unix.gettimeofday () in
+	if !trace_time then
+		begin
+			print_string "Build Non Determinist Automata ";
+			print_float (t_end -. t_start);
+			print_string "s (";
+			print_int (Imap.cardinal a.transND);
+			print_string ")";
+			print_newline ();
+		end;
 	if !print_all then print_string "fin build autom non det\n";
-	determinisation a
+	let t_start = Unix.gettimeofday () in
+	let s = determinisation a in 
+	let t_end = Unix.gettimeofday () in
+	if !trace_time then
+		begin
+			print_string "Determinised the Automata ";
+			print_float (t_end -. t_start);
+			print_string "s (";
+			print_int (StateSetMap.cardinal s.transitions);
+			print_string ")";
+			print_newline ();
+		end;
+	s
 
 (* Regarde si la production est dans un état autorisant la réduction de la règle associé *)
 let canReduce ((n, p, suiv, _):stateND) = 
@@ -309,7 +383,7 @@ let canReduce ((n, p, suiv, _):stateND) =
 	in aux p
 
 (* Récupère dans un états toutes les productions réductibles *)
-let reduces (s:state):state = StateSet.filter canReduce s
+let reduces (convertTable: stateND Imap.t) (s:state):state = Iset.filter (fun k -> canReduce (Imap.find k convertTable)) s
 
 (* Numérote les états pour pouvoir en faire une table *)
 let giveNumbers (t:transitionTableD) = 
@@ -413,8 +487,10 @@ let findPrioToken p pMap =
 		|Some t -> t
 
 (* Fusionne la table des shift et celle des réduction pour faire la table des action depuis un état précis *)
-let fusionSR (shift_line:action Tmap.t) (rules:StateSet.t) pMap aMap (tset: Tset.t) =
-	let ruleMap = StateSet.fold (fun (n, pd, prio, suiv) m -> rajouteR_Rset suiv (n, unconvertPD_P pd, prio) m) rules Tmap.empty in 
+let fusionSR (conversionTable: stateND Imap.t) (shift_line:action Tmap.t) (rules:Iset.t) pMap aMap (tset: Tset.t) =
+	let ruleMap = Iset.fold (fun index m -> 
+		let (n, pd, prio, suiv) = Imap.find index conversionTable in
+		rajouteR_Rset suiv (n, unconvertPD_P pd, prio) m) rules Tmap.empty in 
 	let aux t m = match Tmap.mem t shift_line, Tmap.mem t ruleMap with
 		|false, false -> m
 		|true, false -> (try Tmap.add t (Tmap.find t shift_line) m with Not_found -> assert false)
@@ -438,25 +514,6 @@ let fusionSR (shift_line:action Tmap.t) (rules:StateSet.t) pMap aMap (tset: Tset
 			) m
 	in Tset.fold aux tset Tmap.empty
 
-(*
-let rajouteAction (i:int) (t:terminal) (act:action) (m:actionTable) = 
-	if Imap.mem i m then
-		let map = Imap.find i m in 
-		Imap.add i (Tmap.add t act map) m
-	else Imap.add i (Tmap.add t act Tmap.empty) m
-
-let firstNT g = 
-	let rec aux = function
-		|[] -> failwith "inexistant rule"
-		|(n, p, _)::tl when n = g.start -> begin
-			match p with
-			| [] -> failwith "empty first rule"
-			|(Terminal t)::tl -> failwith "wrong format first rule"
-			|(NonTerminal t)::tl -> t
-			end
-		|_::tl -> aux tl
-	in aux g.rules*)
-
 (* fonctions d'affichage de débug *)
 let rec affichePD_Fmt fmt = function
 	|[] -> ()
@@ -464,18 +521,29 @@ let rec affichePD_Fmt fmt = function
 	|NonTerminalD t::tl -> Format.fprintf fmt "%s %a" t affichePD_Fmt tl
 	|Dot::tl -> Format.fprintf fmt "* %a" affichePD_Fmt tl
 
-let afficheFichierEtats nM = 
+let afficheFichierEtats (conversionTable: stateND Imap.t) nM = 
 	let out = open_out "parser.explain" in
 	let fmt = Format.formatter_of_out_channel out in
+	let print_state (nT, prodD, _, term) = 
+		Format.fprintf fmt " - %s[%s] -> %a\n" nT term affichePD_Fmt prodD
+	in 
 	StateSetMap.iter (fun k i ->
 		Format.fprintf fmt "Etat : %i\n" i;
-		StateSet.iter (fun (nT, prodD, _, term) -> 
-			Format.fprintf fmt " - %s[%s] -> %a\n" nT term affichePD_Fmt prodD) k) nM;
+		Iset.iter (fun iState -> print_state (Imap.find iState conversionTable)) k) nM;
 	close_out out
 
 (* construction de la table *)
 let buildTable (g:grammar) (priority:priority) =
+	let t_start = Unix.gettimeofday () in
 	let a = buildAutomateD g in
+	let t_end = Unix.gettimeofday () in
+	if !trace_time then
+		begin
+			print_string "Build Determinist Automata ";
+			print_float (t_end -. t_start);
+			print_string "s";
+			print_newline ();
+		end;
 	if !print_all then print_string "Automate Deterministe fini\n";
 	let ntS = buildNtset g.rules in 
 	if !print_all then print_string "builded non-terminal set\n";
@@ -483,13 +551,13 @@ let buildTable (g:grammar) (priority:priority) =
 	if !print_all then print_string "builded terminal set\n";
 	let numMap = giveNumbers a.transitions in
 	if !print_all then print_string "Builded number map\n";
-	if !explain then afficheFichierEtats numMap;
+	if !explain then afficheFichierEtats a.conversion numMap;
 	let priorityMap = buildPriorityMap 0 priority in
 	if !print_all then print_string "Builded priority map\n";
 	let assocMap = buildAssocMap priority in
 	if !print_all then print_string "Debut build reductionTab\n";
 	let buildReduceTab set _ m =
-		let laws = reduces set in
+		let laws = reduces a.conversion set in
 		Imap.add (try StateSetMap.find set numMap with Not_found -> assert false) laws m in
 	let reductionTab = StateSetMap.fold buildReduceTab a.transitions Imap.empty in
 	if !print_all then print_string "Fin build reductionTab\n";
@@ -508,7 +576,7 @@ let buildTable (g:grammar) (priority:priority) =
 	let aux i sline m =
 		if Imap.mem i reductionTab then
 		let reduce = try Imap.find i reductionTab with Not_found -> failwith "reduce = Imap.find l.483" in
-		Imap.add i (fusionSR sline reduce priorityMap assocMap tS) m
+		Imap.add i (fusionSR a.conversion sline reduce priorityMap assocMap tS) m
 		else Imap.add i sline m 
 	in let actionTab = Imap.fold aux shiftTab Imap.empty in
 	let starting = StateSetMap.find a.startSet numMap in
@@ -547,7 +615,7 @@ type actionTypes =
 	|Success
 ";;
 
-let pp_tokenDecl fmt liste = 
+let pp_ocaml_tokenDecl fmt liste = 
 	Format.fprintf fmt "type token =\n";
 	Format.fprintf fmt "\t|Not_a_token\n";
 	let afficheToken (t,dataT) = match dataT with 
@@ -577,7 +645,7 @@ let pp_mainEnd fmt fin startS =
 		|%s a -> a
 		| _ -> assert false
 	with Output a -> a
-		| _ -> raise (Samenhir_Parsing_Error [\"Try something else\"])
+		(*| _ -> raise (Samenhir_Parsing_Error [\"Try something else\"])*)
 " fin startS startS (String.uppercase_ascii fin);;
 
 (* affichage des actions de réduction *)
@@ -750,7 +818,7 @@ let pp_gotoStates2 fmt i gotoT ruleMap =
 (* affiche tout le programme *)
 let pp_buildProg fmt program = 
 	pp_header fmt program.head;
-	Format.fprintf fmt "\n\n%a\n%a\n" pp_tokenDecl program.tokenList pp_declarationTypes program;
+	Format.fprintf fmt "\n\n%a\n%a\n" pp_ocaml_tokenDecl program.tokenList pp_declarationTypes program;
 	let tokenTypeMap = List.fold_left (fun m (t,dT) -> if dT = None then m else Tmap.add t dT m) Tmap.empty program.tokenList in
 	let rMap = List.fold_left (fun m (nm,tipe, rawProd, opt, cons) -> Rmap.add (nm,unRawProd rawProd, opt) (rawProd,cons) m) Rmap.empty program.gR.raw_rules in
 	Imap.iter (fun i act -> if Tmap.cardinal act > 0 then pp_actionStates fmt program.gR.startR i act rMap tokenTypeMap (if Imap.mem i program.gotoTab then Imap.find i program.gotoTab else Ntmap.empty)) program.actionTab;
@@ -762,7 +830,7 @@ let pp_buildProg fmt program =
 
 let pp_main fmt program = 
 	pp_header fmt program.head;
-	Format.fprintf fmt "\n\n%a\n%a\n" pp_tokenDecl program.tokenList pp_declarationTypes program;
+	Format.fprintf fmt "\n\n%a\n%a\n" pp_ocaml_tokenDecl program.tokenList pp_declarationTypes program;
 	let tokenTypeMap = List.fold_left (fun m (t,dT) -> if dT = None then m else Tmap.add t dT m) Tmap.empty program.tokenList in
 	let rMap = List.fold_left (fun m (nm,tipe, rawProd, opt, cons) -> Rmap.add (nm,unRawProd rawProd, opt) (rawProd,cons) m) Rmap.empty program.gR.raw_rules in
 	pp_action_table fmt program.actionTab rMap tokenTypeMap;
@@ -778,8 +846,179 @@ let pp_main fmt program =
 
 (* affiche le fichier .mli*)
 let pp_mli fmt program =
-	pp_tokenDecl fmt program.tokenList;
+	pp_ocaml_tokenDecl fmt program.tokenList;
 	Format.fprintf fmt "\nexception Samenhir_Parsing_Error of string list\n";
 	Format.fprintf fmt "val %s: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (%s)\n" program.gR.startR (findType program.gR.startR program.gR.raw_rules)
+;;
+
+
+let pp_rust_header fmt program = 
+	Format.fprintf fmt "%s\n\n" program.head;
+	Format.fprintf fmt "pub enum Errors {
+	ParsingError,
+	LexingError(&'static str),
+}\n\n";;
+
+let pp_rust_tokenDecl fmt liste = 
+	Format.fprintf fmt "pub enum Token {\n";
+	Format.fprintf fmt "\tNotAToken,\n";
+	let afficheToken (t, dataT) = match dataT with
+		|None -> Format.fprintf fmt "\t%s,\n" t
+		|Some data -> Format.fprintf fmt "\t%s(%s),\n" t data
+	in List.iter afficheToken liste;
+	Format.fprintf fmt "}\n"
+;;
+
+let pp_rust_typeDecl fmt raw_rules = 
+	Format.fprintf fmt "enum RulesType {\n";
+	let nameMap = List.fold_left (fun set (nm,t,_,_,_) -> Smap.add nm t set) Smap.empty raw_rules in 
+	Smap.iter (fun nm t -> Format.fprintf fmt "\t%s(%s),\n" (String.uppercase_ascii nm) t) nameMap;
+	Format.fprintf fmt "\tTok(Token),\n}\n";
+	Format.fprintf fmt "enum ReturnReduce {\n\tSamenhirErrorReduce,\n\tSuccess(Vec<usize>, Vec<RulesType>, &'static str),\n}\n";
+	Format.fprintf fmt "
+#[allow(dead_code)]
+enum ActionTypes {
+	Action(usize),
+	Shift(usize),
+	Success,
+	Failure,
+}\n";;
+;;
+
+let pp_rust_action_affiche fmt num t action rMap tokenTypeMap = 
+	let t2 = if t = endString then "EOF" else t in
+	if Tmap.mem t tokenTypeMap then
+		Format.fprintf fmt "\t\t(%i, Token::%s(_)) => " num t2
+	else Format.fprintf fmt "\t\t(%i, Token::%s) => " num t2;
+	match action with
+		| SUCCESS -> Format.fprintf fmt "ActionTypes::Success,\n"
+		| SHIFT i -> Format.fprintf fmt "ActionTypes::Shift(%i),\n" i
+		| REDUCE r -> begin
+			if Hashtbl.mem hash r then
+				let (i, _) = Hashtbl.find hash r in Format.fprintf fmt "ActionTypes::Action(%i),\n" i
+			else begin
+				let i = !compteurReduce in 
+				compteurReduce := i +1;
+				let red = Rmap.find r rMap in
+				Hashtbl.add hash r (i, red);
+				Format.fprintf fmt "ActionTypes::Action(%i),\n" i
+			end
+		end
+;;
+let pp_rust_action_table fmt actTab rMap tokenType =
+	Format.fprintf fmt "fn action_table(state : usize ,next_token : &Token) -> ActionTypes {\n";
+	Format.fprintf fmt "\tmatch (state, next_token) {\n";
+	Imap.iter (fun i -> Tmap.iter (fun n act -> pp_rust_action_affiche fmt i n act rMap tokenType)) actTab;
+	Format.fprintf fmt "\t\t _ => ActionTypes::Failure\n\t}\n}\n\n"
+;;
+
+let pp_rust_reduce_action fmt tokenTypeMap (n,_,_) (num, (raw_prod, cons) : int * (SamenhirAst.raw_production * string)) =
+	let rec aux1 = function 
+			| [] -> ()
+			|TerminalR t::tl -> begin 
+				aux1 tl;
+				Format.fprintf fmt "\t\t\tmatch pile.pop() { Some(RulesType::Tok(_)) => (), _ => return ReturnReduce::SamenhirErrorReduce};\n"
+				end
+			|AssocTerminal (s, t)::tl -> begin 
+				aux1 tl;
+				Format.fprintf fmt "\t\t\tlet %s = match pile.pop() { Some(RulesType::Tok(Token::%s(t))) => t, _ => return ReturnReduce::SamenhirErrorReduce};\n" s t
+				end
+			|NonTerminalR t::tl -> begin 
+				aux1 tl;
+				Format.fprintf fmt "\t\t\tmatch pile.pop() { Some(RulesType::Tok(_)) => return ReturnReduce::SamenhirErrorReduce, Some(_) => (), _ => return ReturnReduce::SamenhirErrorReduce};\n"
+				end
+			|AssocNonTerminal (s,t)::tl -> begin 
+				aux1 tl;
+				Format.fprintf fmt "\t\t\tlet %s = match pile.pop() { Some(RulesType::%s(t)) => t, _ => return ReturnReduce::SamenhirErrorReduce};\n" s (String.uppercase_ascii t)
+				end
+	in
+	Format.fprintf fmt "\t\t%i => {\n" num;
+	aux1 raw_prod;
+	Format.fprintf fmt "\t\t\tfor _i in 0..%i {match list_etat.pop() { Some(_) => (), _ => return ReturnReduce::SamenhirErrorReduce}};\n" (List.length raw_prod);
+	Format.fprintf fmt "\t\t\tpile.push(RulesType::%s({%s}));\n\t\t\tReturnReduce::Success(list_etat, pile, \"%s\")\n\t\t}\n" (String.uppercase_ascii n) cons n
+;;
+let pp_rust_reduce_table fmt tokenTypeMap =
+	Format.fprintf fmt "fn reduce(num:usize, mut list_etat: Vec<usize>, mut pile: Vec<RulesType>) -> ReturnReduce {\n";
+	Format.fprintf fmt "\tmatch num {\n";
+	Hashtbl.iter (pp_rust_reduce_action fmt tokenTypeMap) hash;
+	Format.fprintf fmt "\t_ => ReturnReduce::SamenhirErrorReduce\n\t}\n}\n\n"
+;;
+
+let pp_rust_mainGoto fmt i t target = 
+	Format.fprintf fmt "\t\t(%i, \"%s\") => %i,\n" i t target
+;;
+
+let pp_rust_gotoStates fmt i gotoTable rMap =
+	Ntmap.iter (pp_rust_mainGoto fmt i) gotoTable
+;;
+
+let pp_rust_mainProgram fmt startR startLTable programType lexerName = Format.fprintf fmt "
+fn action_all(new_token : fn (%s) -> Result<Token, &'static str>, lexbuf : %s, mut etat : usize) -> Result<%s, Errors> {
+    let mut pile = Vec::<RulesType>::new();
+    let mut liste_etats = Vec::<usize>::new();
+    let mut next_token = match new_token(lexbuf) {Ok(t) => t, Err(s) => return Err(Errors::LexingError(s))};
+	loop {
+		match action_table(etat, &next_token) {
+			ActionTypes::Success => return Err(Errors::ParsingError),
+			ActionTypes::Action(i) => {
+				liste_etats.push(etat);
+				let s = reduce(i, liste_etats, pile);
+				let nom = match s {
+					ReturnReduce::SamenhirErrorReduce => return Err(Errors::ParsingError),
+					ReturnReduce::Success(e, p, n) => {
+						pile = p;
+						liste_etats = e;
+						n
+						}
+					};
+				let l2 = liste_etats.len();
+				let i = goto(liste_etats[l2-1], nom);
+				if i == -1 {
+					if pile.len() != 1 {
+						return Err(Errors::ParsingError)
+					}
+					match pile.swap_remove(0) {
+						RulesType::%s(t) => return Ok(t),
+						_ => return Err(Errors::ParsingError)
+					}
+				}
+				etat = i as usize;
+				},
+			ActionTypes::Shift(i) => {
+				liste_etats.push(etat);
+				pile.push(RulesType::Tok(next_token));
+				etat = i;
+				next_token = match new_token(lexbuf) {Ok(t) => t, Err(s) => return Err(Errors::LexingError(s))};
+				},
+			ActionTypes::Failure => return Err(Errors::ParsingError)
+		}
+	}
+}
+
+pub fn %s(lexer : fn (%s) -> Result<Token, &'static str>, lexbuf : %s) -> Result<%s, Errors> {
+	action_all(lexer, lexbuf, %i)
+}\n" lexerName lexerName programType (String.uppercase_ascii startR) startR lexerName lexerName programType startLTable;
+	
+	if !include_main then Format.fprintf fmt "fn wierd() -> Result<Token, &'static str> {
+		Err(\"No error\")
+	}
+	
+	fn main() { loop {}; %s(wierd);}\n" startR
+;;
+
+let pp_rust_main fmt program lexerName = 
+		pp_rust_header fmt program;
+		pp_rust_tokenDecl fmt program.tokenList;
+		pp_rust_typeDecl fmt program.gR.raw_rules;
+		Format.fprintf fmt "\n\n";
+		let tokenTypeMap = List.fold_left (fun m (t,dT) -> if dT = None then m else Tmap.add t dT m) Tmap.empty program.tokenList in
+		let rMap = List.fold_left (fun m (nm,tipe, rawProd, opt, cons) -> Rmap.add (nm,unRawProd rawProd, opt) (rawProd,cons) m) Rmap.empty program.gR.raw_rules in
+		pp_rust_action_table fmt program.actionTab rMap tokenTypeMap;
+		pp_rust_reduce_table fmt tokenTypeMap;
+		Format.fprintf fmt "fn goto(i : usize, read_rule : &str) -> isize {\n\tmatch (i, read_rule) {\n";
+		Imap.iter (fun i got ->if Ntmap.cardinal got > 0 then pp_rust_gotoStates fmt i got rMap) program.gotoTab;
+		Format.fprintf fmt "\t\t_ => -1\n\t}\n}\n";
+		pp_rust_mainProgram fmt program.gR.startR program.startLTable (findType program.gR.startR program.gR.raw_rules) lexerName;
+		Format.pp_print_flush fmt ()
 ;;
 
